@@ -80,6 +80,3 @@ token with `firebase-admin`, runs the same onboarding rule as before (new email 
 - Releases + Dashboard (using `dashboard_daily_metrics`)
 - The end-of-day digest job (Vercel Cron hitting a `CRON_SECRET`-protected route)
 
-Say the word and I'll build the next module in the same pattern (repository → service →
-API route → page).
-#
