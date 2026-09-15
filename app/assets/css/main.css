@@ -1,0 +1,126 @@
+@layer tailwind-base, primevue, tailwind-utilities;
+
+@layer tailwind-base {
+  @tailwind base;
+}
+
+@tailwind components;
+
+@layer tailwind-utilities {
+  @tailwind utilities;
+}
+
+/*
+ * Dark mode safety net for PrimeVue surfaces.
+ *
+ * Per-component `pt` (passthrough) classes are the "correct" way to theme
+ * PrimeVue, but they only work if we guess the exact internal section
+ * names right for the installed PrimeVue version, and several surfaces
+ * (Dialog content, the closed Select/MultiSelect trigger box itself, the
+ * teleported overlay panel, Toast) kept slipping through un-themed.
+ *
+ * This targets PrimeVue's actual rendered class names directly (stable
+ * across pt section naming changes) and forces both the trigger and the
+ * open panel to follow `.dark`, in `tailwind-utilities` so it wins over
+ * the `primevue` layer regardless of source order.
+ */
+@layer tailwind-utilities {
+  .dark .p-dialog,
+  .dark .p-dialog-header,
+  .dark .p-dialog-content,
+  .dark .p-dialog-footer {
+    background-color: #000000 !important;
+    color: #ffffff !important;
+    border-color: rgb(255 255 255 / 0.1) !important;
+  }
+
+  .dark .p-select,
+  .dark .p-multiselect,
+  .dark .p-inputtext,
+  .dark .p-textarea {
+    background-color: #000000 !important;
+    color: #ffffff !important;
+    border-color: rgb(255 255 255 / 0.15) !important;
+  }
+
+  .dark .p-select-label,
+  .dark .p-multiselect-label,
+  .dark .p-select-dropdown,
+  .dark .p-multiselect-dropdown,
+  .dark .p-select-option,
+  .dark .p-multiselect-option {
+    color: #ffffff !important;
+  }
+
+  .dark .p-select-overlay,
+  .dark .p-multiselect-overlay,
+  .dark .p-select-list,
+  .dark .p-multiselect-list,
+  .dark .p-select-header,
+  .dark .p-multiselect-header,
+  .dark .p-datatable,
+  .dark .p-datatable-header {
+    background-color: #18181b !important;
+    color: #ffffff !important;
+    border-color: rgb(255 255 255 / 0.1) !important;
+  }
+
+  .dark .p-select-option:hover,
+  .dark .p-multiselect-option:hover {
+    background-color: rgb(255 255 255 / 0.08) !important;
+  }
+
+  .dark .p-select-option[aria-selected='true'],
+  .dark .p-multiselect-option[aria-selected='true'] {
+    background-color: rgb(147 51 234 / 0.15) !important;
+    color: #c084fc !important;
+  }
+
+  .dark .p-multiselect-chip {
+    background-color: rgb(147 51 234 / 0.15) !important;
+    color: #c084fc !important;
+  }
+
+  .dark .p-toast-message {
+    background-color: #000000 !important;
+    color: #ffffff !important;
+    border-color: rgb(255 255 255 / 0.1) !important;
+  }
+
+  /* sortable table headers keep a "sorted"/focus highlight after being
+     clicked, which reads as a stuck hover state, this app doesn't use
+     that affordance so it's turned off everywhere rather than per table.
+     PrimeVue applies this permanently (not just on :focus) via the plain
+     `.p-datatable-column-sorted` class from `datatable.header.cell.selected.*`
+     tokens, which set both a background AND a high-contrast text color.
+     Resetting background-color to `transparent` doesn't make the cell look
+     "normal" — it makes the <th> see-through, so the card wrapper behind
+     the table (white in light mode, black in dark mode) shows through
+     instead of the header's own gray background, which reads as an even
+     louder highlight than PrimeVue's default. Matching the same background
+     and color vars every other header cell already uses makes the sorted
+     column blend in exactly like an unsorted one, in both color schemes. */
+  .p-datatable-column-header-content:focus,
+  .p-datatable-sortable-column:focus,
+  .p-datatable-sortable-column:focus-visible,
+  .p-datatable-sortable-column.p-datatable-column-sorted {
+    background-color: var(--p-datatable-header-cell-background) !important;
+    color: var(--p-datatable-header-cell-color) !important;
+    box-shadow: none !important;
+    outline: none !important;
+  }
+
+  .p-datatable-sortable-column.p-datatable-column-sorted .p-datatable-sort-icon {
+    color: var(--p-datatable-sort-icon-color) !important;
+  }
+
+  /* light mode explicit, so a stray dark: utility elsewhere can't leak in */
+  .p-dialog,
+  .p-select,
+  .p-multiselect,
+  .p-select-overlay,
+  .p-multiselect-overlay {
+    background-color: #ffffff;
+    color: #111827;
+  }
+}

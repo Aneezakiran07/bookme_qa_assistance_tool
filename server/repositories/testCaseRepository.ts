@@ -1,0 +1,181 @@
+import { useDb } from '../db/client'
+
+export interface TestCaseRecord {
+  id: number
+  title: string
+  module_id: number
+  steps: string | null
+  expected_result: string | null
+  priority: 'High' | 'Medium' | 'Low' | null
+  type: 'Manual' | 'Automated'
+  created_by: number | null
+  last_modified_by: number | null
+  last_modified_at: string
+  created_at: string
+}
+
+// same shape as TestCaseRecord plus everything the Test Case Repository
+// table needs to render in one request: the module name and the array of
+// linked requirement ids (so "Linked Reqs" never needs a second round
+// trip per row).
+export interface TestCaseWithMeta extends TestCaseRecord {
+  module_name: string
+  linked_requirement_ids: number[]
+}
+
+export interface TestCaseFilters {
+  moduleId?: number
+  priority?: string
+  type?: string
+}
+
+export const testCaseRepository = {
+  async list(filters: TestCaseFilters = {}): Promise<TestCaseWithMeta[]> {
+    const sql = useDb()
+    const rows = await sql`
+      select
+        tc.*,
+        m.name as module_name,
+        coalesce(l.req_ids, '{}') as linked_requirement_ids
+      from test_cases tc
+      join modules m on m.id = tc.module_id
+      left join (
+        select test_case_id, array_agg(requirement_id order by requirement_id) as req_ids
+        from requirement_test_case_links
+        group by test_case_id
+      ) l on l.test_case_id = tc.id
+      where
+        (${filters.moduleId ?? null}::int is null or tc.module_id = ${filters.moduleId ?? null}::int)
+        and (${filters.priority ?? null}::text is null or tc.priority = ${filters.priority ?? null}::text)
+        and (${filters.type ?? null}::text is null or tc.type = ${filters.type ?? null}::text)
+      order by tc.created_at desc
+    `
+    return rows as TestCaseWithMeta[]
+  },
+
+  async findById(id: number): Promise<TestCaseRecord | null> {
+    const sql = useDb()
+    const rows = await sql`select * from test_cases where id = ${id}`
+    return (rows[0] as TestCaseRecord) ?? null
+  },
+
+  async linkedRequirementIds(id: number): Promise<number[]> {
+    const sql = useDb()
+    const rows = await sql`
+      select requirement_id from requirement_test_case_links where test_case_id = ${id}
+    `
+    return rows.map((r: any) => r.requirement_id)
+  },
+
+  async create(input: {
+    title: string
+    moduleId: number
+    steps: string | null
+    expectedResult: string | null
+    priority: string | null
+    type: string
+    requirementIds: number[]
+    createdBy: number
+  }): Promise<TestCaseRecord> {
+    const sql = useDb()
+    const rows = await sql`
+      insert into test_cases (title, module_id, steps, expected_result, priority, type, created_by, last_modified_by)
+      values (
+        ${input.title},
+        ${input.moduleId},
+        ${input.steps},
+        ${input.expectedResult},
+        ${input.priority},
+        ${input.type},
+        ${input.createdBy},
+        ${input.createdBy}
+      )
+      returning *
+    `
+    const created = rows[0] as TestCaseRecord
+    await this.setRequirementLinks(created.id, input.requirementIds)
+    return created
+  },
+
+  // partial update: only columns present in patch are touched
+  async update(
+    id: number,
+    patch: {
+      title?: string
+      moduleId?: number
+      steps?: string | null
+      expectedResult?: string | null
+      priority?: string | null
+      type?: string
+      lastModifiedBy: number
+    }
+  ): Promise<TestCaseRecord | null> {
+    const sql = useDb()
+    const current = await this.findById(id)
+    if (!current) return null
+
+    const rows = await sql`
+      update test_cases set
+        title = ${patch.title ?? current.title},
+        module_id = ${patch.moduleId ?? current.module_id},
+        steps = ${patch.steps !== undefined ? patch.steps : current.steps},
+        expected_result = ${patch.expectedResult !== undefined ? patch.expectedResult : current.expected_result},
+        priority = ${patch.priority !== undefined ? patch.priority : current.priority},
+        type = ${patch.type ?? current.type},
+        last_modified_by = ${patch.lastModifiedBy},
+        last_modified_at = now()
+      where id = ${id}
+      returning *
+    `
+    return (rows[0] as TestCaseRecord) ?? null
+  },
+
+  // replaces the full set of linked requirements for a test case: clears
+  // existing links then re-inserts the given ids, so callers never have
+  // to diff the old vs new set themselves.
+  async setRequirementLinks(testCaseId: number, requirementIds: number[]): Promise<void> {
+    const sql = useDb()
+    await sql`delete from requirement_test_case_links where test_case_id = ${testCaseId}`
+    const uniqueIds = [...new Set(requirementIds)]
+    for (const reqId of uniqueIds) {
+      await sql`
+        insert into requirement_test_case_links (test_case_id, requirement_id)
+        values (${testCaseId}, ${reqId})
+        on conflict do nothing
+      `
+    }
+  },
+
+  async delete(id: number): Promise<TestCaseRecord | null> {
+    const sql = useDb()
+    const rows = await sql`delete from test_cases where id = ${id} returning *`
+    return (rows[0] as TestCaseRecord) ?? null
+  },
+
+  // creates a copy of an existing test case (title suffixed "(Copy)") and
+  // carries over its requirement links, used by the table's Duplicate action
+  async duplicate(id: number, duplicatedBy: number): Promise<TestCaseRecord | null> {
+    const sql = useDb()
+    const source = await this.findById(id)
+    if (!source) return null
+
+    const links = await this.linkedRequirementIds(id)
+    const rows = await sql`
+      insert into test_cases (title, module_id, steps, expected_result, priority, type, created_by, last_modified_by)
+      values (
+        ${`${source.title} (Copy)`},
+        ${source.module_id},
+        ${source.steps},
+        ${source.expected_result},
+        ${source.priority},
+        ${source.type},
+        ${duplicatedBy},
+        ${duplicatedBy}
+      )
+      returning *
+    `
+    const created = rows[0] as TestCaseRecord
+    await this.setRequirementLinks(created.id, links)
+    return created
+  }
+}

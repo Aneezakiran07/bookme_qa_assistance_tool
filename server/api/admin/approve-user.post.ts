@@ -1,0 +1,22 @@
+import { requireRole } from '~~/server/utils/authorize'
+import { userRepository } from '~~/server/repositories/userRepository'
+
+const validRoles = ['Admin', 'QA Lead', 'Tester', 'Developer']
+
+// used both to activate a brand new pending user and to change an already
+// active user's role or module scope, the update is the same either way
+export default defineEventHandler(async (event) => {
+  requireRole(event, ['Admin'])
+
+  const body = await readBody<{ userId: number; role: string; moduleIds: number[] }>(event)
+
+  if (!body?.userId) {
+    throw createError({ statusCode: 400, statusMessage: 'userId is required' })
+  }
+  if (!validRoles.includes(body.role)) {
+    throw createError({ statusCode: 400, statusMessage: 'Invalid role' })
+  }
+
+  const user = await userRepository.approve(body.userId, body.role, body.moduleIds ?? [])
+  return { success: true, user }
+})
