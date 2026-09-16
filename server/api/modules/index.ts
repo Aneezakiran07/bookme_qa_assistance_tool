@@ -1,92 +1,34 @@
-import { testCaseRepository } from '~~/server/repositories/testCaseRepository'
 import { moduleRepository } from '~~/server/repositories/moduleRepository'
 
-const VALID_PRIORITIES = ['High', 'Medium', 'Low']
-const VALID_TYPES = ['Manual', 'Automated']
-
-// Step 4 of the workflow: authoring structured test cases against a
-// module and (optionally) against one or more requirements. non-restrictive
-// access model matching requirements/index.vue: every active team member
-// can list and create test cases, so no requireRole call here.
+// step 1 of the workflow: modules are the top level grouping every
+// requirement and test case hangs off of. every active team member can
+// list modules (used to populate every "Filter by Module" dropdown across
+// the app) and create one inline (used by ModuleSelect's "create module"
+// flow), so there is no requireRole call here. renaming and deleting a
+// module are restricted separately in [id].put.ts and [id].delete.ts.
 export default defineEventHandler(async (event) => {
   const currentUser = event.context.currentUser
 
   if (event.method === 'GET') {
-    const query = getQuery(event)
-    const moduleId = query.moduleId ? Number(query.moduleId) : undefined
-    if (query.moduleId && (!moduleId || Number.isNaN(moduleId))) {
-      throw createError({ statusCode: 400, statusMessage: 'Invalid moduleId' })
-    }
-    const priority = typeof query.priority === 'string' ? query.priority : undefined
-    if (priority && !VALID_PRIORITIES.includes(priority)) {
-      throw createError({ statusCode: 400, statusMessage: 'Invalid priority filter' })
-    }
-    const type = typeof query.type === 'string' ? query.type : undefined
-    if (type && !VALID_TYPES.includes(type)) {
-      throw createError({ statusCode: 400, statusMessage: 'Invalid type filter' })
-    }
-    const releaseId = query.releaseId ? Number(query.releaseId) : undefined
-    if (query.releaseId && (!releaseId || Number.isNaN(releaseId))) {
-      throw createError({ statusCode: 400, statusMessage: 'Invalid releaseId' })
-    }
-
-    return testCaseRepository.list({ moduleId, priority, type, releaseId })
+    return moduleRepository.list()
   }
 
   if (event.method === 'POST') {
-    const body = await readBody<{
-      title: string
-      moduleId: number
-      steps?: string | null
-      expectedResult?: string | null
-      priority?: string | null
-      type?: string
-      requirementIds?: number[]
-      releaseIds?: number[]
-    }>(event)
-
-    const title = body?.title?.trim()
-    if (!title) {
-      throw createError({ statusCode: 400, statusMessage: 'Title is required' })
+    const body = await readBody<{ name: string }>(event)
+    const name = body?.name?.trim()
+    if (!name) {
+      throw createError({ statusCode: 400, statusMessage: 'Module name is required' })
     }
 
-    const moduleId = Number(body?.moduleId)
-    if (!moduleId) {
-      throw createError({ statusCode: 400, statusMessage: 'Module is required' })
-    }
-    const module = await moduleRepository.findById(moduleId)
-    if (!module) {
-      throw createError({ statusCode: 404, statusMessage: 'Selected module does not exist' })
-    }
-
-    if (body?.priority && !VALID_PRIORITIES.includes(body.priority)) {
-      throw createError({ statusCode: 400, statusMessage: 'Invalid priority' })
+    const existing = await moduleRepository.findByNameLower(name)
+    if (existing) {
+      throw createError({
+        statusCode: 409,
+        statusMessage: `A module named "${existing.name}" already exists.`
+      })
     }
 
-    const type = body?.type ?? 'Manual'
-    if (!VALID_TYPES.includes(type)) {
-      throw createError({ statusCode: 400, statusMessage: 'Invalid type' })
-    }
-
-    const requirementIds = Array.isArray(body?.requirementIds)
-      ? body.requirementIds.map(Number).filter((n) => Number.isFinite(n))
-      : []
-
-    const releaseIds = Array.isArray(body?.releaseIds)
-      ? body.releaseIds.map(Number).filter((n) => Number.isFinite(n))
-      : []
-
-    return testCaseRepository.create({
-      title,
-      moduleId,
-      steps: body?.steps ?? null,
-      expectedResult: body?.expectedResult ?? null,
-      priority: body?.priority ?? null,
-      type,
-      requirementIds,
-      releaseIds,
-      createdBy: currentUser.id
-    })
+    return moduleRepository.create(name, currentUser.id)
   }
 
   throw createError({ statusCode: 405, statusMessage: 'Method not allowed' })

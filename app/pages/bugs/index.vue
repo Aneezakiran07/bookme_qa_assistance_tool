@@ -52,24 +52,24 @@ const SEVERITY_OPTIONS = ['Critical', 'High', 'Medium', 'Low']
 const STATUS_OPTIONS = ['Open', 'In Progress', 'Fixed', 'Retest', 'Closed', 'Reopened']
 
 // -- filters: Module, Severity, Status, Release --
-const { data: moduleOptionsData } = await useFetch<ModuleOption[]>('/api/modules')
-const moduleOptions = computed(() => [{ id: null, name: 'All Modules' }, ...(moduleOptionsData.value ?? [])])
-
-const { data: releaseOptionsData } = await useFetch<ReleaseOption[]>('/api/releases')
-const releaseOptions = computed(() => [
-  { id: null, version: 'All Releases' },
-  ...(releaseOptionsData.value ?? [])
-])
-
-const severityFilterOptions = [{ label: 'All Severities', value: null }, ...SEVERITY_OPTIONS.map((s) => ({ label: s, value: s }))]
-const statusFilterOptions = [{ label: 'All Statuses', value: null }, ...STATUS_OPTIONS.map((s) => ({ label: s, value: s }))]
-
 const selectedModuleId = ref<number | null>(null)
 const selectedSeverity = ref<string | null>(null)
 const selectedStatus = ref<string | null>(null)
 const selectedReleaseId = ref<number | null>(null)
 
-const { data, refresh, pending: loadingBugs } = await useFetch<BugRow[]>('/api/bugs', {
+const severityFilterOptions = [{ label: 'All Severities', value: null }, ...SEVERITY_OPTIONS.map((s) => ({ label: s, value: s }))]
+const statusFilterOptions = [{ label: 'All Statuses', value: null }, ...STATUS_OPTIONS.map((s) => ({ label: s, value: s }))]
+
+// these four fetches are independent of each other, so they are kicked off
+// together and only awaited once instead of one after another. useFetch
+// returns its data and pending and refresh refs synchronously, so those are
+// grabbed right away. Promise.all is only used to wait for all four
+// requests to finish at once, never to read the resolved value itself,
+// since destructuring straight off Promise.all was handing back undefined
+// refs instead of the real composable objects.
+const modulesFetch = useFetch<ModuleOption[]>('/api/modules')
+const releasesFetch = useFetch<ReleaseOption[]>('/api/releases')
+const bugsFetch = useFetch<BugRow[]>('/api/bugs', {
   query: computed(() => ({
     ...(selectedModuleId.value ? { moduleId: selectedModuleId.value } : {}),
     ...(selectedSeverity.value ? { severity: selectedSeverity.value } : {}),
@@ -77,9 +77,21 @@ const { data, refresh, pending: loadingBugs } = await useFetch<BugRow[]>('/api/b
     ...(selectedReleaseId.value ? { releaseId: selectedReleaseId.value } : {})
   }))
 })
-const bugs = computed(() => data.value ?? [])
+const metricsFetch = useFetch<BugMetrics>('/api/bugs/metrics')
 
-const { data: metricsData, refresh: refreshMetrics } = await useFetch<BugMetrics>('/api/bugs/metrics')
+await Promise.all([modulesFetch, releasesFetch, bugsFetch, metricsFetch])
+
+const { data: moduleOptionsData } = modulesFetch
+const { data: releaseOptionsData } = releasesFetch
+const { data, refresh, pending: loadingBugs } = bugsFetch
+const { data: metricsData, refresh: refreshMetrics } = metricsFetch
+
+const moduleOptions = computed(() => [{ id: null, name: 'All Modules' }, ...(moduleOptionsData.value ?? [])])
+const releaseOptions = computed(() => [
+  { id: null, version: 'All Releases' },
+  ...(releaseOptionsData.value ?? [])
+])
+const bugs = computed(() => data.value ?? [])
 const metrics = computed(() => metricsData.value ?? { total_open: 0, critical_high_open: 0, in_retest: 0, closed: 0 })
 
 const columns = [

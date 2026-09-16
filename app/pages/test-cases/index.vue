@@ -46,15 +46,11 @@ const toast = useToast()
 const dropdownPt = useDropdownPt()
 
 // -- filters: Module, Priority, Type (all default to "All") --
-const { data: moduleOptionsData } = await useFetch<ModuleOption[]>('/api/modules')
-const moduleOptions = computed(() => moduleOptionsData.value ?? [])
-
 const selectedModuleId = ref<number | null>(null)
 const selectedPriority = ref<string | null>(null)
 const selectedType = ref<string | null>(null)
 const selectedReleaseId = ref<number | null>(null)
 
-const moduleFilterOptions = computed(() => [{ id: null, name: 'All Modules' }, ...moduleOptions.value])
 const PRIORITY_FILTER_OPTIONS = [
   { label: 'All Priorities', value: null },
   { label: 'High', value: 'High' },
@@ -67,7 +63,15 @@ const TYPE_FILTER_OPTIONS = [
   { label: 'Automated', value: 'Automated' }
 ]
 
-const { data, refresh, pending: loadingTestCases } = await useFetch<TestCaseRow[]>('/api/test-cases', {
+// these four fetches are independent of each other, so they are kicked off
+// together and only awaited once instead of one after another. useFetch
+// returns its data and pending and refresh refs synchronously, so those are
+// grabbed right away. Promise.all is only used to wait for all four
+// requests to finish at once, never to read the resolved value itself,
+// since destructuring straight off Promise.all was handing back undefined
+// refs instead of the real composable objects.
+const modulesFetch = useFetch<ModuleOption[]>('/api/modules')
+const testCasesFetch = useFetch<TestCaseRow[]>('/api/test-cases', {
   query: computed(() => ({
     ...(selectedModuleId.value ? { moduleId: selectedModuleId.value } : {}),
     ...(selectedPriority.value ? { priority: selectedPriority.value } : {}),
@@ -75,7 +79,31 @@ const { data, refresh, pending: loadingTestCases } = await useFetch<TestCaseRow[
     ...(selectedReleaseId.value ? { releaseId: selectedReleaseId.value } : {})
   }))
 })
+const requirementsFetch = useFetch<RequirementOption[]>('/api/requirements')
+const releasesFetch = useFetch<ReleaseOption[]>('/api/releases')
+
+await Promise.all([modulesFetch, testCasesFetch, requirementsFetch, releasesFetch])
+
+const { data: moduleOptionsData } = modulesFetch
+const { data, refresh, pending: loadingTestCases } = testCasesFetch
+const { data: allRequirementsData } = requirementsFetch
+const { data: releaseOptionsData } = releasesFetch
+
+const moduleOptions = computed(() => moduleOptionsData.value ?? [])
+const moduleFilterOptions = computed(() => [{ id: null, name: 'All Modules' }, ...moduleOptions.value])
 const testCases = computed(() => data.value ?? [])
+const allRequirements = computed(() => allRequirementsData.value ?? [])
+const releaseOptions = computed<ReleaseOption[]>(() => releaseOptionsData.value ?? [])
+const releaseFilterOptions = computed(() => [
+  { id: null, version: 'All Versions' },
+  ...releaseOptions.value
+])
+function requirementTitle(id: number) {
+  return allRequirements.value.find((r) => r.id === id)?.title ?? 'Unknown requirement'
+}
+function releaseVersion(id: number) {
+  return releaseOptions.value.find((r) => r.id === id)?.version ?? 'Unknown version'
+}
 
 const columns = [
   { field: 'tc_id', header: 'TC ID' },
@@ -106,30 +134,10 @@ function stripFormatting(value: string | null) {
   return (value ?? '').replace(/\*\*|\*/g, '').replace(/\n/g, ' ').trim()
 }
 
-// -- all requirements, used to resolve titles for the multi-select and
-// the linked-reqs popover; the modal's own fetch below narrows this to
-// the selected module --
-const { data: allRequirementsData } = await useFetch<RequirementOption[]>('/api/requirements')
-const allRequirements = computed(() => allRequirementsData.value ?? [])
-function requirementTitle(id: number) {
-  return allRequirements.value.find((r) => r.id === id)?.title ?? 'Unknown requirement'
-}
-
-// -- releases, used by the "Assign to Releases" multi-select in the modal
-// and by the Release/Version filter dropdown. unlike requirements,
-// releases aren't scoped to a module, so this is a single flat fetch
-// shared by the whole page.
-const { data: releaseOptionsData } = await useFetch<ReleaseOption[]>('/api/releases')
-const releaseOptions = computed<ReleaseOption[]>(
-  () => releaseOptionsData.value ?? []
-)
-const releaseFilterOptions = computed(() => [
-  { id: null, version: 'All Versions' },
-  ...releaseOptions.value
-])
-function releaseVersion(id: number) {
-  return releaseOptions.value.find((r) => r.id === id)?.version ?? 'Unknown version'
-}
+// requirements and releases are fetched together with modules and test
+// cases above (see the Promise.all block); allRequirements, releaseOptions,
+// releaseFilterOptions, requirementTitle and releaseVersion are all defined
+// there.
 
 // -- linked releases popover --
 const releasePopoverRef = ref()

@@ -25,8 +25,12 @@ export default defineEventHandler(async (event) => {
     if (type && !VALID_TYPES.includes(type)) {
       throw createError({ statusCode: 400, statusMessage: 'Invalid type filter' })
     }
+    const releaseId = query.releaseId ? Number(query.releaseId) : undefined
+    if (query.releaseId && (!releaseId || Number.isNaN(releaseId))) {
+      throw createError({ statusCode: 400, statusMessage: 'Invalid releaseId' })
+    }
 
-    return testCaseRepository.list({ moduleId, priority, type })
+    return testCaseRepository.list({ moduleId, priority, type, releaseId })
   }
 
   if (event.method === 'POST') {

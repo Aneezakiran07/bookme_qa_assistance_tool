@@ -34,7 +34,7 @@ export function useDropdownPt() {
     footer: {
       class: '!bg-white !border-gray-200 dark:!bg-zinc-900 dark:!border-zinc-700',
     },
-    filterInput: {
+    pcFilter: {
       class: '!bg-white !text-gray-900 dark:!bg-black dark:!text-white',
     },
   }
