@@ -111,8 +111,14 @@ create table bugs (
   steps_to_reproduce text,
   reported_by integer references users(id),
   reported_at timestamptz default now(),
-  last_status_change_at timestamptz default now()
+  last_status_change_at timestamptz default now(),
+  archived boolean not null default false  -- soft delete: "Delete Bug" flips this instead of removing the row,
+                                            -- so attachments, assignment log, and status history are never lost
 );
+
+-- if bugs already exists in your database from before this column was
+-- added, run this once instead of recreating the table:
+-- alter table bugs add column archived boolean not null default false;
 
 -- one row per uploaded file, so a bug can have any number of screenshots/videos (1NF: atomic values)
 create table bug_attachments (
@@ -162,6 +168,7 @@ create index idx_bugs_status on bugs(status);
 create index idx_bugs_severity on bugs(severity);
 create index idx_bugs_owner on bugs(owner_id);
 create index idx_bugs_release on bugs(release_id);
+create index idx_bugs_archived on bugs(archived);
 create index idx_bug_attachments_bug on bug_attachments(bug_id);
 create index idx_test_cases_module on test_cases(module_id);
 create index idx_executions_test_case on test_executions(test_case_id);

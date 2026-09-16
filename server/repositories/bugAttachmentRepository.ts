@@ -1,6 +1,14 @@
 import { useDb } from '../db/client'
 
 export const bugAttachmentRepository = {
+  async listByBug(bugId: number) {
+    const sql = useDb()
+    const rows = await sql`
+      select * from bug_attachments where bug_id = ${bugId} order by uploaded_at asc
+    `
+    return rows
+  },
+
   async create(
     bugId: number,
     fileUrl: string,

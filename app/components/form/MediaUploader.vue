@@ -10,11 +10,16 @@ export interface MediaAttachment {
   file_type: 'image' | 'video'
 }
 
-const props = defineProps<{ bugId: number }>()
+const props = withDefaults(
+  defineProps<{ bugId: number; initialAttachments?: MediaAttachment[] }>(),
+  { initialAttachments: () => [] }
+)
 
 const emit = defineEmits<{ 'update:attachments': [MediaAttachment[]] }>()
 
-const attachments = ref<MediaAttachment[]>([])
+// seeded from the bug detail page so previously uploaded screenshots and
+// videos show up immediately instead of starting from an empty dropzone
+const attachments = ref<MediaAttachment[]>([...props.initialAttachments])
 const uploading = ref(false)
 const dragOver = ref(false)
 const fileInput = ref<HTMLInputElement>()

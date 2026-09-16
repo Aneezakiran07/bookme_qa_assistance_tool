@@ -40,6 +40,21 @@ const PALETTES: Record<string, Palette> = {
     classes:
       'bg-emerald-100 text-emerald-700 border-emerald-200 dark:bg-emerald-500/15 dark:text-emerald-400 dark:border-emerald-500/30'
   },
+  fixed: {
+    label: 'Fixed',
+    classes:
+      'bg-emerald-100 text-emerald-700 border-emerald-200 dark:bg-emerald-500/15 dark:text-emerald-400 dark:border-emerald-500/30'
+  },
+  retest: {
+    label: 'Retest',
+    classes:
+      'bg-indigo-100 text-indigo-700 border-indigo-200 dark:bg-indigo-500/15 dark:text-indigo-400 dark:border-indigo-500/30'
+  },
+  reopened: {
+    label: 'Reopened',
+    classes:
+      'bg-rose-100 text-rose-700 border-rose-200 dark:bg-rose-500/15 dark:text-rose-400 dark:border-rose-500/30'
+  },
   closed: {
     label: 'Closed',
     classes:
@@ -64,19 +79,22 @@ const PALETTES: Record<string, Palette> = {
 
 // aliases from the actual db check-constraints to a palette key above,
 // so a bug's "Fixed" and a test run's "Passed" both read as "good news"
-// green even though the underlying words differ.
+// green even though the underlying words differ. bug-specific statuses
+// (fixed, retest, reopened) get their own palette entries above instead
+// of borrowing another module's label, so the badge text always matches
+// the real db value the person is looking at.
 const ALIASES: Record<string, keyof typeof PALETTES> = {
   passed: 'passed',
   done: 'passed',
-  fixed: 'resolved',
+  fixed: 'fixed',
   resolved: 'resolved',
   failed: 'failed',
-  reopened: 'failed',
+  reopened: 'reopened',
   open: 'open',
   draft: 'open',
   'in progress': 'inProgress',
   in_progress: 'inProgress',
-  retest: 'inProgress',
+  retest: 'retest',
   'in testing': 'inProgress',
   closed: 'closed',
   pending: 'pending',

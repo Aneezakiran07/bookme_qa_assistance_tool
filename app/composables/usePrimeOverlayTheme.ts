@@ -61,6 +61,21 @@ export function useDialogPt() {
   }
 }
 
+// small floating panel used by Popover (e.g. the Quick Status Edit menu
+// on the bugs list). same reasoning as the dropdown/dialog helpers above:
+// the panel is teleported out of the trigger's DOM subtree, so it needs
+// its own themed pt instead of relying on dark: classes to reach it.
+export function usePopoverPt() {
+  return {
+    root: {
+      class: '!bg-white !border !border-gray-200 !text-gray-900 dark:!bg-zinc-900 dark:!border-zinc-700 dark:!text-white',
+    },
+    content: {
+      class: '!bg-white dark:!bg-zinc-900',
+    },
+  }
+}
+
 // toast message stack
 export function useToastPt() {
   return {

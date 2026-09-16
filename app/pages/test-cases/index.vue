@@ -79,7 +79,7 @@ const columns = [
 ]
 
 function tcCode(id: number) {
-  return `TC-${(100 + id).toString()}`
+  return `TC-${id.toString().padStart(3, '0')}`
 }
 
 function reqCode(id: number) {

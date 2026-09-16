@@ -111,6 +111,14 @@ export const userRepository = {
     }
   },
 
+  // used by the dashboard's module filter to default to "my modules"
+  // instead of showing org-wide data the moment someone logs in
+  async listModuleIdsForUser(userId: number): Promise<number[]> {
+    const sql = useDb()
+    const rows = await sql`select module_id from user_modules where user_id = ${userId}`
+    return rows.map((r: any) => r.module_id)
+  },
+
   async setActive(userId: number, active: boolean): Promise<UserRecord> {
     const sql = useDb()
     const rows = await sql`
