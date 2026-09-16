@@ -38,6 +38,41 @@ const form = reactive({
 
 const saving = ref(false)
 
+// the bug already open against this test case, if any. Set right after
+// the modal opens; drives the duplicate warning banner below
+interface ExistingBug {
+  id: number
+  title: string
+  status: string
+  severity: string
+}
+const existingBug = ref<ExistingBug | null>(null)
+const checkingExisting = ref(false)
+// lets a tester bypass the warning when the failure really is a new,
+// distinct defect rather than a repeat of the linked one
+const logAnywayConfirmed = ref(false)
+const reopening = ref(false)
+
+async function checkForExistingBug() {
+  existingBug.value = null
+  logAnywayConfirmed.value = false
+  if (!props.initialTestCaseId) return
+  checkingExisting.value = true
+  try {
+    const { existing } = await $fetch<{ existing: ExistingBug | null }>(
+      '/api/bugs/open-for-test-case',
+      { query: { testCaseId: props.initialTestCaseId } }
+    )
+    existingBug.value = existing
+  } catch {
+    // non-critical: if the check fails, fall back to the normal create
+    // flow rather than blocking the tester from logging a bug at all
+    existingBug.value = null
+  } finally {
+    checkingExisting.value = false
+  }
+}
+
 // reset the form every time the modal opens with fresh initial values
 watch(
   () => props.modelValue,
@@ -49,12 +84,51 @@ watch(
     form.priority = 'High'
     form.environmentBuild = ''
     form.stepsToReproduce = props.initialSteps ?? ''
+    checkForExistingBug()
   }
 )
 
+// a Retest bug that fails again is the classic duplicate case: the fix
+// didn't hold, so the right move is reopening that ticket, not filing a
+// second one. Other statuses (Open, In Progress, Fixed, Reopened) already
+// have an active owner on them, so we just point back to the ticket.
+const canReopenExisting = computed(() => existingBug.value?.status === 'Retest')
+
+async function reopenExisting() {
+  if (!existingBug.value) return
+  reopening.value = true
+  try {
+    await $fetch(`/api/bugs/${existingBug.value.id}`, {
+      method: 'PUT',
+      body: { status: 'Reopened' }
+    })
+    toast.add({
+      severity: 'success',
+      summary: `Bug #${existingBug.value.id} reopened`,
+      life: 3000
+    })
+    emit('created', { id: existingBug.value.id, title: existingBug.value.title })
+    visible.value = false
+  } catch (error) {
+    toast.add({
+      severity: 'error',
+      summary: 'Could not reopen this bug',
+      detail: (error as any)?.data?.statusMessage ?? 'Please try again.',
+      life: 5000
+    })
+  } finally {
+    reopening.value = false
+  }
+}
+
 const titleError = computed(() => (form.title.trim() ? null : 'Title is required.'))
 const moduleError = computed(() => (form.moduleId ? null : 'Module is required.'))
-const canSave = computed(() => !titleError.value && !moduleError.value && !saving.value)
+// blocked while an open duplicate is showing, unless the tester has
+// explicitly confirmed this failure is a separate defect
+const blockedByDuplicate = computed(() => !!existingBug.value && !logAnywayConfirmed.value)
+const canSave = computed(
+  () => !titleError.value && !moduleError.value && !saving.value && !blockedByDuplicate.value
+)
 
 async function save() {
   if (!canSave.value) return
@@ -96,6 +170,39 @@ async function save() {
 <template>
   <BaseModal v-model="visible" title="Log a bug from this failure" width="42rem">
     <div class="space-y-4">
+      <div
+        v-if="existingBug"
+        class="rounded-md border border-amber-300 bg-amber-50 p-3 text-sm dark:border-amber-500/30 dark:bg-amber-500/10"
+      >
+        <p class="font-medium text-amber-800 dark:text-amber-300">
+          This test case already has an open bug: #{{ existingBug.id }} — {{ existingBug.title }}
+          ({{ existingBug.status }})
+        </p>
+        <p class="mt-1 text-amber-700 dark:text-amber-400">
+          Logging another bug here would create a duplicate ticket for the same defect.
+        </p>
+        <div class="mt-2 flex flex-wrap gap-2">
+          <BaseButton
+            variant="secondary"
+            :label="`View bug #${existingBug.id}`"
+            @click="navigateTo(`/bugs/${existingBug.id}`)"
+          />
+          <BaseButton
+            v-if="canReopenExisting"
+            variant="primary"
+            label="Reopen this bug"
+            :loading="reopening"
+            @click="reopenExisting"
+          />
+          <BaseButton
+            variant="secondary"
+            label="This is a different bug — log anyway"
+            @click="logAnywayConfirmed = true"
+          />
+        </div>
+      </div>
+
+      <div v-if="!blockedByDuplicate">
       <div>
         <label class="mb-1 block text-xs font-medium text-gray-600 dark:text-zinc-300">
           Title
@@ -167,11 +274,13 @@ async function save() {
           :rows="6"
         />
       </div>
+      </div>
     </div>
 
     <template #footer>
       <BaseButton variant="secondary" label="Cancel" @click="visible = false" />
       <BaseButton
+        v-if="!blockedByDuplicate"
         variant="primary"
         label="Save Bug"
         :loading="saving"

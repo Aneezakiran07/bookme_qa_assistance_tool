@@ -37,11 +37,26 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 404, statusMessage: 'Release not found' })
   }
 
+  // guards against logging an execution for a test case that was never
+  // assigned to this release's suite in the first place
+  const isAssigned = await testCaseRepository.isLinkedToRelease(testCaseId, releaseId)
+  if (!isAssigned) {
+    throw createError({
+      statusCode: 400,
+      statusMessage: 'This test case is not assigned to this release'
+    })
+  }
+
   return executionRepository.create({
     testCaseId,
     releaseId,
     result: body.result as 'Pass' | 'Fail' | 'Blocked' | 'Not Run',
     notes: body.notes?.toString().trim() || null,
-    executedBy: currentUser.id
+    executedBy: currentUser.id,
+    // snapshot the test case exactly as it is right now, so a later edit
+    // to its title/steps/expected result never rewrites this run's history
+    testCaseTitleSnapshot: testCase.title,
+    stepsSnapshot: testCase.steps,
+    expectedResultSnapshot: testCase.expected_result
   })
 })

@@ -21,12 +21,14 @@ export interface TestCaseRecord {
 export interface TestCaseWithMeta extends TestCaseRecord {
   module_name: string
   linked_requirement_ids: number[]
+  linked_release_ids: number[]
 }
 
 export interface TestCaseFilters {
   moduleId?: number
   priority?: string
   type?: string
+  releaseId?: number
 }
 
 export const testCaseRepository = {
@@ -36,7 +38,8 @@ export const testCaseRepository = {
       select
         tc.*,
         m.name as module_name,
-        coalesce(l.req_ids, '{}') as linked_requirement_ids
+        coalesce(l.req_ids, '{}') as linked_requirement_ids,
+        coalesce(rl.release_ids, '{}') as linked_release_ids
       from test_cases tc
       join modules m on m.id = tc.module_id
       left join (
@@ -44,10 +47,22 @@ export const testCaseRepository = {
         from requirement_test_case_links
         group by test_case_id
       ) l on l.test_case_id = tc.id
+      left join (
+        select test_case_id, array_agg(release_id order by release_id) as release_ids
+        from test_case_release_links
+        group by test_case_id
+      ) rl on rl.test_case_id = tc.id
       where
         (${filters.moduleId ?? null}::int is null or tc.module_id = ${filters.moduleId ?? null}::int)
         and (${filters.priority ?? null}::text is null or tc.priority = ${filters.priority ?? null}::text)
         and (${filters.type ?? null}::text is null or tc.type = ${filters.type ?? null}::text)
+        and (
+          ${filters.releaseId ?? null}::int is null
+          or exists (
+            select 1 from test_case_release_links trl
+            where trl.test_case_id = tc.id and trl.release_id = ${filters.releaseId ?? null}::int
+          )
+        )
       order by tc.created_at desc
     `
     return rows as TestCaseWithMeta[]
@@ -67,6 +82,27 @@ export const testCaseRepository = {
     return rows.map((r: any) => r.requirement_id)
   },
 
+  async linkedReleaseIds(id: number): Promise<number[]> {
+    const sql = useDb()
+    const rows = await sql`
+      select release_id from test_case_release_links where test_case_id = ${id}
+    `
+    return rows.map((r: any) => r.release_id)
+  },
+
+  // used by the execution flow to confirm a test case is actually part
+  // of the given release's suite before an execution can be logged
+  // against it
+  async isLinkedToRelease(testCaseId: number, releaseId: number): Promise<boolean> {
+    const sql = useDb()
+    const rows = await sql`
+      select 1 from test_case_release_links
+      where test_case_id = ${testCaseId} and release_id = ${releaseId}
+      limit 1
+    `
+    return rows.length > 0
+  },
+
   async create(input: {
     title: string
     moduleId: number
@@ -75,6 +111,7 @@ export const testCaseRepository = {
     priority: string | null
     type: string
     requirementIds: number[]
+    releaseIds: number[]
     createdBy: number
   }): Promise<TestCaseRecord> {
     const sql = useDb()
@@ -94,6 +131,7 @@ export const testCaseRepository = {
     `
     const created = rows[0] as TestCaseRecord
     await this.setRequirementLinks(created.id, input.requirementIds)
+    await this.setReleaseLinks(created.id, input.releaseIds)
     return created
   },
 
@@ -146,6 +184,22 @@ export const testCaseRepository = {
     }
   },
 
+  // same replace-the-whole-set pattern as setRequirementLinks, for the
+  // releases a test case is assigned to. Only test cases linked here for
+  // a given release show up in that release's execution workspace.
+  async setReleaseLinks(testCaseId: number, releaseIds: number[]): Promise<void> {
+    const sql = useDb()
+    await sql`delete from test_case_release_links where test_case_id = ${testCaseId}`
+    const uniqueIds = [...new Set(releaseIds)]
+    for (const releaseId of uniqueIds) {
+      await sql`
+        insert into test_case_release_links (test_case_id, release_id)
+        values (${testCaseId}, ${releaseId})
+        on conflict do nothing
+      `
+    }
+  },
+
   async delete(id: number): Promise<TestCaseRecord | null> {
     const sql = useDb()
     const rows = await sql`delete from test_cases where id = ${id} returning *`
@@ -160,6 +214,7 @@ export const testCaseRepository = {
     if (!source) return null
 
     const links = await this.linkedRequirementIds(id)
+    const releaseLinks = await this.linkedReleaseIds(id)
     const rows = await sql`
       insert into test_cases (title, module_id, steps, expected_result, priority, type, created_by, last_modified_by)
       values (
@@ -176,6 +231,7 @@ export const testCaseRepository = {
     `
     const created = rows[0] as TestCaseRecord
     await this.setRequirementLinks(created.id, links)
+    await this.setReleaseLinks(created.id, releaseLinks)
     return created
   }
 }

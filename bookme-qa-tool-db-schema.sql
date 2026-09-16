@@ -74,6 +74,29 @@ create table releases (
   created_at timestamptz default now()
 );
 
+-- which test cases belong to which release's regression suite (many to
+-- many: a test case can be assigned to any number of releases). the
+-- execution workspace for a release only shows test cases linked here.
+create table test_case_release_links (
+  test_case_id integer not null references test_cases(id) on delete cascade,
+  release_id integer not null references releases(id) on delete cascade,
+  primary key (test_case_id, release_id)
+);
+
+create index idx_test_case_release_links_release on test_case_release_links(release_id);
+
+-- if releases/test_cases already existed in your database from before
+-- this table and the snapshot columns below were added, run once instead:
+-- create table test_case_release_links (
+--   test_case_id integer not null references test_cases(id) on delete cascade,
+--   release_id integer not null references releases(id) on delete cascade,
+--   primary key (test_case_id, release_id)
+-- );
+-- create index idx_test_case_release_links_release on test_case_release_links(release_id);
+-- alter table test_executions add column test_case_title_snapshot text;
+-- alter table test_executions add column steps_snapshot text;
+-- alter table test_executions add column expected_result_snapshot text;
+
 create table test_executions (
   id serial primary key,
   test_case_id integer not null references test_cases(id) on delete restrict,
@@ -81,7 +104,12 @@ create table test_executions (
   result text not null check (result in ('Pass', 'Fail', 'Blocked', 'Not Run')),
   executed_by integer not null references users(id),
   execution_date timestamptz default now(),
-  notes text
+  notes text,
+  -- captured at execution time so a later edit to the test case never
+  -- retroactively changes what a past run recorded against
+  test_case_title_snapshot text,
+  steps_snapshot text,
+  expected_result_snapshot text
 );
 
 -- enforces "append-only" at the DB level: once an execution record is

@@ -30,10 +30,15 @@ export const releaseRepository = {
           release_id, test_case_id, result
         from test_executions
         order by release_id, test_case_id, execution_date desc
+      ),
+      suite_counts as (
+        select release_id, count(*)::int as total
+        from test_case_release_links
+        group by release_id
       )
       select
         r.*,
-        (select count(*) from test_cases)::int as total_test_cases,
+        coalesce(sc.total, 0)::int as total_test_cases,
         coalesce(count(le.test_case_id), 0)::int as executed_count,
         coalesce(count(le.test_case_id) filter (where le.result = 'Pass'), 0)::int as passed_count,
         coalesce(count(le.test_case_id) filter (where le.result = 'Fail'), 0)::int as failed_count,
@@ -47,8 +52,9 @@ export const releaseRepository = {
           )::float
         end as pass_rate
       from releases r
+      left join suite_counts sc on sc.release_id = r.id
       left join latest_executions le on le.release_id = r.id
-      group by r.id
+      group by r.id, sc.total
       order by r.created_at desc
     `
     return rows as ReleaseWithStats[]

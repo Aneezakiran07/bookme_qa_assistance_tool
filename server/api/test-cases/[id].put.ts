@@ -26,6 +26,7 @@ export default defineEventHandler(async (event) => {
     priority?: string | null
     type?: string
     requirementIds?: number[]
+    releaseIds?: number[]
   }>(event)
 
   if (body?.title !== undefined && !body.title.trim()) {
@@ -60,6 +61,11 @@ export default defineEventHandler(async (event) => {
   if (Array.isArray(body?.requirementIds)) {
     const requirementIds = body.requirementIds.map(Number).filter((n) => Number.isFinite(n))
     await testCaseRepository.setRequirementLinks(id, requirementIds)
+  }
+
+  if (Array.isArray(body?.releaseIds)) {
+    const releaseIds = body.releaseIds.map(Number).filter((n) => Number.isFinite(n))
+    await testCaseRepository.setReleaseLinks(id, releaseIds)
   }
 
   return updated

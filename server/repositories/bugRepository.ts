@@ -112,6 +112,35 @@ export const bugRepository = {
     return (rows[0] as BugRecord) ?? null
   },
 
+  // used by the Log Bug flow to catch duplicates: if a test case already
+  // has a non closed, non archived bug against it, the modal should offer
+  // to reopen or link to that ticket instead of silently creating a new
+  // one for the same underlying defect
+  async findOpenByTestCase(testCaseId: number): Promise<BugWithMeta | null> {
+    const sql = useDb()
+    const rows = await sql`
+      select
+        b.*,
+        m.name as module_name,
+        owner.email as owner_email,
+        reporter.email as reported_by_email,
+        r.version as release_version,
+        tc.title as linked_test_case_title
+      from bugs b
+      join modules m on m.id = b.module_id
+      left join users owner on owner.id = b.owner_id
+      left join users reporter on reporter.id = b.reported_by
+      left join releases r on r.id = b.release_id
+      left join test_cases tc on tc.id = b.linked_test_case_id
+      where b.linked_test_case_id = ${testCaseId}
+        and b.status != 'Closed'
+        and b.archived = false
+      order by b.reported_at desc
+      limit 1
+    `
+    return (rows[0] as BugWithMeta) ?? null
+  },
+
   // dynamic partial update: only the fields present in `fields` are
   // touched. `status` and `owner_id` changes are audited by the caller
   // (the PUT endpoint), not here, so this stays a plain column update
@@ -135,7 +164,7 @@ export const bugRepository = {
 
     const setClauses = entries.map(([key], index) => `${key} = $${index + 2}`).join(', ')
     const values = entries.map(([, value]) => value)
-    const rows = await sql.query(
+    const rows = await sql(
       `update bugs set ${setClauses} where id = $1 returning *`,
       [id, ...values]
     )

@@ -23,6 +23,7 @@ interface TestCaseRow {
   last_modified_at: string
   created_at: string
   linked_requirement_ids: number[]
+  linked_release_ids: number[]
 }
 
 interface ModuleOption {
@@ -36,6 +37,11 @@ interface RequirementOption {
   module_id: number
 }
 
+interface ReleaseOption {
+  id: number
+  version: string
+}
+
 const toast = useToast()
 const dropdownPt = useDropdownPt()
 
@@ -46,6 +52,7 @@ const moduleOptions = computed(() => moduleOptionsData.value ?? [])
 const selectedModuleId = ref<number | null>(null)
 const selectedPriority = ref<string | null>(null)
 const selectedType = ref<string | null>(null)
+const selectedReleaseId = ref<number | null>(null)
 
 const moduleFilterOptions = computed(() => [{ id: null, name: 'All Modules' }, ...moduleOptions.value])
 const PRIORITY_FILTER_OPTIONS = [
@@ -64,7 +71,8 @@ const { data, refresh, pending: loadingTestCases } = await useFetch<TestCaseRow[
   query: computed(() => ({
     ...(selectedModuleId.value ? { moduleId: selectedModuleId.value } : {}),
     ...(selectedPriority.value ? { priority: selectedPriority.value } : {}),
-    ...(selectedType.value ? { type: selectedType.value } : {})
+    ...(selectedType.value ? { type: selectedType.value } : {}),
+    ...(selectedReleaseId.value ? { releaseId: selectedReleaseId.value } : {})
   }))
 })
 const testCases = computed(() => data.value ?? [])
@@ -75,7 +83,8 @@ const columns = [
   { field: 'module_name', header: 'Module' },
   { field: 'priority', header: 'Priority' },
   { field: 'type', header: 'Type' },
-  { field: 'linked_reqs', header: 'Linked Reqs' }
+  { field: 'linked_reqs', header: 'Linked Reqs' },
+  { field: 'linked_releases', header: 'Versions' }
 ]
 
 function tcCode(id: number) {
@@ -106,6 +115,30 @@ function requirementTitle(id: number) {
   return allRequirements.value.find((r) => r.id === id)?.title ?? 'Unknown requirement'
 }
 
+// -- releases, used by the "Assign to Releases" multi-select in the modal
+// and by the Release/Version filter dropdown. unlike requirements,
+// releases aren't scoped to a module, so this is a single flat fetch
+// shared by the whole page.
+const { data: releaseOptionsData } = await useFetch<ReleaseOption[]>('/api/releases')
+const releaseOptions = computed<ReleaseOption[]>(
+  () => releaseOptionsData.value ?? []
+)
+const releaseFilterOptions = computed(() => [
+  { id: null, version: 'All Versions' },
+  ...releaseOptions.value
+])
+function releaseVersion(id: number) {
+  return releaseOptions.value.find((r) => r.id === id)?.version ?? 'Unknown version'
+}
+
+// -- linked releases popover --
+const releasePopoverRef = ref()
+const activeReleasePopoverIds = ref<number[]>([])
+function toggleLinkedReleasesPopover(event: MouseEvent, row: TestCaseRow) {
+  activeReleasePopoverIds.value = row.linked_release_ids
+  releasePopoverRef.value?.toggle(event)
+}
+
 // -- linked reqs popover --
 const popoverRef = ref()
 const activePopoverIds = ref<number[]>([])
@@ -127,6 +160,7 @@ const form = reactive({
   title: '',
   moduleId: null as number | null,
   requirementIds: [] as number[],
+  releaseIds: [] as number[],
   priority: 'Medium' as string,
   type: 'Manual' as string,
   steps: '',
@@ -162,6 +196,7 @@ function openAdd() {
   form.title = ''
   form.moduleId = selectedModuleId.value ?? null
   form.requirementIds = []
+  form.releaseIds = []
   form.priority = 'Medium'
   form.type = 'Manual'
   form.steps = ''
@@ -176,6 +211,7 @@ function openEdit(row: TestCaseRow) {
   form.title = row.title
   form.moduleId = row.module_id
   form.requirementIds = [...row.linked_requirement_ids]
+  form.releaseIds = [...row.linked_release_ids]
   form.priority = row.priority ?? 'Medium'
   form.type = row.type
   form.steps = row.steps ?? ''
@@ -192,6 +228,7 @@ async function saveTestCase() {
       title: form.title.trim(),
       moduleId: form.moduleId,
       requirementIds: form.requirementIds,
+      releaseIds: form.releaseIds,
       priority: form.priority,
       type: form.type,
       steps: form.steps || null,
@@ -322,6 +359,15 @@ async function deleteTestCase(row: TestCaseRow) {
           class="w-36"
           :pt="dropdownPt"
         />
+        <Select
+          v-model="selectedReleaseId"
+          :options="releaseFilterOptions"
+          option-label="version"
+          option-value="id"
+          placeholder="All Versions"
+          class="w-44"
+          :pt="dropdownPt"
+        />
       </template>
 
       <template #cell-tc_id="{ data: row }">
@@ -388,6 +434,19 @@ async function deleteTestCase(row: TestCaseRow) {
         </button>
       </template>
 
+      <template #cell-linked_releases="{ data: row }">
+        <button
+          v-if="row.linked_release_ids.length > 0"
+          type="button"
+          class="inline-flex items-center rounded-full bg-purple-100 px-2 py-0.5 text-xs font-semibold text-purple-700
+                 transition-colors hover:bg-purple-200 dark:bg-purple-500/15 dark:text-purple-300 dark:hover:bg-purple-500/25"
+          @click="toggleLinkedReleasesPopover($event, row)"
+        >
+          {{ row.linked_release_ids.length }} version{{ row.linked_release_ids.length === 1 ? '' : 's' }}
+        </button>
+        <span v-else class="text-xs text-gray-400 dark:text-zinc-500">Unassigned</span>
+      </template>
+
       <template #actions="{ data: row }">
         <div class="flex items-center gap-2">
           <BaseButton variant="outline" size="sm" icon="pi pi-pencil" label="Edit" @click="openEdit(row)" />
@@ -427,6 +486,31 @@ async function deleteTestCase(row: TestCaseRow) {
           </li>
         </ul>
         <p v-else class="text-xs text-gray-400 dark:text-zinc-500">No requirements linked.</p>
+      </div>
+    </Popover>
+
+    <!-- linked releases/versions popover -->
+    <Popover
+      ref="releasePopoverRef"
+      :pt="{
+        root: {
+          class: '!bg-white !border !border-gray-200 !text-gray-900 dark:!bg-zinc-900 dark:!border-zinc-700 dark:!text-white'
+        }
+      }"
+    >
+      <div class="max-w-xs space-y-1.5 p-1">
+        <p class="text-xs font-semibold text-gray-500 dark:text-zinc-400">Assigned Versions</p>
+        <ul v-if="activeReleasePopoverIds.length" class="space-y-1">
+          <li v-for="releaseId in activeReleasePopoverIds" :key="releaseId" class="flex items-center gap-2 text-xs">
+            <span
+              class="inline-flex items-center rounded-full border border-purple-200 bg-purple-100 px-1.5 py-0.5
+                     font-semibold text-purple-700 dark:border-purple-500/30 dark:bg-purple-500/15 dark:text-purple-300"
+            >
+              {{ releaseVersion(releaseId) }}
+            </span>
+          </li>
+        </ul>
+        <p v-else class="text-xs text-gray-400 dark:text-zinc-500">Not assigned to any version.</p>
       </div>
     </Popover>
 
@@ -480,6 +564,29 @@ async function deleteTestCase(row: TestCaseRow) {
           />
           <p v-if="form.moduleId && !modalRequirementOptions.length" class="mt-1 text-xs text-gray-400 dark:text-zinc-500">
             No active requirements exist for this module yet.
+          </p>
+        </div>
+
+        <div>
+          <label class="mb-1 block text-xs font-medium text-gray-600 dark:text-zinc-300">
+            Assign to Releases
+          </label>
+          <MultiSelect
+            v-model="form.releaseIds"
+            :options="releaseOptions"
+            option-label="version"
+            option-value="id"
+            display="chip"
+            filter
+            placeholder="Select releases..."
+            class="w-full"
+            :pt="dropdownPt"
+          />
+          <p v-if="!releaseOptions.length" class="mt-1 text-xs text-gray-400 dark:text-zinc-500">
+            No releases exist yet. Create one from Test Executions &amp; Releases first.
+          </p>
+          <p v-else class="mt-1 text-xs text-gray-400 dark:text-zinc-500">
+            Only releases this test case is assigned to will show it in their execution workspace.
           </p>
         </div>
 

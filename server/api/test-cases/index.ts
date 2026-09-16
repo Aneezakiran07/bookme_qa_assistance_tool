@@ -38,6 +38,7 @@ export default defineEventHandler(async (event) => {
       priority?: string | null
       type?: string
       requirementIds?: number[]
+      releaseIds?: number[]
     }>(event)
 
     const title = body?.title?.trim()
@@ -67,6 +68,10 @@ export default defineEventHandler(async (event) => {
       ? body.requirementIds.map(Number).filter((n) => Number.isFinite(n))
       : []
 
+    const releaseIds = Array.isArray(body?.releaseIds)
+      ? body.releaseIds.map(Number).filter((n) => Number.isFinite(n))
+      : []
+
     return testCaseRepository.create({
       title,
       moduleId,
@@ -75,6 +80,7 @@ export default defineEventHandler(async (event) => {
       priority: body?.priority ?? null,
       type,
       requirementIds,
+      releaseIds,
       createdBy: currentUser.id
     })
   }

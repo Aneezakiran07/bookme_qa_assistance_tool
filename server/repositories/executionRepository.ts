@@ -8,6 +8,9 @@ export interface ExecutionRecord {
   executed_by: number
   execution_date: string
   notes: string | null
+  test_case_title_snapshot: string | null
+  steps_snapshot: string | null
+  expected_result_snapshot: string | null
 }
 
 export interface TestCaseExecutionState {
@@ -27,11 +30,11 @@ export interface TestCaseExecutionState {
 }
 
 export const executionRepository = {
-  // Returns EVERY test case in the system with its latest execution state
-  // for the given release. Per the pilot's design (no release->test_case
-  // link table), every release is a full regression run: all test cases
-  // appear, and this only tracks which have been executed. Null latest_result
-  // means "not yet run in this release".
+  // Returns every test case ASSIGNED TO THIS RELEASE (via
+  // test_case_release_links) with its latest execution state for that
+  // release. A test case not linked to this release never appears here,
+  // even if it has been executed under a different release in the past.
+  // Null latest_result means "not yet run in this release".
   async getReleaseState(releaseId: number): Promise<TestCaseExecutionState[]> {
     const sql = useDb()
     const rows = await sql`
@@ -62,11 +65,13 @@ export const executionRepository = {
         l.notes as latest_notes,
         u.email as last_executed_by_email,
         coalesce(c.cnt, 0) as executions_count
-      from test_cases tc
+      from test_case_release_links trl
+      join test_cases tc on tc.id = trl.test_case_id
       join modules m on m.id = tc.module_id
       left join latest l on l.test_case_id = tc.id
       left join counts c on c.test_case_id = tc.id
       left join users u on u.id = l.executed_by
+      where trl.release_id = ${releaseId}
       order by m.name asc, tc.title asc
     `
     return rows as TestCaseExecutionState[]
@@ -74,18 +79,30 @@ export const executionRepository = {
 
   // Append-only insert. The DB trigger prevent_execution_modify blocks any
   // UPDATE or DELETE on this table, so this is genuinely the only way to
-  // add execution history.
+  // add execution history. The snapshot fields capture the test case's
+  // steps/expected result/title exactly as they were at this moment, so a
+  // later edit to the test case never rewrites what this run recorded
+  // against.
   async create(input: {
     testCaseId: number
     releaseId: number
     result: 'Pass' | 'Fail' | 'Blocked' | 'Not Run'
     notes: string | null
     executedBy: number
+    testCaseTitleSnapshot: string
+    stepsSnapshot: string | null
+    expectedResultSnapshot: string | null
   }): Promise<ExecutionRecord> {
     const sql = useDb()
     const rows = await sql`
-      insert into test_executions (test_case_id, release_id, result, notes, executed_by)
-      values (${input.testCaseId}, ${input.releaseId}, ${input.result}, ${input.notes}, ${input.executedBy})
+      insert into test_executions (
+        test_case_id, release_id, result, notes, executed_by,
+        test_case_title_snapshot, steps_snapshot, expected_result_snapshot
+      )
+      values (
+        ${input.testCaseId}, ${input.releaseId}, ${input.result}, ${input.notes}, ${input.executedBy},
+        ${input.testCaseTitleSnapshot}, ${input.stepsSnapshot}, ${input.expectedResultSnapshot}
+      )
       returning *
     `
     return rows[0] as ExecutionRecord
