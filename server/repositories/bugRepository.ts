@@ -24,6 +24,8 @@ export interface BugWithMeta extends BugRecord {
   reported_by_email: string | null
   release_version: string | null
   linked_test_case_title: string | null
+  linked_test_case_steps: string | null
+  linked_test_case_expected_result: string | null
 }
 
 export interface BugFilters {
@@ -31,6 +33,21 @@ export interface BugFilters {
   severity?: string
   status?: string
   releaseId?: number
+}
+
+export type DeveloperBugScope = 'mine' | 'blockers' | 'pending' | 'team'
+
+export interface DeveloperBugFilters {
+  moduleId?: number
+  severity?: string
+  status?: string
+}
+
+export interface DeveloperBugCounts {
+  mine: number
+  blockers: number
+  pending: number
+  team: number
 }
 
 export interface BugMetrics {
@@ -110,6 +127,75 @@ export const bugRepository = {
     const sql = useDb()
     const rows = await sql`select * from bugs where id = ${id}`
     return (rows[0] as BugRecord) ?? null
+  },
+
+  // -- Developer Bugs view (app/pages/developer/bugs/index.vue) --
+  // userId always comes from the caller's authenticated session, never
+  // from the query string, so a developer can only ever pull their own
+  // "mine"/"blockers"/"pending" queues -- only the "team" scope
+  // deliberately has no owner_id restriction at all.
+  //
+  // there is no 'Wont Fix' status in this schema (see the check
+  // constraint on bugs.status), so "active" here just means anything
+  // short of Closed. "pending" (verification) means the developer has
+  // already moved the bug to Fixed or handed it to Retest and is
+  // waiting on QA to confirm it, not a status of its own.
+  async listForDeveloper(
+    userId: number,
+    scope: DeveloperBugScope,
+    filters: DeveloperBugFilters = {}
+  ): Promise<BugWithMeta[]> {
+    const sql = useDb()
+    // only "mine" / "blockers" / "pending" are restricted to this
+    // developer's own bugs -- "team" intentionally sees everyone's
+    const scopeOwnerId = scope === 'team' ? null : userId
+
+    const rows = await sql`
+      select
+        b.*,
+        m.name as module_name,
+        owner.email as owner_email,
+        reporter.email as reported_by_email,
+        r.version as release_version,
+        tc.title as linked_test_case_title,
+        tc.steps as linked_test_case_steps,
+        tc.expected_result as linked_test_case_expected_result
+      from bugs b
+      join modules m on m.id = b.module_id
+      left join users owner on owner.id = b.owner_id
+      left join users reporter on reporter.id = b.reported_by
+      left join releases r on r.id = b.release_id
+      left join test_cases tc on tc.id = b.linked_test_case_id
+      where
+        b.archived = false
+        and (${scopeOwnerId}::int is null or b.owner_id = ${scopeOwnerId}::int)
+        and (${scope} != 'mine' or b.status != 'Closed')
+        and (${scope} != 'blockers' or (b.status != 'Closed' and b.severity in ('Critical', 'High')))
+        and (${scope} != 'pending' or b.status in ('Fixed', 'Retest'))
+        and (${filters.moduleId ?? null}::int is null or b.module_id = ${filters.moduleId ?? null}::int)
+        and (${filters.severity ?? null}::text is null or b.severity = ${filters.severity ?? null}::text)
+        and (${filters.status ?? null}::text is null or b.status = ${filters.status ?? null}::text)
+      order by b.reported_at desc
+    `
+    return rows as BugWithMeta[]
+  },
+
+  // counts for all 4 quick-filter tabs at once, regardless of which one
+  // is currently selected, so the tab labels always show live totals
+  async developerCounts(userId: number): Promise<DeveloperBugCounts> {
+    const sql = useDb()
+    const rows = await sql`
+      select
+        count(*) filter (where owner_id = ${userId} and status != 'Closed')::int as mine,
+        count(*) filter (
+          where owner_id = ${userId} and status != 'Closed' and severity in ('Critical', 'High')
+        )::int as blockers,
+        count(*) filter (where owner_id = ${userId} and status in ('Fixed', 'Retest'))::int as pending,
+        count(*)::int as team
+      from bugs
+      where archived = false
+    `
+    return rows[0] as DeveloperBugCounts
   },
 
   // used by the Log Bug flow to catch duplicates: if a test case already

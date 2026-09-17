@@ -28,6 +28,29 @@ export interface BugBreakdownRow {
   count: number
 }
 
+export interface DeveloperSummary {
+  my_open_bugs: number
+  critical_high_open: number
+  pending_retest: number
+  resolved_today: number
+}
+
+export interface DeveloperBugRow {
+  id: number
+  title: string
+  severity: 'Critical' | 'High' | 'Medium' | 'Low'
+  status: string
+  module_id: number
+  module_name: string
+  last_status_change_at: string
+}
+
+export interface DeveloperHotspot {
+  module_id: number
+  module_name: string
+  count: number
+}
+
 function roundPct(numerator: number, denominator: number): number {
   if (!denominator) return 0
   return Math.round((numerator / denominator) * 1000) / 10
@@ -115,6 +138,33 @@ export const dashboardRepository = {
       automated_test_cases: (tcRows[0] as any).automated_test_cases,
       open_bugs: (bugRows[0] as any).open_bugs,
       open_critical_high: (bugRows[0] as any).open_critical_high
+    }
+  },
+
+  // daily delta half of the nightly snapshot job: how many executions
+  // landed on exactly this one calendar day for this scope, modeled on
+  // the live branch of getPassRate but pinned to a single day instead of
+  // a between range, since dashboard_daily_metrics stores one day's
+  // count per row rather than a running total
+  async getDailyExecutionCounts(
+    date: string,
+    moduleId: number | null,
+    releaseId: number | null
+  ): Promise<{ total_executions: number; passed_executions: number }> {
+    const sql = useDb()
+    const rows = await sql`
+      select
+        count(*)::int as total,
+        count(*) filter (where te.result = 'Pass')::int as passed
+      from test_executions te
+      join test_cases tc on tc.id = te.test_case_id
+      where te.execution_date::date = ${date}::date
+        and (${moduleId}::int is null or tc.module_id = ${moduleId}::int)
+        and (${releaseId}::int is null or te.release_id = ${releaseId}::int)
+    `
+    return {
+      total_executions: (rows[0] as any).total,
+      passed_executions: (rows[0] as any).passed
     }
   },
 
@@ -273,5 +323,66 @@ export const dashboardRepository = {
       limit ${limit}
     `
     return rows
+  },
+
+  // -- Developer dashboard: everything here is scoped to a single
+  // owner_id, always the signed-in developer's own id, passed in by the
+  // caller. Never take that id from the query string -- it must come
+  // from the authenticated session, or one developer could read
+  // another's queue just by editing the request.
+
+  // the 4 summary cards. "resolved today" counts a bug the moment it
+  // moves to Fixed *or* Closed today -- either one is a real, same-day
+  // win for the developer who owns it, and last_status_change_at is
+  // already the field bugs.put.ts stamps on every status change
+  async getDeveloperSummary(userId: number): Promise<DeveloperSummary> {
+    const sql = useDb()
+    const rows = await sql`
+      select
+        count(*) filter (where status != 'Closed')::int as my_open_bugs,
+        count(*) filter (where status != 'Closed' and severity in ('Critical', 'High'))::int as critical_high_open,
+        count(*) filter (where status = 'Retest')::int as pending_retest,
+        count(*) filter (
+          where status in ('Fixed', 'Closed') and last_status_change_at::date = current_date
+        )::int as resolved_today
+      from bugs
+      where archived = false and owner_id = ${userId}
+    `
+    return rows[0] as DeveloperSummary
+  },
+
+  // bugs currently assigned to this developer, most recently updated
+  // first. Closed is excluded so the table stays focused on what still
+  // needs their attention -- same-day closes are already surfaced by
+  // the "Bugs Resolved Today" card above
+  async getDeveloperBugs(userId: number, limit = 50): Promise<DeveloperBugRow[]> {
+    const sql = useDb()
+    const rows = await sql`
+      select
+        b.id, b.title, b.severity, b.status, b.module_id, b.last_status_change_at,
+        m.name as module_name
+      from bugs b
+      join modules m on m.id = b.module_id
+      where b.archived = false and b.owner_id = ${userId} and b.status != 'Closed'
+      order by b.last_status_change_at desc
+      limit ${limit}
+    `
+    return rows as DeveloperBugRow[]
+  },
+
+  // which modules this developer's open bugs are concentrated in, so
+  // they can see at a glance where most of their current workload sits
+  async getDeveloperHotspots(userId: number, limit = 5): Promise<DeveloperHotspot[]> {
+    const sql = useDb()
+    const rows = await sql`
+      select b.module_id, m.name as module_name, count(*)::int as count
+      from bugs b
+      join modules m on m.id = b.module_id
+      where b.archived = false and b.owner_id = ${userId} and b.status != 'Closed'
+      group by b.module_id, m.name
+      order by count desc
+      limit ${limit}
+    `
+    return rows as DeveloperHotspot[]
   }
 }

@@ -70,9 +70,11 @@ create table releases (
   id serial primary key,
   version text unique not null,
   release_date date,
-  regression_status text default 'Not Started' check (regression_status in ('Not Started', 'In Progress', 'Passed', 'Failed')),
   created_at timestamptz default now()
 );
+-- regression_status was removed: releases are now just a grouping label
+-- for test runs and bugs (a version and a date), with no dedicated
+-- regression workflow attached to them
 
 -- which test cases belong to which release's regression suite (many to
 -- many: a test case can be assigned to any number of releases). the

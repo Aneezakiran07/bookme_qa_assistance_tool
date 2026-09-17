@@ -72,8 +72,9 @@ async function createModule() {
     :invalid="invalid"
     class="w-full"
     :pt="dropdownPt"
-    @update:model-value="(v: number) => $emit('update:modelValue', v)"
+    @update:model-value="(v: number) => { $emit('update:modelValue', v); filterText = '' }"
     @filter="(e: { value: string }) => (filterText = e.value)"
+    @hide="filterText = ''"
   >
     <template #footer>
       <div v-if="canCreate" class="border-t border-black/10 p-2 dark:border-white/10">

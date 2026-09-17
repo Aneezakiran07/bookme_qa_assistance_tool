@@ -95,10 +95,10 @@ const bugs = computed(() => data.value ?? [])
 const metrics = computed(() => metricsData.value ?? { total_open: 0, critical_high_open: 0, in_retest: 0, closed: 0 })
 
 const columns = [
-  { field: 'bug_id', header: 'Bug ID' },
+  { field: 'bug_id', sortField: 'id', header: 'Bug ID', sortable: true },
   { field: 'title', header: 'Title & Module' },
-  { field: 'severity', header: 'Severity' },
-  { field: 'status', header: 'Status' },
+  { field: 'severity', header: 'Severity', sortable: true },
+  { field: 'status', header: 'Status', sortable: true },
   { field: 'owner', header: 'Owner/Assignee' },
   { field: 'release_link', header: 'Release / TC Link' }
 ]
@@ -138,8 +138,9 @@ const quickEditPopover = ref()
 const quickEditBug = ref<BugRow | null>(null)
 const quickEditSaving = ref(false)
 
-function nextStatuses(status: string): string[] {
-  return BUG_STATUS_TRANSITIONS[status] ?? []
+function statusTooltip(current: string, status: string): string | undefined {
+  if (status === current) return 'This is the current status.'
+  return undefined
 }
 
 function openQuickEdit(event: MouseEvent, row: BugRow) {
@@ -344,23 +345,24 @@ async function applyQuickStatus(status: string) {
         <p class="px-2 pb-1 text-xs font-semibold uppercase tracking-wide text-gray-400 dark:text-zinc-500">
           Move to
         </p>
-        <button
-          v-for="status in nextStatuses(quickEditBug.status)"
+        <span
+          v-for="status in ALL_BUG_STATUSES"
           :key="status"
-          type="button"
-          class="flex w-full items-center justify-between rounded-md px-2 py-1.5 text-left text-sm
-                 text-gray-700 hover:bg-gray-100 dark:text-zinc-200 dark:hover:bg-white/10"
-          :disabled="quickEditSaving"
-          @click="applyQuickStatus(status)"
+          :title="statusTooltip(quickEditBug.status, status)"
+          class="block"
         >
-          {{ status }}
-        </button>
-        <p
-          v-if="nextStatuses(quickEditBug.status).length === 0"
-          class="px-2 py-1.5 text-xs text-gray-400 dark:text-zinc-500"
-        >
-          No further transitions.
-        </p>
+          <button
+            type="button"
+            class="flex w-full items-center justify-between rounded-md px-2 py-1.5 text-left text-sm
+                   text-gray-700 hover:bg-gray-100 dark:text-zinc-200 dark:hover:bg-white/10
+                   disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:bg-transparent
+                   dark:disabled:hover:bg-transparent"
+            :disabled="quickEditSaving || status === quickEditBug.status"
+            @click="applyQuickStatus(status)"
+          >
+            {{ status }}
+          </button>
+        </span>
       </div>
     </Popover>
 

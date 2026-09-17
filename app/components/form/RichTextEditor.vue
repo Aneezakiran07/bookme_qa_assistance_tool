@@ -47,8 +47,17 @@ function insertLinePrefix(prefix: string) {
 
 // intentionally minimal: bold, italic, and a numbered/bulleted step —
 // the three formats testers actually reach for when writing steps
+function escapeHtml(value: string) {
+  return value
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;')
+}
+
 const previewHtml = computed(() =>
-  (props.modelValue ?? '')
+  escapeHtml(props.modelValue ?? '')
     .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
     .replace(/\*(.+?)\*/g, '<em>$1</em>')
     .replace(/\n/g, '<br />')
@@ -85,7 +94,8 @@ const previewHtml = computed(() =>
       :placeholder="placeholder"
       :rows="rows"
       class="w-full resize-y border-0 bg-transparent p-3 text-sm text-gray-900
-             outline-none placeholder:text-gray-400 dark:text-white dark:placeholder:text-white/40"
+             placeholder:text-gray-400 dark:text-white dark:placeholder:text-white/40
+             focus:outline-none focus:ring-2 focus:ring-inset focus:ring-purple-400"
       @input="$emit('update:modelValue', ($event.target as HTMLTextAreaElement).value)"
     />
     <div
@@ -99,6 +109,7 @@ const previewHtml = computed(() =>
 <style scoped>
 .toolbar-btn {
   @apply flex h-7 w-7 items-center justify-center rounded text-gray-500
-    hover:bg-gray-100 dark:text-white/60 dark:hover:bg-white/10;
+    hover:bg-gray-100 dark:text-white/60 dark:hover:bg-white/10
+    focus:outline-none focus-visible:ring-2 focus-visible:ring-purple-400;
 }
 </style>

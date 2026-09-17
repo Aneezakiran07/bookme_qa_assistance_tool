@@ -43,4 +43,18 @@ export default defineNuxtRouteMiddleware((to) => {
   if (isSignedOutRoute || isPendingRoute) {
     return navigateTo('/')
   }
+
+  // developers get a focused bug workspace only, they never get the full
+  // test case or execution suites, so send them back to the dashboard
+  // with a query flag if they try to reach those routes directly. a
+  // toast can't be fired from here because the toast service may not be
+  // mounted yet during middleware, so the dashboard watches for this
+  // flag on mount and fires the toast itself
+  const isDeveloper = user.value?.role === 'Developer'
+  const isTestCaseRoute = to.path.startsWith('/test-cases')
+  const isExecutionRoute = to.path.startsWith('/executions')
+
+  if (isDeveloper && (isTestCaseRoute || isExecutionRoute)) {
+    return navigateTo('/?denied=developer-role')
+  }
 })

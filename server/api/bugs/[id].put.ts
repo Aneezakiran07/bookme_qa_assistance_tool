@@ -2,7 +2,6 @@ import { bugRepository } from '~~/server/repositories/bugRepository'
 import { userRepository } from '~~/server/repositories/userRepository'
 import { bugStatusHistoryRepository } from '~~/server/repositories/bugStatusHistoryRepository'
 import { bugAssignmentLogRepository } from '~~/server/repositories/bugAssignmentLogRepository'
-import { isValidBugStatusTransition } from '~~/server/utils/bugStatusTransitions'
 
 const VALID_SEVERITIES = ['Critical', 'High', 'Medium', 'Low']
 const VALID_PRIORITIES = ['High', 'Medium', 'Low']
@@ -72,17 +71,12 @@ export default defineEventHandler(async (event) => {
     fields.linked_test_case_id = body.linkedTestCaseId ?? null
   }
 
-  // status transitions are validated against the fixed lifecycle map and
-  // audited in bug_status_history; last_status_change_at moves with it
+  // any status can be selected directly now; no lifecycle map to satisfy.
+  // still audited in bug_status_history so the timeline stays intact, and
+  // last_status_change_at still moves with it
   if (body.status !== undefined && body.status !== existing.status) {
     if (!VALID_STATUSES.includes(body.status)) {
       throw createError({ statusCode: 400, statusMessage: 'Invalid status' })
-    }
-    if (!isValidBugStatusTransition(existing.status, body.status)) {
-      throw createError({
-        statusCode: 400,
-        statusMessage: `Cannot move a bug from ${existing.status} to ${body.status}`
-      })
     }
     fields.status = body.status
     fields.last_status_change_at = new Date().toISOString()

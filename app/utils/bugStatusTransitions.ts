@@ -1,12 +1,5 @@
-// mirrors server/utils/bugStatusTransitions.ts. kept as a plain object
-// (not imported across the client/server boundary) so the status buttons
-// render instantly without a round trip; the PUT endpoint is still the
-// source of truth and rejects anything not listed here.
-export const BUG_STATUS_TRANSITIONS: Record<string, string[]> = {
-  Open: ['In Progress'],
-  'In Progress': ['Fixed'],
-  Fixed: ['Retest'],
-  Retest: ['Closed', 'Reopened'],
-  Closed: ['Reopened'],
-  Reopened: ['In Progress']
-}
+// full status set for the status dropdown used by bugs/index.vue's
+// quick-edit popover and bugs/[id].vue's status selector. Any bug can move
+// to any of these statuses directly, there is no lifecycle restriction.
+// Order here is the display order in both places.
+export const ALL_BUG_STATUSES = ['Open', 'In Progress', 'Fixed', 'Retest', 'Closed', 'Reopened']

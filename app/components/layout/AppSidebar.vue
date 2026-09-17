@@ -17,15 +17,26 @@ const currentUser = computed(() => user.value as {
 } | null)
 
 const isAdmin = computed(() => currentUser.value?.role === 'Admin')
+const isDeveloper = computed(() => currentUser.value?.role === 'Developer')
 
-const projectLinks: NavLink[] = [
-  { label: 'Dashboard', to: '/', icon: 'pi pi-home' },
-  { label: 'Requirements', to: '/requirements', icon: 'pi pi-file-check' },
-  { label: 'Test Cases', to: '/test-cases', icon: 'pi pi-list-check' },
-  { label: 'Test Executions', to: '/executions', icon: 'pi pi-play-circle' },
-  { label: 'Bugs', to: '/bugs', icon: 'pi pi-bug' },
-  { label: 'Releases', to: '/releases', icon: 'pi pi-tag' },
-]
+const projectLinks = computed<NavLink[]>(() => {
+  // developers only get the dashboard and their own focused bug queue,
+  // the full requirements, test case, execution, and bugs workflow is
+  // reserved for qa lead, tester, and admin roles
+  if (isDeveloper.value) {
+    return [
+      { label: 'Dashboard', to: '/', icon: 'pi pi-home' },
+      { label: 'My Bugs', to: '/developer/bugs', icon: 'pi pi-inbox' },
+    ]
+  }
+  return [
+    { label: 'Dashboard', to: '/', icon: 'pi pi-home' },
+    { label: 'Requirements', to: '/requirements', icon: 'pi pi-file-check' },
+    { label: 'Test Cases', to: '/test-cases', icon: 'pi pi-list-check' },
+    { label: 'Test Executions', to: '/executions', icon: 'pi pi-play-circle' },
+    { label: 'Bugs', to: '/bugs', icon: 'pi pi-bug' },
+  ]
+})
 
 const managementLinksStandard: NavLink[] = [
   { label: 'App Map', to: '/management/modules', icon: 'pi pi-sitemap' },

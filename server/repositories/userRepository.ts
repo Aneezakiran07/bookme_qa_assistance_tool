@@ -40,12 +40,13 @@ export const userRepository = {
     return rows as UserRecord[]
   },
 
-  async approve(userId: number, role: string, moduleIds: number[]): Promise<UserRecord> {
+  async approve(userId: number, role: string, moduleIds: number[]): Promise<UserRecord | null> {
     const sql = useDb()
     const rows = await sql`
       update users set role = ${role}, active = true where id = ${userId}
       returning *
     `
+    if (!rows[0]) return null
     await this.setModules(userId, moduleIds)
     return rows[0] as UserRecord
   },

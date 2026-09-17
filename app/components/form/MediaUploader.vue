@@ -17,6 +17,8 @@ const props = withDefaults(
 
 const emit = defineEmits<{ 'update:attachments': [MediaAttachment[]] }>()
 
+const toast = useToast()
+
 // seeded from the bug detail page so previously uploaded screenshots and
 // videos show up immediately instead of starting from an empty dropzone
 const attachments = ref<MediaAttachment[]>([...props.initialAttachments])
@@ -43,9 +45,28 @@ async function handleFiles(fileList: FileList | null) {
       attachments.value.push(created)
     }
     emit('update:attachments', attachments.value)
+  } catch (error) {
+    toast.add({
+      severity: 'error',
+      summary: 'Could not upload this file',
+      detail: (error as any)?.data?.statusMessage ?? 'Please try again.',
+      life: 5000
+    })
   } finally {
     uploading.value = false
+    // reset so selecting the exact same file again still fires @change
+    if (fileInput.value) fileInput.value.value = ''
   }
+}
+
+// full-size lightbox preview, opened by clicking a thumbnail image or
+// video anywhere in the grid, never by clicking the remove button
+const lightboxOpen = ref(false)
+const lightboxIndex = ref(0)
+
+function openLightbox(index: number) {
+  lightboxIndex.value = index
+  lightboxOpen.value = true
 }
 
 async function removeAttachment(id: number) {
@@ -90,21 +111,31 @@ function onDrop(event: DragEvent) {
 
     <div v-if="attachments.length" class="mt-3 grid grid-cols-3 gap-3 sm:grid-cols-4">
       <div
-        v-for="attachment in attachments"
+        v-for="(attachment, index) in attachments"
         :key="attachment.id"
         class="group relative overflow-hidden rounded-md border border-black/10 dark:border-white/10"
       >
         <video
           v-if="attachment.file_type === 'video'"
           :src="attachment.url"
-          class="h-24 w-full object-cover"
+          class="h-24 w-full cursor-pointer object-cover"
           muted
+          @click="openLightbox(index)"
         />
-        <img v-else :src="attachment.url" class="h-24 w-full object-cover" alt="Attachment preview" />
+        <img
+          v-else
+          :src="attachment.url"
+          class="h-24 w-full cursor-pointer object-cover"
+          alt="Attachment preview"
+          @click="openLightbox(index)"
+        />
         <button
           type="button"
-          class="absolute right-1 top-1 hidden h-6 w-6 items-center justify-center
-                 rounded-full bg-black/70 text-white group-hover:flex"
+          class="absolute right-1 top-1 flex h-6 w-6 items-center justify-center
+                 rounded-full bg-black/70 text-white opacity-0 transition-opacity
+                 group-hover:opacity-100 group-focus-within:opacity-100
+                 focus:opacity-100 focus:outline-none focus:ring-2 focus:ring-purple-400
+                 focus:ring-offset-1"
           aria-label="Remove attachment"
           @click.stop="removeAttachment(attachment.id)"
         >
@@ -112,5 +143,11 @@ function onDrop(event: DragEvent) {
         </button>
       </div>
     </div>
+
+    <MediaLightbox
+      v-model="lightboxOpen"
+      :attachments="attachments"
+      :start-index="lightboxIndex"
+    />
   </div>
 </template>

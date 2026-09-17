@@ -18,5 +18,8 @@ export default defineEventHandler(async (event) => {
   }
 
   const user = await userRepository.approve(body.userId, body.role, body.moduleIds ?? [])
+  if (!user) {
+    throw createError({ statusCode: 404, statusMessage: 'User not found' })
+  }
   return { success: true, user }
 })

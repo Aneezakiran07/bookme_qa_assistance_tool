@@ -2,6 +2,10 @@ import { useCloudinary } from '~~/server/utils/cloudinary'
 import { bugAttachmentRepository } from '~~/server/repositories/bugAttachmentRepository'
 export default defineEventHandler(async (event) => {
   const attachmentId = Number(getRouterParam(event, 'id'))
+  if (!attachmentId || Number.isNaN(attachmentId)) {
+    throw createError({ statusCode: 400, statusMessage: 'Invalid attachment id' })
+  }
+
   const deleted = await bugAttachmentRepository.delete(attachmentId)
 
   if (!deleted) {

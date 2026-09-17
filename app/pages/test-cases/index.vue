@@ -106,11 +106,11 @@ function releaseVersion(id: number) {
 }
 
 const columns = [
-  { field: 'tc_id', header: 'TC ID' },
+  { field: 'tc_id', sortField: 'id', header: 'TC ID', sortable: true },
   { field: 'title', header: 'Title' },
-  { field: 'module_name', header: 'Module' },
-  { field: 'priority', header: 'Priority' },
-  { field: 'type', header: 'Type' },
+  { field: 'module_name', header: 'Module', sortable: true },
+  { field: 'priority', header: 'Priority', sortable: true },
+  { field: 'type', header: 'Type', sortable: true },
   { field: 'linked_reqs', header: 'Linked Reqs' },
   { field: 'linked_releases', header: 'Versions' }
 ]

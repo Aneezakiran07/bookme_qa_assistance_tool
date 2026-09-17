@@ -32,12 +32,16 @@ const dialogPt = useDialogPt()
   <Dialog
     v-model:visible="visible"
     modal
-    :style="{ width }"
+    :style="{ width, maxWidth: '95vw', maxHeight: '90vh' }"
     :closable="closable"
     :dismissable-mask="dismissableMask"
     class="!bg-white !text-gray-900 dark:!bg-black dark:!text-white
            !border !border-black/10 dark:!border-white/10"
-    :pt="dialogPt"
+    :pt="{
+      ...dialogPt,
+      root: { class: [dialogPt.root.class, 'flex flex-col'] },
+      content: { class: [dialogPt.content.class, 'overflow-y-auto'] }
+    }"
   >
     <template v-if="title || $slots.header" #header>
       <slot name="header">

@@ -1,7 +1,8 @@
 <script setup lang="ts">
 // Bug detail workspace: left column shows bug context, steps, attachments,
-// and the merged audit history; right column drives the status lifecycle
-// and owner reassignment. Every mutation here goes through PUT /api/bugs/[id],
+// and the merged audit history; right column drives owner reassignment.
+// Status is changed directly from a dropdown in the header, no fixed
+// lifecycle to satisfy. Every mutation here goes through PUT /api/bugs/[id],
 // which is also what audits status_history and assignment_log rows.
 definePageMeta({ layout: 'default' })
 
@@ -18,6 +19,8 @@ interface BugDetail {
   environment_build: string | null
   linked_test_case_id: number | null
   linked_test_case_title: string | null
+  linked_test_case_steps: string | null
+  linked_test_case_expected_result: string | null
   release_id: number | null
   release_version: string | null
   reported_by: number | null
@@ -57,6 +60,7 @@ interface StatusHistoryRow {
 
 const route = useRoute()
 const toast = useToast()
+const dropdownPt = useDropdownPt()
 const bugId = Number(route.params.id)
 
 const { data, refresh, pending: loading } = await useFetch<{
@@ -129,14 +133,11 @@ function onAttachmentsChanged() {
   refresh()
 }
 
-// -- status transitions --
+// -- status --
 const changingStatus = ref(false)
 
-function nextStatuses(status: string): string[] {
-  return BUG_STATUS_TRANSITIONS[status] ?? []
-}
-
 async function moveToStatus(status: string) {
+  if (!bug.value || status === bug.value.status) return
   changingStatus.value = true
   try {
     await $fetch(`/api/bugs/${bugId}`, { method: 'PUT', body: { status } })
@@ -257,7 +258,21 @@ const timelineEntries = computed(() => {
             <h2 class="text-base font-semibold text-gray-900 dark:text-white">
               {{ bug.title }}
             </h2>
-            <StatusBadge :status="bug.status" size="sm" />
+            <Select
+              :model-value="bug.status"
+              :options="ALL_BUG_STATUSES"
+              :disabled="changingStatus"
+              class="w-44"
+              :pt="dropdownPt"
+              @update:model-value="moveToStatus"
+            >
+              <template #value="{ value }">
+                <StatusBadge v-if="value" :status="value" size="sm" />
+              </template>
+              <template #option="{ option }">
+                <StatusBadge :status="option" size="sm" />
+              </template>
+            </Select>
           </div>
 
           <div class="mt-3 flex flex-wrap items-center gap-2">
@@ -350,6 +365,41 @@ const timelineEntries = computed(() => {
           </div>
         </div>
 
+        <!-- linked test case, read only preview, no link into the test case's edit or execute flows -->
+        <div
+          v-if="bug.linked_test_case_id"
+          class="rounded-lg border border-black/10 bg-white p-5 dark:border-white/10 dark:bg-black"
+        >
+          <p class="mb-2 text-xs font-semibold uppercase tracking-wide text-gray-400 dark:text-zinc-500">
+            Linked Test Case
+          </p>
+          <p class="text-sm font-medium text-gray-900 dark:text-white">
+            {{ tcCode(bug.linked_test_case_id) }}: {{ bug.linked_test_case_title }}
+          </p>
+          <div class="mt-3">
+            <p class="text-xs font-semibold uppercase tracking-wide text-gray-400 dark:text-zinc-500">
+              Steps
+            </p>
+            <div
+              class="mt-1 whitespace-pre-wrap rounded-md border border-black/10 bg-gray-50 p-3 text-sm
+                     text-gray-800 dark:border-white/10 dark:bg-white/5 dark:text-zinc-200"
+            >
+              {{ bug.linked_test_case_steps || 'No steps recorded.' }}
+            </div>
+          </div>
+          <div class="mt-3">
+            <p class="text-xs font-semibold uppercase tracking-wide text-gray-400 dark:text-zinc-500">
+              Expected Result
+            </p>
+            <div
+              class="mt-1 whitespace-pre-wrap rounded-md border border-black/10 bg-gray-50 p-3 text-sm
+                     text-gray-800 dark:border-white/10 dark:bg-white/5 dark:text-zinc-200"
+            >
+              {{ bug.linked_test_case_expected_result || 'No expected result recorded.' }}
+            </div>
+          </div>
+        </div>
+
         <!-- attachments -->
         <div class="rounded-lg border border-black/10 bg-white p-5 dark:border-white/10 dark:bg-black">
           <p class="mb-2 text-xs font-semibold uppercase tracking-wide text-gray-400 dark:text-zinc-500">
@@ -373,29 +423,6 @@ const timelineEntries = computed(() => {
 
       <!-- right column -->
       <div class="space-y-4">
-        <div class="rounded-lg border border-black/10 bg-white p-5 dark:border-white/10 dark:bg-black">
-          <p class="mb-3 text-xs font-semibold uppercase tracking-wide text-gray-400 dark:text-zinc-500">
-            Status Transition
-          </p>
-          <div class="space-y-2">
-            <BaseButton
-              v-for="status in nextStatuses(bug.status)"
-              :key="status"
-              :label="`Move to ${status}`"
-              variant="outline"
-              block
-              :loading="changingStatus"
-              @click="moveToStatus(status)"
-            />
-            <p
-              v-if="nextStatuses(bug.status).length === 0"
-              class="text-xs text-gray-400 dark:text-zinc-500"
-            >
-              This bug has no further transitions.
-            </p>
-          </div>
-        </div>
-
         <div class="rounded-lg border border-black/10 bg-white p-5 dark:border-white/10 dark:bg-black">
           <p class="mb-2 text-xs font-semibold uppercase tracking-wide text-gray-400 dark:text-zinc-500">
             Owner / Assignee

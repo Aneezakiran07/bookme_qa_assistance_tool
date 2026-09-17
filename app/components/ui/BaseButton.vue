@@ -40,11 +40,11 @@ const variantClass = computed(() => {
     case 'primary':
       return '!bg-purple-600 !border-purple-600 hover:!bg-purple-700 hover:!border-purple-700 !text-white focus:!ring-purple-400'
     case 'secondary':
-      return 'dark:!bg-white/10 dark:!text-white dark:!border-white/10 dark:hover:!bg-white/20 !bg-gray-100 !text-gray-800 !border-gray-200 hover:!bg-gray-200'
+      return 'dark:!bg-white/10 dark:!text-white dark:!border-white/10 dark:hover:!bg-white/20 !bg-gray-100 !text-gray-800 !border-gray-200 hover:!bg-gray-200 focus:!ring-gray-400 dark:focus:!ring-white/40'
     case 'outline':
-      return '!bg-transparent !border-purple-600 !text-purple-600 hover:!bg-purple-50 dark:!text-purple-400 dark:hover:!bg-purple-950/40'
+      return '!bg-transparent !border-purple-600 !text-purple-600 hover:!bg-purple-50 dark:!text-purple-400 dark:hover:!bg-purple-950/40 focus:!ring-purple-400'
     case 'danger':
-      return '!bg-red-600 !border-red-600 hover:!bg-red-700 hover:!border-red-700 !text-white'
+      return '!bg-red-600 !border-red-600 hover:!bg-red-700 hover:!border-red-700 !text-white focus:!ring-red-400'
     default:
       return ''
   }

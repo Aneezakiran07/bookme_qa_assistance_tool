@@ -6,6 +6,10 @@ export default defineEventHandler(async (event) => {
   requireRole(event, ['Admin'])
 
   const userId = Number(getRouterParam(event, 'id'))
+  if (!userId || Number.isNaN(userId)) {
+    throw createError({ statusCode: 400, statusMessage: 'Invalid user id' })
+  }
+
   const body = await readBody<{ role: string; moduleIds: number[] }>(event)
 
   if (!validRoles.includes(body.role)) {
@@ -15,5 +19,9 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 400, statusMessage: 'At least one module is required' })
   }
 
-  return userRepository.approve(userId, body.role, body.moduleIds)
+  const user = await userRepository.approve(userId, body.role, body.moduleIds)
+  if (!user) {
+    throw createError({ statusCode: 404, statusMessage: 'User not found' })
+  }
+  return user
 })

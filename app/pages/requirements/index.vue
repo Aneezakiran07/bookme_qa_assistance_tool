@@ -47,11 +47,11 @@ const { data, refresh, pending: loadingRequirements } = await useFetch<Requireme
 const requirements = computed(() => data.value ?? [])
 
 const columns = [
-  { field: 'req_id', header: 'Req ID' },
+  { field: 'req_id', sortField: 'id', header: 'Req ID', sortable: true },
   { field: 'title', header: 'Title & Description' },
-  { field: 'module_name', header: 'Module' },
-  { field: 'status', header: 'Status' },
-  { field: 'target_release', header: 'Target Release' },
+  { field: 'module_name', header: 'Module', sortable: true },
+  { field: 'status', header: 'Status', sortable: true },
+  { field: 'target_release', header: 'Target Release', sortable: true },
   { field: 'linked_test_cases_count', header: 'Linked Test Cases' }
 ]
 

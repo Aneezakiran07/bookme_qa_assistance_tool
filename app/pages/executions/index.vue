@@ -1,15 +1,14 @@
 <script setup lang="ts">
 // Release list page. Shows every release cycle with its test execution
-// progress: how many of the total test cases have been executed, the pass
-// rate so far, and the current regression status. "Execute Run" drops into
-// the dedicated execution workspace at /executions/[id].
+// progress: how many of the total test cases have been executed and the
+// pass rate so far. "Execute Run" drops into the dedicated execution
+// workspace at /executions/[id].
 definePageMeta({ layout: 'default' })
 
 interface ReleaseRow {
   id: number
   version: string
   release_date: string | null
-  regression_status: 'Not Started' | 'In Progress' | 'Passed' | 'Failed'
   created_at: string
   total_test_cases: number
   executed_count: number
@@ -20,7 +19,6 @@ interface ReleaseRow {
 }
 
 const toast = useToast()
-const dropdownPt = useDropdownPt()
 
 const { data, refresh, pending: loadingReleases } = await useFetch<ReleaseRow[]>('/api/releases')
 const releases = computed(() => data.value ?? [])
@@ -28,13 +26,12 @@ const releases = computed(() => data.value ?? [])
 const columns = [
   { field: 'version', header: 'Version' },
   { field: 'release_date', header: 'Release Date', sortable: true },
-  { field: 'regression_status', header: 'Regression Status' },
   { field: 'progress', header: 'Executed' },
   { field: 'pass_rate', header: 'Pass Rate' }
 ]
 
 function formatDate(value: string | null) {
-  if (!value) return '—'
+  if (!value) return 'â€”'
   return new Date(value).toLocaleDateString(undefined, {
     year: 'numeric',
     month: 'short',
@@ -45,12 +42,10 @@ function formatDate(value: string | null) {
 // -- create release modal --
 const modalOpen = ref(false)
 const saving = ref(false)
-const REGRESSION_OPTIONS = ['Not Started', 'In Progress', 'Passed', 'Failed']
 
 const form = reactive({
   version: '',
-  releaseDate: '',
-  regressionStatus: 'Not Started'
+  releaseDate: ''
 })
 
 const versionError = computed(() => (form.version.trim() ? null : 'Version is required.'))
@@ -59,7 +54,6 @@ const canSave = computed(() => !versionError.value && !saving.value)
 function openCreate() {
   form.version = ''
   form.releaseDate = ''
-  form.regressionStatus = 'Not Started'
   modalOpen.value = true
 }
 
@@ -71,8 +65,7 @@ async function saveRelease() {
       method: 'POST',
       body: {
         version: form.version.trim(),
-        releaseDate: form.releaseDate || null,
-        regressionStatus: form.regressionStatus
+        releaseDate: form.releaseDate || null
       }
     })
     toast.add({ severity: 'success', summary: 'Release created', life: 3000 })
@@ -135,10 +128,6 @@ async function saveRelease() {
         </span>
       </template>
 
-      <template #cell-regression_status="{ data: row }">
-        <StatusBadge :status="row.regression_status" size="sm" />
-      </template>
-
       <template #cell-progress="{ data: row }">
         <div class="flex items-center gap-2 min-w-[10rem]">
           <AppProgressBar
@@ -165,7 +154,7 @@ async function saveRelease() {
         >
           {{ row.pass_rate }}%
         </span>
-        <span v-else class="text-xs text-gray-400 dark:text-zinc-500">—</span>
+        <span v-else class="text-xs text-gray-400 dark:text-zinc-500">â€”</span>
       </template>
 
       <template #actions="{ data: row }">
@@ -207,18 +196,6 @@ async function saveRelease() {
                    text-gray-900 outline-none transition-colors
                    focus:border-purple-500 focus:ring-1 focus:ring-purple-500
                    dark:border-white/10 dark:text-white dark:[color-scheme:dark]"
-          />
-        </div>
-
-        <div>
-          <label class="mb-1 block text-xs font-medium text-gray-600 dark:text-zinc-300">
-            Regression Status
-          </label>
-          <Select
-            v-model="form.regressionStatus"
-            :options="REGRESSION_OPTIONS"
-            class="w-full"
-            :pt="dropdownPt"
           />
         </div>
       </div>

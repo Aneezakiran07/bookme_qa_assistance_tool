@@ -74,6 +74,11 @@ const PALETTES: Record<string, Palette> = {
     label: 'Approved',
     classes:
       'bg-emerald-100 text-emerald-700 border-emerald-200 dark:bg-emerald-500/15 dark:text-emerald-400 dark:border-emerald-500/30'
+  },
+  done: {
+    label: 'Done',
+    classes:
+      'bg-emerald-100 text-emerald-700 border-emerald-200 dark:bg-emerald-500/15 dark:text-emerald-400 dark:border-emerald-500/30'
   }
 }
 
@@ -85,7 +90,7 @@ const PALETTES: Record<string, Palette> = {
 // the real db value the person is looking at.
 const ALIASES: Record<string, keyof typeof PALETTES> = {
   passed: 'passed',
-  done: 'passed',
+  done: 'done',
   fixed: 'fixed',
   resolved: 'resolved',
   failed: 'failed',
@@ -111,12 +116,13 @@ const palette = computed<Palette>(() => {
 
 <template>
   <span
-    class="inline-flex items-center rounded-full border font-medium"
+    class="inline-flex max-w-[12rem] items-center whitespace-nowrap rounded-full border font-medium"
     :class="[
       palette.classes,
       size === 'sm' ? 'px-2 py-0.5 text-xs' : 'px-2.5 py-1 text-sm'
     ]"
+    :title="palette.label"
   >
-    {{ palette.label }}
+    <span class="truncate">{{ palette.label }}</span>
   </span>
 </template>

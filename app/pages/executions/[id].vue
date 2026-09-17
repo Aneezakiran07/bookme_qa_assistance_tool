@@ -28,7 +28,6 @@ interface ReleaseInfo {
   id: number
   version: string
   release_date: string | null
-  regression_status: string
 }
 
 const route = useRoute()
@@ -189,7 +188,7 @@ function statusKey(latest: string | null): string {
         <div>
           <p class="text-xs text-gray-400 dark:text-zinc-500">Executing Release</p>
           <h1 class="text-lg font-semibold text-gray-900 dark:text-white">
-            {{ release?.version ?? '—' }}
+            {{ release?.version ?? 'â€”' }}
           </h1>
         </div>
       </div>
@@ -363,7 +362,7 @@ function statusKey(latest: string | null): string {
               <span v-if="selectedTestCase.last_executed_by_email">
                 by {{ selectedTestCase.last_executed_by_email }}
               </span>
-              · {{ selectedTestCase.executions_count }} run{{ selectedTestCase.executions_count === 1 ? '' : 's' }} total
+              Â· {{ selectedTestCase.executions_count }} run{{ selectedTestCase.executions_count === 1 ? '' : 's' }} total
             </div>
 
             <div>
