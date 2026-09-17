@@ -7897,8 +7897,8 @@ const _inlineRuntimeConfig = {
       ]
     }
   },
-  "databaseUrl": "postgresql://neondb_owner:npg_HPlWquB6IoU1@ep-cool-waterfall-b30i3yqf-pooler.c-4.ap-southeast-1.aws.neon.tech/bookme_qa?sslmode=require&channel_binding=require",
-  "cronSecret": "base64:EJBb787N++F0aEnpFNQV2ot4cqARKuXS52VkrDRswRM=",
+  "databaseUrl": "postgresql://neondb_owner:npg_OCGU0qW5Ppts@ep-cool-waterfall-b30i3yqf-pooler.c-4.ap-southeast-1.aws.neon.tech/bookme_qa?sslmode=require&channel_binding=require",
+  "cronSecret": "Iu2saRnZgJW52pUkkENJ6OVySMDHsFz8FOTU3R39N1U=",
   "cloudinary": {
     "cloudName": "bruy7w15",
     "apiKey": "927764559963758",
@@ -7907,11 +7907,11 @@ const _inlineRuntimeConfig = {
   "firebaseAdmin": {
     "projectId": "bookmeqa-17c96",
     "clientEmail": "firebase-adminsdk-fbsvc@bookmeqa-17c96.iam.gserviceaccount.com",
-    "privateKey": "-----BEGIN PRIVATE KEY-----\nMIIEvgIBADANBgkqhkiG9w0BAQEFAASCBKgwggSkAgEAAoIBAQDSQUTYVqMlXOgv\nTYdzOSRq70Nmv+awAoNFCnAbg9e3A34M5kzeiL7xsbNzvi7ScgNC32REGw4FEtc9\n+iB1MJnfJ6rxhsG0mf5syXNlJrjFm/ev0w3dRR3nEGduhT6LcuM3JOHD9eORs6+y\nvIqHcJFnJBrFO7Sek8UL1R6qFLiePGLnsc5hjX+rjn0NxUsLJgJsoKs/wqHDkAW4\nWh/rI6k+MdkMOlPVqS8j80dsI4DPhnrAQwljS3pQqHA6HhRg8CYdr9MKS9OLQadd\nVobXxnqnLarpg8gn41tY6p8r/SArTLAonAieufa9mkUeCQbzdyhJ0SUUyIWaDq3i\ng/ILsIndAgMBAAECggEAMYaMzi3IM7SY/41yVq6S2Lp/xKv2zaZl3+Unx59seFBT\nCHxWBoQtABcU13JoqosPIBkpT86UpJbNyyxIKXqXgCRipI5SwfUVJHBmZWDz3J5S\nv2CGT0To2IT5bCPoOeZHxbVDFcrtfiRWglJdii42ndY4FRXtg334yAL9PGBxpVnU\nPBV4o5QsPLt3O0XQkR+ChtFbDv7JRJlnSyl99IBOMIBwYCe6E9yN8XHNuhvviA40\n1TJL/gQUjNREISAWAQz/YPt6R6814505hClM0qrfCEgA/74HPvwWVIqqidE7TpSp\nN0KRlG4XMWVClP5m8SuaRVHzgRphOBBloLeYQY10kQKBgQDsYZGh/mqJDIQyzgrq\nxpXLMmPcQ1YUXEeBM2TDx9gzKu+BEDiM/5N9KuUdq+9BhSg67PE7YIBC0yLMGcDn\ntC+Heehp/4G7bRkvTkV7qK6HNvHUKjeG/z7qV9vlMiXxyckZOrN+oPxIqwAlHq4s\ngm3lQyycXMK+88dwX6xvHpxI8QKBgQDjtJe8Kt9n/Gvcx2L8Ioy/UicNqBrXnY61\nReiEtG1bwKOitg+pTM1ZjQlAaLyzRiTOhqx3aX0Wd1w5oFiLrqWjz1dnEOin7Chb\n6SCKf5TT8KunuKjzdji8dtHKOUI+rEWb3Tma1e0DzeG8bWbV9F7pRTMLlbOGo5kh\nIH/YLZ8vrQKBgBzazCw6IkcYgAqznCGMnDxxqj74+UkC+reKzoIXowyb8SCQGlcb\n26Ur10wH8OzOlFqdEdVtsjp2C4lem22tUR/4gaZuyidW6fwcUd8GeEeJLXv4q06P\nWd7BWtZfiMI7H5E02TRb8m/sb9gYJqrIQSH7UTbFHACzQWU2SJZH5kwBAoGBAJBH\nv9VU/RXwlY/hLtFAOxqHPYOjvs5cYS5vS3O6t4hpucXBwo6twXg6q2AKfXbCvVO3\nddR8HOx9WQySk0h+synmmSUPS7wLIU+Lmjjnui/I0ZuGoFcT08NnLmsKePUpRzoJ\npRR89J9ydtRkJcLwAqugU0XF52kqhD6/TwJ1deZJAoGBAJTssoUmKv9rye6e3dYc\nnX5BgH0eysxOa9Kc731ml4pA213ON1PEjUZl1MNzaQ5XdQxZh5fQzZShtNYi1g0S\n/z9ZRcrxIrGQFHU9JJQoQGIJ53ieO0Y2WiQzthxgOm6DtZE9rbmPGI2Ec28pg47l\ns9JagkeWu1w9Ij/dYxiLt7qY\n-----END PRIVATE KEY-----\n"
+    "privateKey": "-----BEGIN PRIVATE KEY-----\nMIIEvQIBADANBgkqhkiG9w0BAQEFAASCBKcwggSjAgEAAoIBAQC5tE9JPbBe3Ert\nrduiG6OhWvxbiiaU96nthXgr4fF1KjU339be8fMC/Y4U3yiAdhl5NsGrk91gaAax\nZXOSoZmpcl8seMSZyAiTR2gnj//VExxZcg9Mst4QAWO3EaZyqqrqdHY/PSCtERrY\n//jZJw9w9NbwmSXWeyOaSES6GsPgcGWQO+UZHwc8BIq7rFWnI0DB6fpSR9uDC19u\n85JQvYcQ1tQkWVSXgLknWhJ4K/12lTh+8lhm9JzdJ92pnQnp6m/rvxrQ9PLMD07Y\nbUl4x5nk76c+757r/zIAY5CSPpFlPxyq5eUHehuLZDn8PYt7vlJ/SMLskL66u1lS\nxpaUaC6bAgMBAAECggEASfGVhnzVTxhZj4VkSIrH33Z6uLpsPXHWTFkSbirD+drK\nIQr0pIZjtKOgoQfwuSINZ5oZiMfSZNJXI+jZGaBWLsX3Rp557h/b5kUPIH2yqTW4\nWpdTpz8rs+TRvzH8fHkfoEaqVOjyq2b9sT1PaawndltPgLMCgYI7vXGcSBxjNWju\nKW/7OSRz7ba+syItmdx5zl0AzGOmrDVllwXOURuBkswUJ9CQ4LEi//A1SGdmH8TE\n3biTxgOQpByrFmGx19OQxWmYWjupaF1J0xZ2l7htR0qas1ZsYVMzkmYtezn4Rjua\n+JtHmPJxkyM52EPbn2n5+pFg+xcmG2BKXKum2xQNSQKBgQDcmSWF9JMEgF9OkEV8\nKpeRvM+1lANZwHJouckvHads1lpiYsW3TF2MgcwDKcVDTOykcMlP24WfOvXFZdeo\nhJ3J4IOzigPPI3nJoO9L3Q7yFz3w0OeVQVzFQd1w9bxlRgCwoKoN4H1Z61IxHpws\nD++nphQlrvmTeqeys8RDN2SkswKBgQDXgZ1cu7CRQLaPgLd3ge4+iyel39GXLA9/\nF/qiJuYk1wyaw3U+zMXpoMzE0SEQtLpS0rEf0/2komnS+bEo2thdBwFUbv3bUscl\n3lcA41H+GdnvJwoL9GulZY2xcxXydMeKflB/oQtgzHBM3VvM60TrbFMLc+NkQvZB\n5WbGrxdSeQKBgG5nt3/ziCEYnpqTWjNqnbEy7kHSclrZFmmTkj0iekjefx3+kTXL\n4oYP8CslHLUyKr2iNR7in12yBI9nCSguN0pyM3gH+yAQgUOIaDtvx6siNr3vz/fD\nXsrazBlc441MG8xKnNGVKSd3vwsWZtMmpqshU7QIfqBxIr0te2yorJZBAoGAHA/+\nw9KU/XUl0K38Ng2vTmmkcg8hJcRRCEXBF1hlY6q1M3n8TH8xzmhoAcERwzElih9x\nfSmHv+Z+TUDCdwV4YzTEUZBacjLnR+EaBz2SsboADQpSXpgnZFRDDTZlRzs5uKkW\nJmh8KNC2VuwERjzkrptefQFMPQQTOSV8KqcmLFECgYEAxrI+LrARjz5qopDNmtFD\nT7+VShgzDv+1JIoW42nuSUslqBQEG142iHa0TqGiHaTe/mqXsZVl2QnQMUUYgDbo\njbhiyr2/MZoeFtqdUpfmk4PnLhWIIFepuSebAXGhM4BdtTKq+zkCvTNvND4y1AR9\nMsfMrPoZwuViIm5UO7DVZek=\n-----END PRIVATE KEY-----\n"
   },
   "session": {
     "name": "nuxt-session",
-    "password": "536dfb6210a15e1e5d91c13ef8f75cc98bbe2c15822ef65ce5671ab32b491023",
+    "password": "395aeba2c92f0d679397b9248e068907719ef17dd21f6ab7143de7a14f13e5d4",
     "cookie": {
       "sameSite": "lax"
     }
@@ -14351,10 +14351,12 @@ const bugRepository = {
   async listForDeveloper(userId, scope, filters = {}) {
     var _a, _b, _c, _d, _e, _f;
     const sql = useDb();
-    const scopeOwnerId = scope === "team" ? null : userId;
+    const scopeOwnerId = scope === "mine" ? userId : null;
+    const scopeReportedBy = scope === "reported" ? userId : null;
     const rows = await sql`
       select
         b.*,
+        'BUG-' || lpad(b.id::text, 3, '0') as bug_code,
         m.name as module_name,
         owner.email as owner_email,
         reporter.email as reported_by_email,
@@ -14371,32 +14373,13 @@ const bugRepository = {
       where
         b.archived = false
         and (${scopeOwnerId}::int is null or b.owner_id = ${scopeOwnerId}::int)
-        and (${scope} != 'mine' or b.status != 'Closed')
-        and (${scope} != 'blockers' or (b.status != 'Closed' and b.severity in ('Critical', 'High')))
-        and (${scope} != 'pending' or b.status in ('Fixed', 'Retest'))
+        and (${scopeReportedBy}::int is null or b.reported_by = ${scopeReportedBy}::int)
         and (${(_a = filters.moduleId) != null ? _a : null}::int is null or b.module_id = ${(_b = filters.moduleId) != null ? _b : null}::int)
         and (${(_c = filters.severity) != null ? _c : null}::text is null or b.severity = ${(_d = filters.severity) != null ? _d : null}::text)
         and (${(_e = filters.status) != null ? _e : null}::text is null or b.status = ${(_f = filters.status) != null ? _f : null}::text)
       order by b.reported_at desc
     `;
     return rows;
-  },
-  // counts for all 4 quick-filter tabs at once, regardless of which one
-  // is currently selected, so the tab labels always show live totals
-  async developerCounts(userId) {
-    const sql = useDb();
-    const rows = await sql`
-      select
-        count(*) filter (where owner_id = ${userId} and status != 'Closed')::int as mine,
-        count(*) filter (
-          where owner_id = ${userId} and status != 'Closed' and severity in ('Critical', 'High')
-        )::int as blockers,
-        count(*) filter (where owner_id = ${userId} and status in ('Fixed', 'Retest'))::int as pending,
-        count(*)::int as team
-      from bugs
-      where archived = false
-    `;
-    return rows[0];
   },
   // used by the Log Bug flow to catch duplicates: if a test case already
   // has a non closed, non archived bug against it, the modal should offer
@@ -15375,21 +15358,18 @@ const scope_get$1 = /*#__PURE__*/Object.freeze(/*#__PURE__*/Object.definePropert
   default: scope_get
 }, Symbol.toStringTag, { value: 'Module' }));
 
-const VALID_SCOPES = ["mine", "blockers", "pending", "team"];
+const VALID_SCOPES = ["mine", "reported", "team"];
 const bugs_get = defineEventHandler(async (event) => {
   const currentUser = event.context.currentUser;
   const userId = currentUser.id;
   const query = getQuery$1(event);
   const scope = VALID_SCOPES.includes(query.scope) ? query.scope : "mine";
-  const [bugs, counts] = await Promise.all([
-    bugRepository.listForDeveloper(userId, scope, {
-      moduleId: query.moduleId ? Number(query.moduleId) : void 0,
-      severity: query.severity ? String(query.severity) : void 0,
-      status: query.status ? String(query.status) : void 0
-    }),
-    bugRepository.developerCounts(userId)
-  ]);
-  return { scope, bugs, counts };
+  const bugs = await bugRepository.listForDeveloper(userId, scope, {
+    moduleId: query.moduleId ? Number(query.moduleId) : void 0,
+    severity: query.severity ? String(query.severity) : void 0,
+    status: query.status ? String(query.status) : void 0
+  });
+  return { scope, bugs };
 });
 
 const bugs_get$1 = /*#__PURE__*/Object.freeze(/*#__PURE__*/Object.defineProperty({
