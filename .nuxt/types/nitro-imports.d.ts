@@ -145,6 +145,7 @@ declare global {
   const readValidatedBody: typeof import('../../node_modules/h3/dist/index').readValidatedBody
   const removeResponseHeader: typeof import('../../node_modules/h3/dist/index').removeResponseHeader
   const replaceUserSession: typeof import('../../node_modules/nuxt-auth-utils/dist/runtime/server/utils/session').replaceUserSession
+  const requireCronSecret: typeof import('../../server/utils/cronAuth').requireCronSecret
   const requireRole: typeof import('../../server/utils/authorize').requireRole
   const requireUserSession: typeof import('../../node_modules/nuxt-auth-utils/dist/runtime/server/utils/session').requireUserSession
   const runTask: typeof import('../../node_modules/nitropack/dist/runtime/internal/task').runTask
@@ -152,6 +153,7 @@ declare global {
   const sanitizeStatusMessage: typeof import('../../node_modules/h3/dist/index').sanitizeStatusMessage
   const sealSession: typeof import('../../node_modules/h3/dist/index').sealSession
   const send: typeof import('../../node_modules/h3/dist/index').send
+  const sendEmail: typeof import('../../server/utils/email').sendEmail
   const sendError: typeof import('../../node_modules/h3/dist/index').sendError
   const sendIterable: typeof import('../../node_modules/h3/dist/index').sendIterable
   const sendNoContent: typeof import('../../node_modules/h3/dist/index').sendNoContent
@@ -409,4 +411,6 @@ export { hashPassword, verifyPassword, passwordNeedsReHash } from 'C:/dev/bookme
 export { sessionHooks, getUserSession, setUserSession, replaceUserSession, clearUserSession, requireUserSession } from 'C:/dev/bookmeqa/node_modules/nuxt-auth-utils/dist/runtime/server/utils/session';
 export { requireRole } from 'C:/dev/bookmeqa/server/utils/authorize';
 export { useCloudinary } from 'C:/dev/bookmeqa/server/utils/cloudinary';
+export { requireCronSecret } from 'C:/dev/bookmeqa/server/utils/cronAuth';
+export { sendEmail } from 'C:/dev/bookmeqa/server/utils/email';
 export { useFirebaseAuth } from 'C:/dev/bookmeqa/server/utils/firebaseAdmin';

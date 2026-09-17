@@ -36,6 +36,9 @@ declare module "nitropack/types" {
     '/api/bugs/open-for-test-case': {
       'get': Simplify<Serialize<Awaited<ReturnType<typeof import('../../server/api/bugs/open-for-test-case.get').default>>>>
     }
+    '/api/cron/daily-digest': {
+      'get': Simplify<Serialize<Awaited<ReturnType<typeof import('../../server/api/cron/daily-digest.get').default>>>>
+    }
     '/api/cron/daily-snapshot': {
       'get': Simplify<Serialize<Awaited<ReturnType<typeof import('../../server/api/cron/daily-snapshot.get').default>>>>
     }
@@ -66,6 +69,13 @@ declare module "nitropack/types" {
     }
     '/api/modules': {
       'default': Simplify<Serialize<Awaited<ReturnType<typeof import('../../server/api/modules/index').default>>>>
+    }
+    '/api/profile/digest-preview': {
+      'get': Simplify<Serialize<Awaited<ReturnType<typeof import('../../server/api/profile/digest-preview.get').default>>>>
+    }
+    '/api/profile': {
+      'get': Simplify<Serialize<Awaited<ReturnType<typeof import('../../server/api/profile/index.get').default>>>>
+      'put': Simplify<Serialize<Awaited<ReturnType<typeof import('../../server/api/profile/index.put').default>>>>
     }
     '/api/releases/:id': {
       'delete': Simplify<Serialize<Awaited<ReturnType<typeof import('../../server/api/releases/[id].delete').default>>>>

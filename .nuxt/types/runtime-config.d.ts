@@ -30,6 +30,12 @@ import { RuntimeConfig as UserRuntimeConfig, PublicRuntimeConfig as UserPublicRu
       privateKey: string,
    },
 
+   oneSignal: {
+      appId: string,
+
+      apiKey: string,
+   },
+
    session: {
       name: string,
 
@@ -551,6 +557,8 @@ import { RuntimeConfig as UserRuntimeConfig, PublicRuntimeConfig as UserPublicRu
    },
   }
   interface SharedPublicRuntimeConfig {
+   appUrl: string,
+
    firebase: {
       apiKey: string,
 

@@ -3,7 +3,7 @@ import { Server } from 'node:http';
 import { resolve, dirname, join } from 'node:path';
 import crypto$1 from 'node:crypto';
 import { parentPort, threadId } from 'node:worker_threads';
-import { defineEventHandler, handleCacheHeaders, splitCookiesString, createEvent, fetchWithEvent, isEvent, eventHandler, setHeaders, createError, sendRedirect, proxyRequest, getRequestHeader, setResponseHeaders, setResponseStatus, send, getRequestHeaders, setResponseHeader, appendResponseHeader, getRequestURL, getResponseHeader, getResponseStatus, useSession, removeResponseHeader, getQuery as getQuery$1, getRequestWebStream, createApp, createRouter as createRouter$1, toNodeListener, lazyEventHandler, getRouterParam, readBody, readMultipartFormData, getHeader, getResponseStatusText } from 'file://C:/dev/bookmeqa/node_modules/h3/dist/index.mjs';
+import { defineEventHandler, handleCacheHeaders, splitCookiesString, createEvent, fetchWithEvent, isEvent, eventHandler, setHeaders, createError, sendRedirect, proxyRequest, getRequestHeader, setResponseHeaders, setResponseStatus, send, getRequestHeaders, setResponseHeader, appendResponseHeader, getRequestURL, getResponseHeader, getResponseStatus, useSession, getHeader, getQuery as getQuery$1, removeResponseHeader, getRequestWebStream, createApp, createRouter as createRouter$1, toNodeListener, lazyEventHandler, getRouterParam, readBody, readMultipartFormData, getResponseStatusText } from 'file://C:/dev/bookmeqa/node_modules/h3/dist/index.mjs';
 import { escapeHtml } from 'file://C:/dev/bookmeqa/node_modules/@vue/shared/dist/shared.cjs.js';
 import viteNodeEntry_mjs from 'file:///C:/dev/bookmeqa/node_modules/@nuxt/vite-builder/dist/vite-node-entry.mjs';
 import { viteNodeFetch } from 'file:///C:/dev/bookmeqa/node_modules/@nuxt/vite-builder/dist/vite-node.mjs';
@@ -754,6 +754,7 @@ const _inlineRuntimeConfig = {
     }
   },
   "public": {
+    "appUrl": "",
     "firebase": {
       "apiKey": "AIzaSyB9_r9Lrh5Qqf3kDep-7pGQBqtQMlN1Is4",
       "authDomain": "bookmeqa-17c96.firebaseapp.com",
@@ -7909,6 +7910,10 @@ const _inlineRuntimeConfig = {
     "clientEmail": "firebase-adminsdk-fbsvc@bookmeqa-17c96.iam.gserviceaccount.com",
     "privateKey": "-----BEGIN PRIVATE KEY-----\nMIIEvQIBADANBgkqhkiG9w0BAQEFAASCBKcwggSjAgEAAoIBAQC5tE9JPbBe3Ert\nrduiG6OhWvxbiiaU96nthXgr4fF1KjU339be8fMC/Y4U3yiAdhl5NsGrk91gaAax\nZXOSoZmpcl8seMSZyAiTR2gnj//VExxZcg9Mst4QAWO3EaZyqqrqdHY/PSCtERrY\n//jZJw9w9NbwmSXWeyOaSES6GsPgcGWQO+UZHwc8BIq7rFWnI0DB6fpSR9uDC19u\n85JQvYcQ1tQkWVSXgLknWhJ4K/12lTh+8lhm9JzdJ92pnQnp6m/rvxrQ9PLMD07Y\nbUl4x5nk76c+757r/zIAY5CSPpFlPxyq5eUHehuLZDn8PYt7vlJ/SMLskL66u1lS\nxpaUaC6bAgMBAAECggEASfGVhnzVTxhZj4VkSIrH33Z6uLpsPXHWTFkSbirD+drK\nIQr0pIZjtKOgoQfwuSINZ5oZiMfSZNJXI+jZGaBWLsX3Rp557h/b5kUPIH2yqTW4\nWpdTpz8rs+TRvzH8fHkfoEaqVOjyq2b9sT1PaawndltPgLMCgYI7vXGcSBxjNWju\nKW/7OSRz7ba+syItmdx5zl0AzGOmrDVllwXOURuBkswUJ9CQ4LEi//A1SGdmH8TE\n3biTxgOQpByrFmGx19OQxWmYWjupaF1J0xZ2l7htR0qas1ZsYVMzkmYtezn4Rjua\n+JtHmPJxkyM52EPbn2n5+pFg+xcmG2BKXKum2xQNSQKBgQDcmSWF9JMEgF9OkEV8\nKpeRvM+1lANZwHJouckvHads1lpiYsW3TF2MgcwDKcVDTOykcMlP24WfOvXFZdeo\nhJ3J4IOzigPPI3nJoO9L3Q7yFz3w0OeVQVzFQd1w9bxlRgCwoKoN4H1Z61IxHpws\nD++nphQlrvmTeqeys8RDN2SkswKBgQDXgZ1cu7CRQLaPgLd3ge4+iyel39GXLA9/\nF/qiJuYk1wyaw3U+zMXpoMzE0SEQtLpS0rEf0/2komnS+bEo2thdBwFUbv3bUscl\n3lcA41H+GdnvJwoL9GulZY2xcxXydMeKflB/oQtgzHBM3VvM60TrbFMLc+NkQvZB\n5WbGrxdSeQKBgG5nt3/ziCEYnpqTWjNqnbEy7kHSclrZFmmTkj0iekjefx3+kTXL\n4oYP8CslHLUyKr2iNR7in12yBI9nCSguN0pyM3gH+yAQgUOIaDtvx6siNr3vz/fD\nXsrazBlc441MG8xKnNGVKSd3vwsWZtMmpqshU7QIfqBxIr0te2yorJZBAoGAHA/+\nw9KU/XUl0K38Ng2vTmmkcg8hJcRRCEXBF1hlY6q1M3n8TH8xzmhoAcERwzElih9x\nfSmHv+Z+TUDCdwV4YzTEUZBacjLnR+EaBz2SsboADQpSXpgnZFRDDTZlRzs5uKkW\nJmh8KNC2VuwERjzkrptefQFMPQQTOSV8KqcmLFECgYEAxrI+LrARjz5qopDNmtFD\nT7+VShgzDv+1JIoW42nuSUslqBQEG142iHa0TqGiHaTe/mqXsZVl2QnQMUUYgDbo\njbhiyr2/MZoeFtqdUpfmk4PnLhWIIFepuSebAXGhM4BdtTKq+zkCvTNvND4y1AR9\nMsfMrPoZwuViIm5UO7DVZek=\n-----END PRIVATE KEY-----\n"
   },
+  "oneSignal": {
+    "appId": "",
+    "apiKey": ""
+  },
   "session": {
     "name": "nuxt-session",
     "password": "395aeba2c92f0d679397b9248e068907719ef17dd21f6ab7143de7a14f13e5d4",
@@ -9906,6 +9911,34 @@ function useCloudinary() {
     configured = true;
   }
   return v2;
+}
+
+function requireCronSecret(event) {
+  const config = useRuntimeConfig();
+  const authHeader = getHeader(event, "authorization");
+  const headerSecret = (authHeader == null ? void 0 : authHeader.startsWith("Bearer ")) ? authHeader.slice("Bearer ".length) : null;
+  const querySecret = getQuery$1(event).secret;
+  const providedSecret = headerSecret != null ? headerSecret : querySecret;
+  if (!providedSecret || providedSecret !== config.cronSecret) {
+    throw createError({ statusCode: 401, statusMessage: "Unauthorized" });
+  }
+}
+
+async function sendEmail({ to, subject, html }) {
+  const config = useRuntimeConfig();
+  await $fetch("https://api.onesignal.com/notifications", {
+    method: "POST",
+    headers: {
+      Authorization: `Key ${config.oneSignal.apiKey}`,
+      "Content-Type": "application/json"
+    },
+    body: {
+      app_id: config.oneSignal.appId,
+      include_email_tokens: [to],
+      email_subject: subject,
+      email_body: html
+    }
+  });
 }
 
 function useFirebaseAuth() {
@@ -13025,7 +13058,22 @@ _QjOtzdFec9AMTG8hZdSJPLlUdBq9rPB1DnY5NP3IdSQ,
 _wH6JrtIxmaSoA8lCPWFnE9z4lQeXW6H5z3l5aymEQw
 ];
 
-const assets = {};
+const assets = {
+  "/index.mjs": {
+    "type": "text/javascript; charset=utf-8",
+    "etag": "\"9f02e-z5SFczvqAjjACDLAgPnvHvAOQ9o\"",
+    "mtime": "2026-09-17T16:04:31.314Z",
+    "size": 651310,
+    "path": "index.mjs"
+  },
+  "/index.mjs.map": {
+    "type": "application/json",
+    "etag": "\"279a03-9Osn/dIKbsgFwBXbX/WdGR+Oe38\"",
+    "mtime": "2026-09-17T16:04:31.315Z",
+    "size": 2595331,
+    "path": "index.mjs.map"
+  }
+};
 
 function readAsset (id) {
   const serverDir = dirname$1(fileURLToPath(globalThis._importMeta_.url));
@@ -13231,6 +13279,20 @@ const userRepository = {
       returning *
     `;
     return rows[0];
+  },
+  // updates the editable fields on the profile page. notifications and
+  // the daily digest are on for everyone by default now, so this only
+  // ever touches the display name
+  async updateProfile(userId, fields) {
+    var _a;
+    const sql = useDb();
+    const rows = await sql`
+      update users set
+        display_name = ${fields.displayName}
+      where id = ${userId}
+      returning *
+    `;
+    return (_a = rows[0]) != null ? _a : null;
   }
 };
 
@@ -13798,10 +13860,11 @@ const _lazy_wP85gF = () => Promise.resolve().then(function () { return _id__get$
 const _lazy_nhBJU1 = () => Promise.resolve().then(function () { return _id__put$9; });
 const _lazy_UgYUTk = () => Promise.resolve().then(function () { return _id__delete$9; });
 const _lazy_msUIiR = () => Promise.resolve().then(function () { return index_post$5; });
-const _lazy_YNGQdU = () => Promise.resolve().then(function () { return index_get$3; });
+const _lazy_YNGQdU = () => Promise.resolve().then(function () { return index_get$5; });
 const _lazy_vIZD61 = () => Promise.resolve().then(function () { return index_post$3; });
 const _lazy_FjENPD = () => Promise.resolve().then(function () { return metrics_get$3; });
 const _lazy_GsDT7S = () => Promise.resolve().then(function () { return openForTestCase_get$1; });
+const _lazy_KLl63O = () => Promise.resolve().then(function () { return dailyDigest_get$1; });
 const _lazy_WE9D1T = () => Promise.resolve().then(function () { return dailySnapshot_get$1; });
 const _lazy_uWu40d = () => Promise.resolve().then(function () { return developer_get$1; });
 const _lazy_zP6TwB = () => Promise.resolve().then(function () { return metrics_get$1; });
@@ -13813,6 +13876,9 @@ const _lazy_W2z8my = () => Promise.resolve().then(function () { return me_get$1;
 const _lazy_c35owy = () => Promise.resolve().then(function () { return _id__delete$7; });
 const _lazy_YquURM = () => Promise.resolve().then(function () { return _id__put$7; });
 const _lazy_EGt_9b = () => Promise.resolve().then(function () { return index$7; });
+const _lazy_KZnO_9 = () => Promise.resolve().then(function () { return digestPreview_get$1; });
+const _lazy_2tfzWc = () => Promise.resolve().then(function () { return index_get$3; });
+const _lazy_ziAdZT = () => Promise.resolve().then(function () { return index_put$1; });
 const _lazy_RhNn_I = () => Promise.resolve().then(function () { return _id__delete$5; });
 const _lazy_oiEl05 = () => Promise.resolve().then(function () { return _id__get$1; });
 const _lazy_lNkGGq = () => Promise.resolve().then(function () { return _id__put$5; });
@@ -13847,6 +13913,7 @@ const handlers = [
   { route: '/api/bugs', handler: _lazy_vIZD61, lazy: true, middleware: false, method: "post" },
   { route: '/api/bugs/metrics', handler: _lazy_FjENPD, lazy: true, middleware: false, method: "get" },
   { route: '/api/bugs/open-for-test-case', handler: _lazy_GsDT7S, lazy: true, middleware: false, method: "get" },
+  { route: '/api/cron/daily-digest', handler: _lazy_KLl63O, lazy: true, middleware: false, method: "get" },
   { route: '/api/cron/daily-snapshot', handler: _lazy_WE9D1T, lazy: true, middleware: false, method: "get" },
   { route: '/api/dashboard/developer', handler: _lazy_uWu40d, lazy: true, middleware: false, method: "get" },
   { route: '/api/dashboard/metrics', handler: _lazy_zP6TwB, lazy: true, middleware: false, method: "get" },
@@ -13858,6 +13925,9 @@ const handlers = [
   { route: '/api/modules/:id', handler: _lazy_c35owy, lazy: true, middleware: false, method: "delete" },
   { route: '/api/modules/:id', handler: _lazy_YquURM, lazy: true, middleware: false, method: "put" },
   { route: '/api/modules', handler: _lazy_EGt_9b, lazy: true, middleware: false, method: undefined },
+  { route: '/api/profile/digest-preview', handler: _lazy_KZnO_9, lazy: true, middleware: false, method: "get" },
+  { route: '/api/profile', handler: _lazy_2tfzWc, lazy: true, middleware: false, method: "get" },
+  { route: '/api/profile', handler: _lazy_ziAdZT, lazy: true, middleware: false, method: "put" },
   { route: '/api/releases/:id', handler: _lazy_RhNn_I, lazy: true, middleware: false, method: "delete" },
   { route: '/api/releases/:id', handler: _lazy_oiEl05, lazy: true, middleware: false, method: "get" },
   { route: '/api/releases/:id', handler: _lazy_lNkGGq, lazy: true, middleware: false, method: "put" },
@@ -14593,7 +14663,7 @@ const VALID_SEVERITIES$1 = ["Critical", "High", "Medium", "Low"];
 const VALID_PRIORITIES$3 = ["High", "Medium", "Low"];
 const VALID_STATUSES$2 = ["Open", "In Progress", "Fixed", "Retest", "Closed", "Reopened"];
 const _id__put$8 = defineEventHandler(async (event) => {
-  var _a, _b, _c, _d, _e;
+  var _a, _b, _c, _d, _e, _f, _g;
   const currentUser = event.context.currentUser;
   const bugId = Number(getRouterParam(event, "id"));
   if (!bugId || Number.isNaN(bugId)) {
@@ -14646,10 +14716,11 @@ const _id__put$8 = defineEventHandler(async (event) => {
     fields.status = body.status;
     fields.last_status_change_at = (/* @__PURE__ */ new Date()).toISOString();
   }
+  let newOwner = null;
   if (body.ownerId !== void 0 && body.ownerId !== existing.owner_id) {
     if (body.ownerId !== null) {
-      const owner = await userRepository.findById(body.ownerId);
-      if (!owner) {
+      newOwner = await userRepository.findById(body.ownerId);
+      if (!newOwner) {
         throw createError({ statusCode: 404, statusMessage: "Assignee not found" });
       }
     }
@@ -14675,6 +14746,25 @@ const _id__put$8 = defineEventHandler(async (event) => {
     });
   }
   await bugRepository.update(bugId, fields);
+  if (newOwner) {
+    const bugCode = `BUG-${String(bugId).padStart(3, "0")}`;
+    const config = useRuntimeConfig();
+    const bugUrl = `${config.public.appUrl}/bugs/${bugId}`;
+    const title = (_f = fields.title) != null ? _f : existing.title;
+    const severity = (_g = fields.severity) != null ? _g : existing.severity;
+    sendEmail({
+      to: newOwner.email,
+      subject: `${bugCode} assigned to you: ${title}`,
+      html: `
+        <p>${currentUser.email} assigned you a bug.</p>
+        <p><strong>${bugCode}</strong> &mdash; ${title}</p>
+        <p>Severity: ${severity}</p>
+        <p><a href="${bugUrl}">${bugUrl}</a></p>
+      `
+    }).catch((err) => {
+      console.error(`Failed to send assignment email for bug ${bugId} to ${newOwner.email}`, err);
+    });
+  }
   return bugRepository.findByIdWithMeta(bugId);
 });
 
@@ -14745,7 +14835,7 @@ const index_post$5 = /*#__PURE__*/Object.freeze(/*#__PURE__*/Object.defineProper
   default: index_post$4
 }, Symbol.toStringTag, { value: 'Module' }));
 
-const index_get$2 = defineEventHandler(async (event) => {
+const index_get$4 = defineEventHandler(async (event) => {
   const query = getQuery$1(event);
   return bugRepository.list({
     moduleId: query.moduleId ? Number(query.moduleId) : void 0,
@@ -14755,9 +14845,9 @@ const index_get$2 = defineEventHandler(async (event) => {
   });
 });
 
-const index_get$3 = /*#__PURE__*/Object.freeze(/*#__PURE__*/Object.defineProperty({
+const index_get$5 = /*#__PURE__*/Object.freeze(/*#__PURE__*/Object.defineProperty({
   __proto__: null,
-  default: index_get$2
+  default: index_get$4
 }, Symbol.toStringTag, { value: 'Module' }));
 
 const moduleRepository = {
@@ -15222,15 +15312,87 @@ const dashboardRepository = {
   }
 };
 
-const dailySnapshot_get = defineEventHandler(async (event) => {
+const dailyDigest_get = defineEventHandler(async (event) => {
+  requireCronSecret(event);
   const config = useRuntimeConfig();
-  const authHeader = getHeader(event, "authorization");
-  const headerSecret = (authHeader == null ? void 0 : authHeader.startsWith("Bearer ")) ? authHeader.slice("Bearer ".length) : null;
-  const querySecret = getQuery$1(event).secret;
-  const providedSecret = headerSecret != null ? headerSecret : querySecret;
-  if (!providedSecret || providedSecret !== config.cronSecret) {
-    throw createError({ statusCode: 401, statusMessage: "Unauthorized" });
+  const appUrl = config.public.appUrl;
+  const today = (/* @__PURE__ */ new Date()).toISOString().slice(0, 10);
+  const users = await userRepository.listActive();
+  const developers = users.filter((u) => u.role === "Developer");
+  const leads = users.filter((u) => u.role === "QA Lead" || u.role === "Admin");
+  let sent = 0;
+  let skipped = 0;
+  let failed = 0;
+  for (const dev of developers) {
+    try {
+      const summary = await dashboardRepository.getDeveloperSummary(dev.id);
+      const hasActivity = summary.my_open_bugs > 0 || summary.resolved_today > 0;
+      if (!hasActivity) {
+        skipped += 1;
+        continue;
+      }
+      const bugs = await dashboardRepository.getDeveloperBugs(dev.id, 10);
+      const bugListHtml = bugs.map((b) => {
+        const bugCode = `BUG-${String(b.id).padStart(3, "0")}`;
+        return `<li><a href="${appUrl}/bugs/${b.id}">${bugCode}</a> &mdash; ${b.title} (${b.severity}, ${b.status})</li>`;
+      }).join("");
+      await sendEmail({
+        to: dev.email,
+        subject: `Your daily bug digest: ${summary.my_open_bugs} open`,
+        html: `
+          <p>Here's where your bugs stand today.</p>
+          <ul>
+            <li>Open bugs: ${summary.my_open_bugs}</li>
+            <li>Critical/High open: ${summary.critical_high_open}</li>
+            <li>Pending verification: ${summary.pending_retest}</li>
+            <li>Resolved today: ${summary.resolved_today}</li>
+          </ul>
+          ${bugListHtml ? `<p>Your open bugs:</p><ul>${bugListHtml}</ul>` : ""}
+        `
+      });
+      sent += 1;
+    } catch (err) {
+      failed += 1;
+      console.error(`Failed to send daily digest to developer ${dev.id} (${dev.email})`, err);
+    }
   }
+  for (const lead of leads) {
+    try {
+      const metrics = await dashboardRepository.getSnapshotMetrics(null, null);
+      const passRate = await dashboardRepository.getPassRate(today, today, null, null);
+      const hasActivity = metrics.open_bugs > 0 || passRate.total_executions > 0;
+      if (!hasActivity) {
+        skipped += 1;
+        continue;
+      }
+      await sendEmail({
+        to: lead.email,
+        subject: `Project daily digest: ${metrics.open_bugs} open bugs`,
+        html: `
+          <p>Project summary for today.</p>
+          <ul>
+            <li>Open bugs: ${metrics.open_bugs}</li>
+            <li>Open Critical/High: ${metrics.open_critical_high}</li>
+            <li>Today's pass rate: ${passRate.pass_rate}% (${passRate.passed_executions}/${passRate.total_executions})</li>
+          </ul>
+        `
+      });
+      sent += 1;
+    } catch (err) {
+      failed += 1;
+      console.error(`Failed to send daily digest to lead ${lead.id} (${lead.email})`, err);
+    }
+  }
+  return { sent, skipped, failed };
+});
+
+const dailyDigest_get$1 = /*#__PURE__*/Object.freeze(/*#__PURE__*/Object.defineProperty({
+  __proto__: null,
+  default: dailyDigest_get
+}, Symbol.toStringTag, { value: 'Module' }));
+
+const dailySnapshot_get = defineEventHandler(async (event) => {
+  requireCronSecret(event);
   const sql = useDb();
   const metricDate = (/* @__PURE__ */ new Date()).toISOString().slice(0, 10);
   const moduleRows = await sql`select id from modules`;
@@ -15988,6 +16150,85 @@ const index$6 = defineEventHandler(async (event) => {
 const index$7 = /*#__PURE__*/Object.freeze(/*#__PURE__*/Object.defineProperty({
   __proto__: null,
   default: index$6
+}, Symbol.toStringTag, { value: 'Module' }));
+
+const digestPreview_get = defineEventHandler(async (event) => {
+  const currentUser = event.context.currentUser;
+  const today = (/* @__PURE__ */ new Date()).toISOString().slice(0, 10);
+  if (currentUser.role === "Developer") {
+    const summary = await dashboardRepository.getDeveloperSummary(currentUser.id);
+    const bugs = await dashboardRepository.getDeveloperBugs(currentUser.id, 10);
+    return {
+      scope: "developer",
+      openBugs: summary.my_open_bugs,
+      criticalHighOpen: summary.critical_high_open,
+      pendingRetest: summary.pending_retest,
+      resolvedToday: summary.resolved_today,
+      bugs: bugs.map((b) => ({
+        id: b.id,
+        code: `BUG-${String(b.id).padStart(3, "0")}`,
+        title: b.title,
+        severity: b.severity,
+        status: b.status
+      }))
+    };
+  }
+  const metrics = await dashboardRepository.getSnapshotMetrics(null, null);
+  const passRate = await dashboardRepository.getPassRate(today, today, null, null);
+  return {
+    scope: "lead",
+    openBugs: metrics.open_bugs,
+    openCriticalHigh: metrics.open_critical_high,
+    passRate: passRate.pass_rate,
+    passedExecutions: passRate.passed_executions,
+    totalExecutions: passRate.total_executions
+  };
+});
+
+const digestPreview_get$1 = /*#__PURE__*/Object.freeze(/*#__PURE__*/Object.defineProperty({
+  __proto__: null,
+  default: digestPreview_get
+}, Symbol.toStringTag, { value: 'Module' }));
+
+const index_get$2 = defineEventHandler(async (event) => {
+  const currentUser = event.context.currentUser;
+  const user = await userRepository.findById(currentUser.id);
+  if (!user) {
+    throw createError({ statusCode: 404, statusMessage: "User not found" });
+  }
+  return {
+    id: user.id,
+    email: user.email,
+    role: user.role,
+    displayName: user.display_name
+  };
+});
+
+const index_get$3 = /*#__PURE__*/Object.freeze(/*#__PURE__*/Object.defineProperty({
+  __proto__: null,
+  default: index_get$2
+}, Symbol.toStringTag, { value: 'Module' }));
+
+const index_put = defineEventHandler(async (event) => {
+  var _a;
+  const currentUser = event.context.currentUser;
+  const body = await readBody(event);
+  const displayName = ((_a = body == null ? void 0 : body.displayName) == null ? void 0 : _a.trim()) || null;
+  const updated = await userRepository.updateProfile(currentUser.id, { displayName });
+  if (!updated) {
+    throw createError({ statusCode: 404, statusMessage: "User not found" });
+  }
+  return {
+    id: updated.id,
+    email: updated.email,
+    role: updated.role,
+    displayName: updated.display_name
+  };
+});
+
+const index_put$1 = /*#__PURE__*/Object.freeze(/*#__PURE__*/Object.defineProperty({
+  __proto__: null,
+  default: index_put
 }, Symbol.toStringTag, { value: 'Module' }));
 
 const _id__delete$4 = defineEventHandler(async (event) => {

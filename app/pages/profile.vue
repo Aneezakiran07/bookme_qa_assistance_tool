@@ -1,9 +1,9 @@
 <script setup lang="ts">
-// personal settings page: display name plus the two notification
-// toggles planned for the email feature. this only reads/writes
-// /api/profile, the OneSignal sending logic itself is wired up
-// separately once that work is ready, these toggles just persist intent
-// for now.
+// personal profile page: display name plus a permanent, read only
+// preview of the daily digest content for this user. notifications and
+// digests are on for everyone by default now, so there is nothing left
+// to toggle here, the page just shows who you are and what your next
+// digest will contain.
 definePageMeta({ layout: 'default' })
 
 interface ProfileData {
@@ -11,39 +11,51 @@ interface ProfileData {
   email: string
   role: string
   displayName: string | null
-  emailNotifications: boolean
-  dailyDigestEnabled: boolean
 }
+
+interface DigestBugRow {
+  id: number
+  code: string
+  title: string
+  severity: string
+  status: string
+}
+
+interface DeveloperDigest {
+  scope: 'developer'
+  openBugs: number
+  criticalHighOpen: number
+  pendingRetest: number
+  resolvedToday: number
+  bugs: DigestBugRow[]
+}
+
+interface LeadDigest {
+  scope: 'lead'
+  openBugs: number
+  openCriticalHigh: number
+  passRate: number
+  passedExecutions: number
+  totalExecutions: number
+}
+
+type DigestPreview = DeveloperDigest | LeadDigest
 
 const toast = useToast()
 
 const { data, pending: loadingProfile } = await useFetch<ProfileData>('/api/profile')
+const { data: digest, pending: loadingDigest } = await useFetch<DigestPreview>('/api/profile/digest-preview')
 
 const displayName = ref('')
-const emailNotifications = ref(true)
-const dailyDigestEnabled = ref(true)
 
 watchEffect(() => {
   if (!data.value) return
   displayName.value = data.value.displayName ?? ''
-  emailNotifications.value = data.value.emailNotifications
-  dailyDigestEnabled.value = data.value.dailyDigestEnabled
-})
-
-// daily digests only make sense if email notifications are on at all,
-// so turning the master toggle off also turns the digest off, and the
-// digest toggle is disabled while the master toggle is off
-watch(emailNotifications, (enabled) => {
-  if (!enabled) dailyDigestEnabled.value = false
 })
 
 const dirty = computed(() => {
   if (!data.value) return false
-  return (
-    displayName.value.trim() !== (data.value.displayName ?? '') ||
-    emailNotifications.value !== data.value.emailNotifications ||
-    dailyDigestEnabled.value !== data.value.dailyDigestEnabled
-  )
+  return displayName.value.trim() !== (data.value.displayName ?? '')
 })
 
 const initials = computed(() => {
@@ -61,9 +73,7 @@ async function saveProfile() {
     const updated = await $fetch<ProfileData>('/api/profile', {
       method: 'PUT',
       body: {
-        displayName: displayName.value.trim() || null,
-        emailNotifications: emailNotifications.value,
-        dailyDigestEnabled: dailyDigestEnabled.value
+        displayName: displayName.value.trim() || null
       }
     })
     data.value = updated
@@ -142,48 +152,85 @@ async function saveProfile() {
       </div>
     </section>
 
-    <!-- notification preferences -->
+    <!-- daily digest preview -->
     <section
       class="rounded-lg border border-gray-200 bg-white p-6 dark:border-zinc-800 dark:bg-black"
     >
       <h2 class="mb-1 text-base font-semibold text-gray-900 dark:text-white">
-        Notification preferences
+        Your daily digest
       </h2>
       <p class="mb-5 text-xs text-gray-400 dark:text-zinc-500">
-        Controls what gets emailed to you. Sending isn't live yet, so nothing goes out until that's turned on.
+        Emailed to you once a day. This is a live preview of what tonight's digest looks like right now.
       </p>
 
-      <div class="space-y-4">
-        <div class="flex items-center justify-between gap-4">
-          <div class="min-w-0">
-            <p class="text-sm font-medium text-gray-900 dark:text-white">
-              Email notifications
-            </p>
-            <p class="text-xs text-gray-400 dark:text-zinc-500">
-              Get emailed when a bug is assigned to you.
-            </p>
+      <div v-if="loadingDigest" class="text-sm text-gray-500 dark:text-zinc-400">
+        Loading digest preview...
+      </div>
+
+      <template v-else-if="digest?.scope === 'developer'">
+        <div class="grid grid-cols-2 gap-3 sm:grid-cols-4">
+          <div class="rounded-md border border-gray-200 p-3 dark:border-zinc-800">
+            <p class="text-xs text-gray-400 dark:text-zinc-500">Open bugs</p>
+            <p class="text-xl font-semibold text-gray-900 dark:text-white">{{ digest.openBugs }}</p>
           </div>
-          <ToggleSwitch v-model="emailNotifications" />
+          <div class="rounded-md border border-gray-200 p-3 dark:border-zinc-800">
+            <p class="text-xs text-gray-400 dark:text-zinc-500">Critical/High open</p>
+            <p class="text-xl font-semibold text-gray-900 dark:text-white">{{ digest.criticalHighOpen }}</p>
+          </div>
+          <div class="rounded-md border border-gray-200 p-3 dark:border-zinc-800">
+            <p class="text-xs text-gray-400 dark:text-zinc-500">Pending verification</p>
+            <p class="text-xl font-semibold text-gray-900 dark:text-white">{{ digest.pendingRetest }}</p>
+          </div>
+          <div class="rounded-md border border-gray-200 p-3 dark:border-zinc-800">
+            <p class="text-xs text-gray-400 dark:text-zinc-500">Resolved today</p>
+            <p class="text-xl font-semibold text-gray-900 dark:text-white">{{ digest.resolvedToday }}</p>
+          </div>
         </div>
 
-        <div class="flex items-center justify-between gap-4">
-          <div class="min-w-0">
-            <p
-              class="text-sm font-medium text-gray-900 dark:text-white"
-              :class="{ 'opacity-50': !emailNotifications }"
+        <div v-if="digest.bugs.length" class="mt-5">
+          <p class="mb-2 text-xs font-medium text-gray-600 dark:text-zinc-300">Your open bugs</p>
+          <ul class="space-y-2">
+            <li
+              v-for="bug in digest.bugs"
+              :key="bug.id"
+              class="flex items-center justify-between gap-3 rounded-md border border-gray-200 px-3 py-2 dark:border-zinc-800"
             >
-              Daily digest
-            </p>
-            <p
-              class="text-xs text-gray-400 dark:text-zinc-500"
-              :class="{ 'opacity-50': !emailNotifications }"
-            >
-              A once-a-day summary of your open bugs and today's activity.
+              <div class="min-w-0">
+                <p class="truncate text-sm text-gray-900 dark:text-white">
+                  <span class="font-mono text-xs text-gray-400 dark:text-zinc-500">{{ bug.code }}</span>
+                  {{ bug.title }}
+                </p>
+              </div>
+              <StatusBadge :status="bug.status" size="sm" />
+            </li>
+          </ul>
+        </div>
+        <p v-else class="mt-5 text-sm text-gray-400 dark:text-zinc-500">
+          Nothing open right now, so tonight's digest would just be the summary above.
+        </p>
+      </template>
+
+      <template v-else-if="digest?.scope === 'lead'">
+        <div class="grid grid-cols-2 gap-3 sm:grid-cols-3">
+          <div class="rounded-md border border-gray-200 p-3 dark:border-zinc-800">
+            <p class="text-xs text-gray-400 dark:text-zinc-500">Open bugs</p>
+            <p class="text-xl font-semibold text-gray-900 dark:text-white">{{ digest.openBugs }}</p>
+          </div>
+          <div class="rounded-md border border-gray-200 p-3 dark:border-zinc-800">
+            <p class="text-xs text-gray-400 dark:text-zinc-500">Open Critical/High</p>
+            <p class="text-xl font-semibold text-gray-900 dark:text-white">{{ digest.openCriticalHigh }}</p>
+          </div>
+          <div class="rounded-md border border-gray-200 p-3 dark:border-zinc-800">
+            <p class="text-xs text-gray-400 dark:text-zinc-500">Today's pass rate</p>
+            <p class="text-xl font-semibold text-gray-900 dark:text-white">
+              {{ digest.passRate }}%
+              <span class="text-xs font-normal text-gray-400 dark:text-zinc-500">
+                ({{ digest.passedExecutions }}/{{ digest.totalExecutions }})
+              </span>
             </p>
           </div>
-          <ToggleSwitch v-model="dailyDigestEnabled" :disabled="!emailNotifications" />
         </div>
-      </div>
+      </template>
     </section>
 
     <div class="flex justify-end">

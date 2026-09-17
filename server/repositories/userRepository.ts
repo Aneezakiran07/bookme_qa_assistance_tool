@@ -132,19 +132,17 @@ export const userRepository = {
     return rows[0] as UserRecord
   },
 
-  // updates the editable fields on the profile page: display name plus
-  // the two notification toggles, in one call so the page can save
-  // everything together instead of firing off three separate requests
+  // updates the editable fields on the profile page. notifications and
+  // the daily digest are on for everyone by default now, so this only
+  // ever touches the display name
   async updateProfile(
     userId: number,
-    fields: { displayName: string | null; emailNotifications: boolean; dailyDigestEnabled: boolean }
+    fields: { displayName: string | null }
   ): Promise<UserRecord | null> {
     const sql = useDb()
     const rows = await sql`
       update users set
-        display_name = ${fields.displayName},
-        email_notifications = ${fields.emailNotifications},
-        daily_digest_enabled = ${fields.dailyDigestEnabled}
+        display_name = ${fields.displayName}
       where id = ${userId}
       returning *
     `
