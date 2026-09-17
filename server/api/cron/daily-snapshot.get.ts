@@ -26,18 +26,10 @@
 
 import { useDb } from '~~/server/db/client'
 import { dashboardRepository } from '~~/server/repositories/dashboardRepository'
+import { requireCronSecret } from '~~/server/utils/cronAuth'
 
 export default defineEventHandler(async (event) => {
-  const config = useRuntimeConfig()
-
-  const authHeader = getHeader(event, 'authorization')
-  const headerSecret = authHeader?.startsWith('Bearer ') ? authHeader.slice('Bearer '.length) : null
-  const querySecret = getQuery(event).secret as string | undefined
-  const providedSecret = headerSecret ?? querySecret
-
-  if (!providedSecret || providedSecret !== config.cronSecret) {
-    throw createError({ statusCode: 401, statusMessage: 'Unauthorized' })
-  }
+  requireCronSecret(event)
 
   const sql = useDb()
   const metricDate = new Date().toISOString().slice(0, 10)

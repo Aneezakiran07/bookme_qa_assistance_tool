@@ -2,6 +2,7 @@ import { bugRepository } from '~~/server/repositories/bugRepository'
 import { userRepository } from '~~/server/repositories/userRepository'
 import { bugStatusHistoryRepository } from '~~/server/repositories/bugStatusHistoryRepository'
 import { bugAssignmentLogRepository } from '~~/server/repositories/bugAssignmentLogRepository'
+import { sendEmail } from '~~/server/utils/email'
 
 const VALID_SEVERITIES = ['Critical', 'High', 'Medium', 'Low']
 const VALID_PRIORITIES = ['High', 'Medium', 'Low']
@@ -90,10 +91,11 @@ export default defineEventHandler(async (event) => {
   // reassignment is audited in bug_assignment_log with the bug's severity
   // at the moment of assignment, so historical severity isn't lost if the
   // bug's severity changes later
+  let newOwner: Awaited<ReturnType<typeof userRepository.findById>> = null
   if (body.ownerId !== undefined && body.ownerId !== existing.owner_id) {
     if (body.ownerId !== null) {
-      const owner = await userRepository.findById(body.ownerId)
-      if (!owner) {
+      newOwner = await userRepository.findById(body.ownerId)
+      if (!newOwner) {
         throw createError({ statusCode: 404, statusMessage: 'Assignee not found' })
       }
     }
@@ -123,5 +125,29 @@ export default defineEventHandler(async (event) => {
   }
 
   await bugRepository.update(bugId, fields as any)
+
+  if (newOwner) {
+    const bugCode = `BUG-${String(bugId).padStart(3, '0')}`
+    const config = useRuntimeConfig()
+    const bugUrl = `${config.public.appUrl}/bugs/${bugId}`
+    const title = (fields.title as string) ?? existing.title
+    const severity = (fields.severity as string) ?? existing.severity
+
+    // fire and forget: a failed email should never turn a successful
+    // reassignment into a 500 for the person doing the assigning
+    sendEmail({
+      to: newOwner.email,
+      subject: `${bugCode} assigned to you: ${title}`,
+      html: `
+        <p>${currentUser.email} assigned you a bug.</p>
+        <p><strong>${bugCode}</strong> &mdash; ${title}</p>
+        <p>Severity: ${severity}</p>
+        <p><a href="${bugUrl}">${bugUrl}</a></p>
+      `
+    }).catch((err) => {
+      console.error(`Failed to send assignment email for bug ${bugId} to ${newOwner!.email}`, err)
+    })
+  }
+
   return bugRepository.findByIdWithMeta(bugId)
 })

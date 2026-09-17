@@ -26,7 +26,7 @@ const projectLinks = computed<NavLink[]>(() => {
   if (isDeveloper.value) {
     return [
       { label: 'Dashboard', to: '/', icon: 'pi pi-home' },
-      { label: 'Bugs Management', to: '/developer/bugs', icon: 'pi pi-inbox' },
+      { label: 'Bugs Directory', to: '/developer/bugs', icon: 'pi pi-inbox' },
     ]
   }
   return [
@@ -136,7 +136,11 @@ async function handleLogout() {
 
     <!-- user profile -->
     <div class="border-t border-gray-200 p-3 dark:border-zinc-800">
-      <div class="flex items-center gap-3 rounded-md px-2 py-2">
+      <NuxtLink
+        to="/profile"
+        class="flex items-center gap-3 rounded-md px-2 py-2 transition-colors hover:bg-gray-100 dark:hover:bg-zinc-900"
+        active-class="!bg-purple-600/10"
+      >
         <div
           class="flex h-9 w-9 shrink-0 items-center justify-center rounded-full
                  bg-purple-600 text-xs font-semibold text-white"
@@ -160,11 +164,11 @@ async function handleLogout() {
           class="shrink-0 rounded-md p-1.5 text-gray-400 transition-colors
                  hover:bg-gray-100 hover:text-gray-600
                  dark:text-zinc-500 dark:hover:bg-zinc-900 dark:hover:text-zinc-300"
-          @click="handleLogout"
+          @click.prevent="handleLogout"
         >
           <i class="pi pi-sign-out text-sm" />
         </button>
-      </div>
+      </NuxtLink>
     </div>
   </aside>
 </template>

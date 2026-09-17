@@ -7,6 +7,9 @@ export interface UserRecord {
   role: 'Pending' | 'Admin' | 'QA Lead' | 'Tester' | 'Developer'
   active: boolean
   created_at: string
+  display_name: string | null
+  email_notifications: boolean
+  daily_digest_enabled: boolean
 }
 
 // this file is the only place that talks to the users table directly
@@ -127,5 +130,24 @@ export const userRepository = {
       returning *
     `
     return rows[0] as UserRecord
+  },
+
+  // updates the editable fields on the profile page: display name plus
+  // the two notification toggles, in one call so the page can save
+  // everything together instead of firing off three separate requests
+  async updateProfile(
+    userId: number,
+    fields: { displayName: string | null; emailNotifications: boolean; dailyDigestEnabled: boolean }
+  ): Promise<UserRecord | null> {
+    const sql = useDb()
+    const rows = await sql`
+      update users set
+        display_name = ${fields.displayName},
+        email_notifications = ${fields.emailNotifications},
+        daily_digest_enabled = ${fields.dailyDigestEnabled}
+      where id = ${userId}
+      returning *
+    `
+    return (rows[0] as UserRecord) ?? null
   }
 }

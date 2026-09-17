@@ -88,10 +88,15 @@ export default defineNuxtConfig({
       clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
       privateKey: process.env.FIREBASE_PRIVATE_KEY,
     },
+    oneSignal: {
+      appId: process.env.ONESIGNAL_APP_ID,
+      apiKey: process.env.ONESIGNAL_REST_API_KEY,
+    },
     session: {
       password: process.env.NUXT_SESSION_PASSWORD,
     },
     public: {
+      appUrl: process.env.APP_URL,
       firebase: {
         apiKey: process.env.NUXT_PUBLIC_FIREBASE_API_KEY,
         authDomain: process.env.NUXT_PUBLIC_FIREBASE_AUTH_DOMAIN,
