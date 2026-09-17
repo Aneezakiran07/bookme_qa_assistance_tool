@@ -20,7 +20,7 @@ interface TestCaseState {
   latest_result: string | null
   last_executed_at: string | null
   last_executed_by_email: string | null
-  latest_notes: string | null
+  latest_actual_result: string | null
   executions_count: number
 }
 
@@ -80,13 +80,13 @@ watchEffect(() => {
 
 // -- execution form --
 const form = reactive({
-  notes: ''
+  actual_result: ''
 })
 
 watch(
   () => selectedTestCase.value?.id,
   () => {
-    form.notes = ''
+    form.actual_result = ''
   }
 )
 
@@ -124,7 +124,7 @@ async function submitResult(result: 'Pass' | 'Fail' | 'Blocked') {
         testCaseId: selectedTestCase.value.id,
         releaseId: release.value.id,
         result,
-        notes: form.notes || null
+        actualResult: form.actual_result || null
       }
     })
 
@@ -141,7 +141,7 @@ async function submitResult(result: 'Pass' | 'Fail' | 'Blocked') {
       logBugModalOpen.value = true
     }
 
-    form.notes = ''
+    form.actual_result = ''
     await refresh()
   } catch (error) {
     toast.add({
@@ -367,10 +367,10 @@ function statusKey(latest: string | null): string {
 
             <div>
               <label class="mb-1.5 block text-xs font-medium text-gray-600 dark:text-zinc-300">
-                Notes (optional)
+                Actual Result (optional)
               </label>
               <textarea
-                v-model="form.notes"
+                v-model="form.actual_result"
                 rows="3"
                 placeholder="Environment, observed behavior, or anything worth capturing with this run..."
                 class="w-full resize-y rounded-md border border-black/10 bg-transparent p-3 text-sm

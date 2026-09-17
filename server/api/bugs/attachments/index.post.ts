@@ -38,6 +38,7 @@ export default defineEventHandler(async (event) => {
     uploadResult.secure_url,
     uploadResult.public_id,
     fileType,
-    currentUser.id
+    currentUser.id,
+    currentUser.role
   )
 })

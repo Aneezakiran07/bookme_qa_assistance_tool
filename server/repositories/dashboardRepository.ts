@@ -307,7 +307,7 @@ export const dashboardRepository = {
     const sql = useDb()
     const rows = await sql`
       select
-        te.id, te.result, te.execution_date, te.notes,
+        te.id, te.result, te.execution_date, te.actual_result,
         tc.title as test_case_title,
         m.name as module_name,
         u.email as executed_by_email,

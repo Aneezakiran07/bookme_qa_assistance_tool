@@ -14,12 +14,13 @@ export const bugAttachmentRepository = {
     fileUrl: string,
     publicId: string,
     fileType: 'image' | 'video',
-    uploadedBy: number
+    uploadedBy: number,
+    uploadedByRole: string
   ) {
     const sql = useDb()
     const rows = await sql`
-      insert into bug_attachments (bug_id, file_url, public_id, file_type, uploaded_by)
-      values (${bugId}, ${fileUrl}, ${publicId}, ${fileType}, ${uploadedBy})
+      insert into bug_attachments (bug_id, file_url, public_id, file_type, uploaded_by, uploaded_by_role)
+      values (${bugId}, ${fileUrl}, ${publicId}, ${fileType}, ${uploadedBy}, ${uploadedByRole})
       returning *
     `
     return rows[0]

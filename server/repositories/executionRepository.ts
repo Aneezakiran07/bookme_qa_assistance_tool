@@ -7,7 +7,7 @@ export interface ExecutionRecord {
   result: 'Pass' | 'Fail' | 'Blocked' | 'Not Run'
   executed_by: number
   execution_date: string
-  notes: string | null
+  actual_result: string | null
   test_case_title_snapshot: string | null
   steps_snapshot: string | null
   expected_result_snapshot: string | null
@@ -25,7 +25,7 @@ export interface TestCaseExecutionState {
   latest_result: string | null
   last_executed_at: string | null
   last_executed_by_email: string | null
-  latest_notes: string | null
+  latest_actual_result: string | null
   executions_count: number
 }
 
@@ -40,7 +40,7 @@ export const executionRepository = {
     const rows = await sql`
       with latest as (
         select distinct on (test_case_id)
-          test_case_id, result, execution_date, notes, executed_by
+          test_case_id, result, execution_date, actual_result, executed_by
         from test_executions
         where release_id = ${releaseId}
         order by test_case_id, execution_date desc
@@ -62,7 +62,7 @@ export const executionRepository = {
         m.name as module_name,
         l.result as latest_result,
         l.execution_date as last_executed_at,
-        l.notes as latest_notes,
+        l.actual_result as latest_actual_result,
         u.email as last_executed_by_email,
         coalesce(c.cnt, 0) as executions_count
       from test_case_release_links trl
@@ -87,7 +87,7 @@ export const executionRepository = {
     testCaseId: number
     releaseId: number
     result: 'Pass' | 'Fail' | 'Blocked' | 'Not Run'
-    notes: string | null
+    actualResult: string | null
     executedBy: number
     testCaseTitleSnapshot: string
     stepsSnapshot: string | null
@@ -96,11 +96,11 @@ export const executionRepository = {
     const sql = useDb()
     const rows = await sql`
       insert into test_executions (
-        test_case_id, release_id, result, notes, executed_by,
+        test_case_id, release_id, result, actual_result, executed_by,
         test_case_title_snapshot, steps_snapshot, expected_result_snapshot
       )
       values (
-        ${input.testCaseId}, ${input.releaseId}, ${input.result}, ${input.notes}, ${input.executedBy},
+        ${input.testCaseId}, ${input.releaseId}, ${input.result}, ${input.actualResult}, ${input.executedBy},
         ${input.testCaseTitleSnapshot}, ${input.stepsSnapshot}, ${input.expectedResultSnapshot}
       )
       returning *

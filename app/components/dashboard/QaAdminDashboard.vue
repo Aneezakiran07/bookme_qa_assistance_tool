@@ -53,7 +53,7 @@ interface DashboardResponse {
     id: number
     result: string
     execution_date: string
-    notes: string | null
+    actual_result: string | null
     test_case_title: string
     module_name: string
     executed_by_email: string

@@ -12,6 +12,7 @@ export interface BugRecord {
   linked_test_case_id: number | null
   release_id: number | null
   steps_to_reproduce: string | null
+  dev_notes: string | null
   reported_by: number | null
   reported_at: string
   last_status_change_at: string
@@ -19,6 +20,7 @@ export interface BugRecord {
 }
 
 export interface BugWithMeta extends BugRecord {
+  bug_code?: string
   module_name: string
   owner_email: string | null
   reported_by_email: string | null
@@ -35,19 +37,12 @@ export interface BugFilters {
   releaseId?: number
 }
 
-export type DeveloperBugScope = 'mine' | 'blockers' | 'pending' | 'team'
+export type DeveloperBugScope = 'mine' | 'reported' | 'team'
 
 export interface DeveloperBugFilters {
   moduleId?: number
   severity?: string
   status?: string
-}
-
-export interface DeveloperBugCounts {
-  mine: number
-  blockers: number
-  pending: number
-  team: number
 }
 
 export interface BugMetrics {
@@ -146,13 +141,18 @@ export const bugRepository = {
     filters: DeveloperBugFilters = {}
   ): Promise<BugWithMeta[]> {
     const sql = useDb()
-    // only "mine" / "blockers" / "pending" are restricted to this
-    // developer's own bugs -- "team" intentionally sees everyone's
-    const scopeOwnerId = scope === 'team' ? null : userId
+    // "mine" is restricted to bugs owned by this developer, "reported" to
+    // bugs this developer filed themselves, and "team" intentionally sees
+    // everyone's -- severity/status are now plain optional equality
+    // filters layered on top of whichever scope is active, same as
+    // moduleId already was, rather than scope-specific baked-in clauses
+    const scopeOwnerId = scope === 'mine' ? userId : null
+    const scopeReportedBy = scope === 'reported' ? userId : null
 
     const rows = await sql`
       select
         b.*,
+        'BUG-' || lpad(b.id::text, 3, '0') as bug_code,
         m.name as module_name,
         owner.email as owner_email,
         reporter.email as reported_by_email,
@@ -169,33 +169,13 @@ export const bugRepository = {
       where
         b.archived = false
         and (${scopeOwnerId}::int is null or b.owner_id = ${scopeOwnerId}::int)
-        and (${scope} != 'mine' or b.status != 'Closed')
-        and (${scope} != 'blockers' or (b.status != 'Closed' and b.severity in ('Critical', 'High')))
-        and (${scope} != 'pending' or b.status in ('Fixed', 'Retest'))
+        and (${scopeReportedBy}::int is null or b.reported_by = ${scopeReportedBy}::int)
         and (${filters.moduleId ?? null}::int is null or b.module_id = ${filters.moduleId ?? null}::int)
         and (${filters.severity ?? null}::text is null or b.severity = ${filters.severity ?? null}::text)
         and (${filters.status ?? null}::text is null or b.status = ${filters.status ?? null}::text)
       order by b.reported_at desc
     `
     return rows as BugWithMeta[]
-  },
-
-  // counts for all 4 quick-filter tabs at once, regardless of which one
-  // is currently selected, so the tab labels always show live totals
-  async developerCounts(userId: number): Promise<DeveloperBugCounts> {
-    const sql = useDb()
-    const rows = await sql`
-      select
-        count(*) filter (where owner_id = ${userId} and status != 'Closed')::int as mine,
-        count(*) filter (
-          where owner_id = ${userId} and status != 'Closed' and severity in ('Critical', 'High')
-        )::int as blockers,
-        count(*) filter (where owner_id = ${userId} and status in ('Fixed', 'Retest'))::int as pending,
-        count(*)::int as team
-      from bugs
-      where archived = false
-    `
-    return rows[0] as DeveloperBugCounts
   },
 
   // used by the Log Bug flow to catch duplicates: if a test case already
@@ -240,6 +220,7 @@ export const bugRepository = {
     linked_test_case_id: number | null
     release_id: number | null
     steps_to_reproduce: string | null
+    dev_notes: string | null
     last_status_change_at: string
   }>): Promise<BugRecord | null> {
     const sql = useDb()

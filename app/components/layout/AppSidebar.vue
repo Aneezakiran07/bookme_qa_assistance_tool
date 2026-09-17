@@ -26,7 +26,7 @@ const projectLinks = computed<NavLink[]>(() => {
   if (isDeveloper.value) {
     return [
       { label: 'Dashboard', to: '/', icon: 'pi pi-home' },
-      { label: 'My Bugs', to: '/developer/bugs', icon: 'pi pi-inbox' },
+      { label: 'Bugs Management', to: '/developer/bugs', icon: 'pi pi-inbox' },
     ]
   }
   return [
@@ -34,7 +34,7 @@ const projectLinks = computed<NavLink[]>(() => {
     { label: 'Requirements', to: '/requirements', icon: 'pi pi-file-check' },
     { label: 'Test Cases', to: '/test-cases', icon: 'pi pi-list-check' },
     { label: 'Test Executions', to: '/executions', icon: 'pi pi-play-circle' },
-    { label: 'Bugs', to: '/bugs', icon: 'pi pi-bug' },
+    { label: 'Bugs', to: '/bugs', icon: 'pi pi-exclamation-triangle' },
   ]
 })
 

@@ -40,7 +40,7 @@ export interface ReleaseExecutionHistoryRow {
   result: 'Pass' | 'Fail' | 'Blocked' | 'Not Run'
   executed_by_email: string | null
   execution_date: string
-  notes: string | null
+  actual_result: string | null
 }
 
 export const releaseRepository = {
@@ -167,7 +167,7 @@ export const releaseRepository = {
         te.result,
         u.email as executed_by_email,
         te.execution_date,
-        te.notes
+        te.actual_result
       from test_executions te
       left join users u on u.id = te.executed_by
       where te.release_id = ${releaseId}
@@ -250,5 +250,5 @@ export const releaseRepository = {
         on conflict do nothing
       `
     }
-  }//
+  }
 }

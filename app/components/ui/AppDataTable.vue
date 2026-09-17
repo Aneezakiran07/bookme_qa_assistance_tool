@@ -34,6 +34,9 @@ const props = withDefaults(
     searchPlaceholder?: string
     emptyMessage?: string
     dataKey?: string
+    // header text for the actions column, when the actions slot is used.
+    // defaults to blank (matching current behavior) when omitted
+    actionsHeader?: string
   }>(),
   {
     loading: false,
@@ -41,7 +44,8 @@ const props = withDefaults(
     searchable: true,
     searchPlaceholder: 'Search...',
     emptyMessage: 'No records found.',
-    dataKey: 'id'
+    dataKey: 'id',
+    actionsHeader: ''
   }
 )
 
@@ -146,7 +150,12 @@ function resolveSortField(col: AppDataTableColumn) {
           </template>
         </Column>
 
-        <Column v-if="$slots.actions" header="" style="width: 1%; white-space: nowrap">
+        <Column
+          v-if="$slots.actions"
+          :header="actionsHeader"
+          style="width: 1%; white-space: nowrap"
+          :pt="{ headerCell: { class: 'text-right' }, bodyCell: { class: 'text-right' } }"
+        >
           <template #body="slotProps">
             <slot name="actions" v-bind="slotProps" />
           </template>

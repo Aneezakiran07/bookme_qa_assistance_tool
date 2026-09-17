@@ -28,7 +28,10 @@ interface BugDetail {
   reported_at: string
   last_status_change_at: string
   steps_to_reproduce: string | null
+  dev_notes: string | null
 }
+
+const QA_ROLES = ['QA Lead', 'Tester']
 
 interface AttachmentRow {
   id: number
@@ -36,6 +39,7 @@ interface AttachmentRow {
   public_id: string
   file_type: 'image' | 'video'
   uploaded_by: number
+  uploaded_by_role: string | null
   uploaded_at: string
 }
 
@@ -62,6 +66,8 @@ const route = useRoute()
 const toast = useToast()
 const dropdownPt = useDropdownPt()
 const bugId = Number(route.params.id)
+const { user } = useUserSession()
+const isDeveloper = computed(() => user.value?.role === 'Developer')
 
 const { data, refresh, pending: loading } = await useFetch<{
   bug: BugDetail
@@ -72,6 +78,15 @@ const { data, refresh, pending: loading } = await useFetch<{
 
 const bug = computed(() => data.value?.bug ?? null)
 const attachments = computed(() => data.value?.attachments ?? [])
+const attachmentsForUploader = computed(() =>
+  attachments.value.map((a) => ({
+    id: a.id,
+    url: a.file_url,
+    public_id: a.public_id,
+    file_type: a.file_type,
+    uploaded_by_role: a.uploaded_by_role
+  }))
+)
 const assignmentLog = computed(() => data.value?.assignmentLog ?? [])
 const statusHistory = computed(() => data.value?.statusHistory ?? [])
 
@@ -131,6 +146,42 @@ async function saveSteps() {
 function onAttachmentsChanged() {
   // MediaUploader already talks to the API directly; just resync counts/timeline
   refresh()
+}
+
+// -- developer notes & blockers, read/edit toggle --
+// editable by any role today, matching this app's existing "no canManage
+// gate on bugs" convention. kept entirely separate from steps to
+// reproduce -- this is for implementation notes, environment quirks, or
+// explaining a status decision, not a second place reproduction steps
+// get written
+const editingDevNotes = ref(false)
+const devNotesDraft = ref('')
+const savingDevNotes = ref(false)
+
+function startEditDevNotes() {
+  devNotesDraft.value = bug.value?.dev_notes ?? ''
+  editingDevNotes.value = true
+}
+
+async function saveDevNotes() {
+  savingDevNotes.value = true
+  try {
+    await $fetch(`/api/bugs/${bugId}`, {
+      method: 'PUT',
+      body: { devNotes: devNotesDraft.value || null }
+    })
+    editingDevNotes.value = false
+    await refresh()
+  } catch (error) {
+    toast.add({
+      severity: 'error',
+      summary: 'Could not save developer notes',
+      detail: (error as any)?.data?.statusMessage ?? 'Please try again.',
+      life: 5000
+    })
+  } finally {
+    savingDevNotes.value = false
+  }
 }
 
 // -- status --
@@ -400,16 +451,107 @@ const timelineEntries = computed(() => {
           </div>
         </div>
 
-        <!-- attachments -->
-        <div class="rounded-lg border border-black/10 bg-white p-5 dark:border-white/10 dark:bg-black">
+        <!-- attachments, split into QA reproduction proof and developer
+             fix/verification proof so each role's evidence stays in its
+             own section. an image or video's bucket is decided by
+             uploaded_by_role, snapshotted on the attachment at upload
+             time so a later role change never reshuffles old uploads -->
+        <div v-if="!isDeveloper" class="rounded-lg border border-black/10 bg-white p-5 dark:border-white/10 dark:bg-black">
           <p class="mb-2 text-xs font-semibold uppercase tracking-wide text-gray-400 dark:text-zinc-500">
-            Attachments
+            QA Reproduction Proof
           </p>
           <MediaUploader
             :bug-id="bug.id"
-            :initial-attachments="attachments.map((a) => ({ id: a.id, url: a.file_url, public_id: a.public_id, file_type: a.file_type }))"
+            :initial-attachments="attachmentsForUploader"
+            :filter-roles="QA_ROLES"
             @update:attachments="onAttachmentsChanged"
           />
+        </div>
+
+        <div v-if="!isDeveloper" class="rounded-lg border border-black/10 bg-white p-5 dark:border-white/10 dark:bg-black">
+          <p class="mb-2 text-xs font-semibold uppercase tracking-wide text-gray-400 dark:text-zinc-500">
+            Developer Fix / Verification Proof
+          </p>
+          <MediaUploader
+            :bug-id="bug.id"
+            :initial-attachments="attachmentsForUploader"
+            :filter-roles="['Developer']"
+            readonly
+          />
+        </div>
+
+        <div v-if="isDeveloper" class="rounded-lg border border-black/10 bg-white p-5 dark:border-white/10 dark:bg-black">
+          <p class="mb-2 text-xs font-semibold uppercase tracking-wide text-gray-400 dark:text-zinc-500">
+            QA Reproduction Proof
+          </p>
+          <MediaUploader
+            :bug-id="bug.id"
+            :initial-attachments="attachmentsForUploader"
+            :filter-roles="QA_ROLES"
+            readonly
+          />
+        </div>
+
+        <div v-if="isDeveloper" class="rounded-lg border border-black/10 bg-white p-5 dark:border-white/10 dark:bg-black">
+          <p class="mb-2 text-xs font-semibold uppercase tracking-wide text-gray-400 dark:text-zinc-500">
+            Developer Resolution Proof
+          </p>
+          <MediaUploader
+            :bug-id="bug.id"
+            :initial-attachments="attachmentsForUploader"
+            :filter-roles="['Developer']"
+            @update:attachments="onAttachmentsChanged"
+          />
+        </div>
+
+        <!-- developer notes & blockers, kept separate from steps to
+             reproduce: implementation notes, environment quirks, or why a
+             status decision was made, not a second reproduction-steps box -->
+        <div class="rounded-lg border border-black/10 bg-white p-5 dark:border-white/10 dark:bg-black">
+          <div class="mb-2 flex items-center justify-between">
+            <p class="text-xs font-semibold uppercase tracking-wide text-gray-400 dark:text-zinc-500">
+              Developer Notes & Blockers
+            </p>
+            <button
+              v-if="!editingDevNotes"
+              type="button"
+              class="text-xs font-medium text-purple-600 hover:underline dark:text-purple-400"
+              @click="startEditDevNotes"
+            >
+              Edit
+            </button>
+          </div>
+          <div v-if="!editingDevNotes" class="whitespace-pre-wrap text-sm text-gray-800 dark:text-zinc-200">
+            {{ bug.dev_notes || 'No developer notes yet.' }}
+          </div>
+          <div v-else class="space-y-2">
+            <textarea
+              v-model="devNotesDraft"
+              rows="4"
+              placeholder="Implementation notes, environment quirks, or why this status decision was made..."
+              class="w-full resize-y rounded-md border border-black/10 bg-transparent p-3 text-sm
+                     text-gray-900 outline-none placeholder:text-gray-400
+                     focus:border-purple-500 focus:ring-1 focus:ring-purple-500
+                     dark:border-white/10 dark:text-white dark:placeholder:text-white/40"
+            />
+            <div class="flex justify-end gap-2">
+              <button
+                type="button"
+                class="rounded-md px-3 py-1.5 text-xs font-medium text-gray-600 hover:bg-black/5 dark:text-zinc-300 dark:hover:bg-white/5"
+                @click="editingDevNotes = false"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                :disabled="savingDevNotes"
+                class="rounded-md bg-purple-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-purple-700 disabled:opacity-50"
+                @click="saveDevNotes"
+              >
+                Save
+              </button>
+            </div>
+          </div>
         </div>
 
         <!-- audit history -->

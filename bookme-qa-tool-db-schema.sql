@@ -106,7 +106,7 @@ create table test_executions (
   result text not null check (result in ('Pass', 'Fail', 'Blocked', 'Not Run')),
   executed_by integer not null references users(id),
   execution_date timestamptz default now(),
-  notes text,
+  actual_result text,
   -- captured at execution time so a later edit to the test case never
   -- retroactively changes what a past run recorded against
   test_case_title_snapshot text,
@@ -139,6 +139,8 @@ create table bugs (
   linked_test_case_id integer references test_cases(id),
   release_id integer references releases(id),  -- nullable: exploratory bugs found outside a specific release cycle won't have one
   steps_to_reproduce text,
+  dev_notes text,  -- implementation notes, environment quirks, or status-decision context; kept
+                    -- separate from steps_to_reproduce, which stays QA-owned
   reported_by integer references users(id),
   reported_at timestamptz default now(),
   last_status_change_at timestamptz default now(),
@@ -158,6 +160,10 @@ create table bug_attachments (
   public_id text,           -- Cloudinary asset id, used to destroy() the asset on delete
   file_type text check (file_type in ('image', 'video')),
   uploaded_by integer not null references users(id),
+  -- snapshot of the uploader's role at upload time (not derived live from
+  -- users.role) so a later role change never retroactively reclassifies
+  -- what someone uploaded in the past
+  uploaded_by_role text,
   uploaded_at timestamptz default now()
 );
 

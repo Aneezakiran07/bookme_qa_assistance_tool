@@ -51,7 +51,7 @@ interface ExecutionHistoryRow {
   result: 'Pass' | 'Fail' | 'Blocked' | 'Not Run'
   executed_by_email: string | null
   execution_date: string
-  notes: string | null
+  actual_result: string | null
 }
 
 const route = useRoute()
@@ -357,7 +357,7 @@ async function saveEdit() {
             { field: 'result', header: 'Result', sortable: true },
             { field: 'executed_by_email', header: 'Executed By' },
             { field: 'execution_date', header: 'Date', sortable: true },
-            { field: 'notes', header: 'Notes' }
+            { field: 'actual_result', header: 'Actual Result' }
           ]"
           search-placeholder="Search execution history..."
           empty-message="No executions recorded yet for this release."
@@ -377,8 +377,8 @@ async function saveEdit() {
               {{ new Date(row.execution_date).toLocaleString() }}
             </span>
           </template>
-          <template #cell-notes="{ data: row }">
-            <span class="text-sm text-gray-600 dark:text-zinc-300">{{ row.notes || '—' }}</span>
+          <template #cell-actual_result="{ data: row }">
+            <span class="text-sm text-gray-600 dark:text-zinc-300">{{ row.actual_result || '—' }}</span>
           </template>
         </AppDataTable>
       </template>

@@ -1,13 +1,15 @@
 <script setup lang="ts">
-// streamlined, distraction-free bug queue for the Developer role: no
-// release filter, no report-bug flow, no execution context -- just the
-// bugs that need a developer's attention, with a status dropdown right
-// in the row so a fix can be marked without leaving the page. QA's full
-// tracker with all of that extra context still lives at /bugs.
+// Bugs Directory: streamlined bug list for the Developer role, with
+// explicit scope control (mine / reported by me / all team) instead of
+// the old fixed quick-filter tabs, plus module/severity/status/search
+// filters. no release filter, no report-bug flow, no execution context
+// -- just the bugs a developer needs to see. QA's full tracker with all
+// of that extra context still lives at /bugs.
 definePageMeta({ layout: 'default' })
 
 interface DeveloperBugRow {
   id: number
+  bug_code: string
   title: string
   module_id: number
   module_name: string
@@ -25,40 +27,42 @@ interface ModuleOption {
   name: string
 }
 
-interface DeveloperBugCounts {
-  mine: number
-  blockers: number
-  pending: number
-  team: number
-}
-
-type Scope = 'mine' | 'blockers' | 'pending' | 'team'
+type Scope = 'mine' | 'reported' | 'team'
 
 const toast = useToast()
 const dropdownPt = useDropdownPt()
 
-const TABS: { id: Scope; label: string; countKey: keyof DeveloperBugCounts }[] = [
-  { id: 'mine', label: 'Assigned To Me', countKey: 'mine' },
-  { id: 'blockers', label: 'High / Critical Blockers', countKey: 'blockers' },
-  { id: 'pending', label: 'Pending Verification', countKey: 'pending' },
-  { id: 'team', label: 'All Team Bugs', countKey: 'team' }
+const SCOPE_OPTIONS: { label: string; value: Scope }[] = [
+  { label: 'Assigned to Me', value: 'mine' },
+  { label: 'Reported by Me', value: 'reported' },
+  { label: 'All Team Bugs', value: 'team' }
 ]
 
-// "Assigned To Me" is the default tab per spec
+// "Assigned to Me" is the default scope per spec
 const activeScope = ref<Scope>('mine')
 
-const SEVERITY_OPTIONS = ['Critical', 'High', 'Medium', 'Low']
+// label-only rename for Critical -- still filters on the real severity
+// value 'Critical' underneath
+const SEVERITY_OPTIONS = [
+  { label: 'Low', value: 'Low' },
+  { label: 'Medium', value: 'Medium' },
+  { label: 'High', value: 'High' },
+  { label: 'Critical / Blocker', value: 'Critical' }
+]
+
 const selectedModuleId = ref<number | null>(null)
 const selectedSeverity = ref<string | null>(null)
+const selectedStatus = ref<string | null>(null)
 
 const modulesFetch = useFetch<ModuleOption[]>('/api/modules')
-const bugsFetch = useFetch<{ scope: Scope; bugs: DeveloperBugRow[]; counts: DeveloperBugCounts }>(
+const bugsFetch = useFetch<{ scope: Scope; bugs: DeveloperBugRow[] }>(
   '/api/developer/bugs',
   {
     query: computed(() => ({
       scope: activeScope.value,
       ...(selectedModuleId.value ? { moduleId: selectedModuleId.value } : {}),
-      ...(selectedSeverity.value ? { severity: selectedSeverity.value } : {})
+      ...(selectedSeverity.value ? { severity: selectedSeverity.value } : {}),
+      ...(selectedStatus.value ? { status: selectedStatus.value } : {})
     }))
   }
 )
@@ -69,10 +73,8 @@ const { data: moduleOptionsData } = modulesFetch
 const { data, refresh, pending: loading } = bugsFetch
 
 const moduleOptions = computed(() => [{ id: null, name: 'All Modules' }, ...(moduleOptionsData.value ?? [])])
-const severityOptions = [{ label: 'All Severities', value: null }, ...SEVERITY_OPTIONS.map((s) => ({ label: s, value: s }))]
 
 const bugs = computed(() => data.value?.bugs ?? [])
-const counts = computed(() => data.value?.counts ?? { mine: 0, blockers: 0, pending: 0, team: 0 })
 
 const SEVERITY_CLASSES: Record<string, string> = {
   Critical:
@@ -83,16 +85,12 @@ const SEVERITY_CLASSES: Record<string, string> = {
   Low: 'bg-blue-100 text-blue-700 border-blue-200 dark:bg-blue-500/15 dark:text-blue-400 dark:border-blue-500/30'
 }
 
-function bugCode(id: number) {
-  return `BUG-${id.toString().padStart(3, '0')}`
-}
-
 function formatDate(dateStr: string) {
   return new Date(dateStr).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })
 }
 
 const columns = [
-  { field: 'bug_id', sortField: 'id', header: 'ID', sortable: true },
+  { field: 'bug_code', sortField: 'id', header: 'ID', sortable: true },
   { field: 'severity', header: 'Severity', sortable: true },
   { field: 'title', header: 'Title' },
   { field: 'module_name', header: 'Module', sortable: true },
@@ -126,49 +124,33 @@ async function updateStatus(bug: DeveloperBugRow, status: string) {
     savingBugId.value = null
   }
 }
+
+function viewBug(bug: DeveloperBugRow) {
+  navigateTo(`/bugs/${bug.id}`)
+}
 </script>
 
 <template>
   <div class="space-y-4">
     <div>
       <h1 class="text-xl font-semibold text-gray-900 dark:text-white">
-        My Bugs
+        Bugs Directory
       </h1>
       <p class="mt-1 text-sm text-gray-500 dark:text-zinc-400">
-        Manage, filter, and resolve the bugs assigned to you.
+        Manage, filter, and resolve tracking tickets.
       </p>
     </div>
 
-    <!-- quick-filter tabs -->
-    <div class="flex flex-wrap gap-1 border-b border-black/10 dark:border-white/10">
-      <button
-        v-for="tab in TABS"
-        :key="tab.id"
-        type="button"
-        class="-mb-px flex items-center gap-1.5 border-b-2 px-3 py-2 text-sm font-medium transition-colors"
-        :class="
-          activeScope === tab.id
-            ? 'border-purple-600 text-purple-600 dark:border-purple-400 dark:text-purple-400'
-            : 'border-transparent text-gray-500 hover:text-gray-700 dark:text-zinc-400 dark:hover:text-zinc-200'
-        "
-        @click="activeScope = tab.id"
-      >
-        {{ tab.label }}
-        <span
-          class="rounded-full px-1.5 py-0.5 text-xs font-semibold"
-          :class="
-            activeScope === tab.id
-              ? 'bg-purple-600/10 text-purple-600 dark:bg-purple-400/10 dark:text-purple-400'
-              : 'bg-gray-100 text-gray-500 dark:bg-white/10 dark:text-zinc-400'
-          "
-        >
-          {{ counts[tab.countKey] }}
-        </span>
-      </button>
-    </div>
-
-    <!-- secondary filters -->
+    <!-- scope + filters toolbar -->
     <div class="flex flex-wrap items-center gap-3">
+      <Select
+        v-model="activeScope"
+        :options="SCOPE_OPTIONS"
+        option-label="label"
+        option-value="value"
+        class="w-44"
+        :pt="dropdownPt"
+      />
       <Select
         v-model="selectedModuleId"
         :options="moduleOptions"
@@ -180,10 +162,21 @@ async function updateStatus(bug: DeveloperBugRow, status: string) {
       />
       <Select
         v-model="selectedSeverity"
-        :options="severityOptions"
+        :options="SEVERITY_OPTIONS"
         option-label="label"
         option-value="value"
         placeholder="All Severities"
+        show-clear
+        class="w-48"
+        :pt="dropdownPt"
+      />
+      <Select
+        v-model="selectedStatus"
+        :options="ALL_BUG_STATUSES.map((s) => ({ label: s, value: s }))"
+        option-label="label"
+        option-value="value"
+        placeholder="All Statuses"
+        show-clear
         class="w-44"
         :pt="dropdownPt"
       />
@@ -193,11 +186,12 @@ async function updateStatus(bug: DeveloperBugRow, status: string) {
       :value="bugs"
       :columns="columns"
       :loading="loading"
-      search-placeholder="Search bugs..."
+      search-placeholder="Search by title or bug code..."
+      actions-header="Actions"
       :empty-message="activeScope === 'mine' ? 'No bugs assigned to you. Nice work.' : 'No bugs match this view.'"
     >
-      <template #cell-bug_id="{ data: row }">
-        <span class="font-mono text-xs text-gray-500 dark:text-zinc-400">{{ bugCode(row.id) }}</span>
+      <template #cell-bug_code="{ data: row }">
+        <span class="font-mono text-xs text-gray-500 dark:text-zinc-400">{{ row.bug_code }}</span>
       </template>
 
       <template #cell-severity="{ data: row }">
@@ -210,12 +204,9 @@ async function updateStatus(bug: DeveloperBugRow, status: string) {
       </template>
 
       <template #cell-title="{ data: row }">
-        <NuxtLink
-          :to="`/bugs/${row.id}`"
-          class="font-medium text-gray-900 hover:text-purple-600 hover:underline dark:text-white dark:hover:text-purple-400"
-        >
+        <span class="font-medium text-gray-900 dark:text-white">
           {{ row.title }}
-        </NuxtLink>
+        </span>
       </template>
 
       <template #cell-status="{ data: row }">
@@ -235,6 +226,19 @@ async function updateStatus(bug: DeveloperBugRow, status: string) {
 
       <template #cell-created_on="{ data: row }">
         <span class="text-sm text-gray-500 dark:text-zinc-400">{{ formatDate(row.reported_at) }}</span>
+      </template>
+
+      <template #actions="{ data: row }">
+        <button
+          type="button"
+          class="inline-flex items-center gap-1.5 rounded-md border border-black/10 px-2.5 py-1.5
+                 text-xs font-medium text-gray-700 transition-colors hover:bg-gray-50
+                 dark:border-white/10 dark:text-zinc-200 dark:hover:bg-white/5"
+          @click="viewBug(row)"
+        >
+          <i class="pi pi-eye text-xs" />
+          View
+        </button>
       </template>
     </AppDataTable>
   </div>

@@ -7898,7 +7898,7 @@ const _inlineRuntimeConfig = {
     }
   },
   "databaseUrl": "postgresql://neondb_owner:npg_HPlWquB6IoU1@ep-cool-waterfall-b30i3yqf-pooler.c-4.ap-southeast-1.aws.neon.tech/bookme_qa?sslmode=require&channel_binding=require",
-  "cronSecret": "bookmeqa",
+  "cronSecret": "base64:EJBb787N++F0aEnpFNQV2ot4cqARKuXS52VkrDRswRM=",
   "cloudinary": {
     "cloudName": "bruy7w15",
     "apiKey": "927764559963758",
@@ -13025,22 +13025,7 @@ _QjOtzdFec9AMTG8hZdSJPLlUdBq9rPB1DnY5NP3IdSQ,
 _wH6JrtIxmaSoA8lCPWFnE9z4lQeXW6H5z3l5aymEQw
 ];
 
-const assets = {
-  "/index.mjs": {
-    "type": "text/javascript; charset=utf-8",
-    "etag": "\"9d43d-1m2osdi1xy6l84zRdkOyDMESYB8\"",
-    "mtime": "2026-09-17T10:16:21.701Z",
-    "size": 644157,
-    "path": "index.mjs"
-  },
-  "/index.mjs.map": {
-    "type": "application/json",
-    "etag": "\"274403-oEivBiw+PBRrovyssAvmDNtTz/c\"",
-    "mtime": "2026-09-17T10:16:21.704Z",
-    "size": 2573315,
-    "path": "index.mjs.map"
-  }
-};
+const assets = {};
 
 function readAsset (id) {
   const serverDir = dirname$1(fileURLToPath(globalThis._importMeta_.url));
@@ -14524,11 +14509,11 @@ const bugAttachmentRepository = {
     `;
     return rows;
   },
-  async create(bugId, fileUrl, publicId, fileType, uploadedBy) {
+  async create(bugId, fileUrl, publicId, fileType, uploadedBy, uploadedByRole) {
     const sql = useDb();
     const rows = await sql`
-      insert into bug_attachments (bug_id, file_url, public_id, file_type, uploaded_by)
-      values (${bugId}, ${fileUrl}, ${publicId}, ${fileType}, ${uploadedBy})
+      insert into bug_attachments (bug_id, file_url, public_id, file_type, uploaded_by, uploaded_by_role)
+      values (${bugId}, ${fileUrl}, ${publicId}, ${fileType}, ${uploadedBy}, ${uploadedByRole})
       returning *
     `;
     return rows[0];
@@ -14662,6 +14647,9 @@ const _id__put$8 = defineEventHandler(async (event) => {
   if (body.stepsToReproduce !== void 0) {
     fields.steps_to_reproduce = body.stepsToReproduce || null;
   }
+  if (body.devNotes !== void 0) {
+    fields.dev_notes = body.devNotes || null;
+  }
   if (body.releaseId !== void 0) {
     fields.release_id = (_c = body.releaseId) != null ? _c : null;
   }
@@ -14764,7 +14752,8 @@ const index_post$4 = defineEventHandler(async (event) => {
     uploadResult.secure_url,
     uploadResult.public_id,
     fileType,
-    currentUser.id
+    currentUser.id,
+    currentUser.role
   );
 });
 
@@ -15174,7 +15163,7 @@ const dashboardRepository = {
     const sql = useDb();
     const rows = await sql`
       select
-        te.id, te.result, te.execution_date, te.notes,
+        te.id, te.result, te.execution_date, te.actual_result,
         tc.title as test_case_title,
         m.name as module_name,
         u.email as executed_by_email,
@@ -15530,7 +15519,7 @@ const releaseRepository = {
         te.result,
         u.email as executed_by_email,
         te.execution_date,
-        te.notes
+        te.actual_result
       from test_executions te
       left join users u on u.id = te.executed_by
       where te.release_id = ${releaseId}
@@ -15605,7 +15594,6 @@ const releaseRepository = {
       `;
     }
   }
-  //
 };
 
 const executionRepository = {
@@ -15619,7 +15607,7 @@ const executionRepository = {
     const rows = await sql`
       with latest as (
         select distinct on (test_case_id)
-          test_case_id, result, execution_date, notes, executed_by
+          test_case_id, result, execution_date, actual_result, executed_by
         from test_executions
         where release_id = ${releaseId}
         order by test_case_id, execution_date desc
@@ -15641,7 +15629,7 @@ const executionRepository = {
         m.name as module_name,
         l.result as latest_result,
         l.execution_date as last_executed_at,
-        l.notes as latest_notes,
+        l.actual_result as latest_actual_result,
         u.email as last_executed_by_email,
         coalesce(c.cnt, 0) as executions_count
       from test_case_release_links trl
@@ -15665,11 +15653,11 @@ const executionRepository = {
     const sql = useDb();
     const rows = await sql`
       insert into test_executions (
-        test_case_id, release_id, result, notes, executed_by,
+        test_case_id, release_id, result, actual_result, executed_by,
         test_case_title_snapshot, steps_snapshot, expected_result_snapshot
       )
       values (
-        ${input.testCaseId}, ${input.releaseId}, ${input.result}, ${input.notes}, ${input.executedBy},
+        ${input.testCaseId}, ${input.releaseId}, ${input.result}, ${input.actualResult}, ${input.executedBy},
         ${input.testCaseTitleSnapshot}, ${input.stepsSnapshot}, ${input.expectedResultSnapshot}
       )
       returning *
@@ -15907,7 +15895,7 @@ const index_post = defineEventHandler(async (event) => {
     testCaseId,
     releaseId,
     result: body.result,
-    notes: ((_a = body.notes) == null ? void 0 : _a.toString().trim()) || null,
+    actualResult: ((_a = body.actualResult) == null ? void 0 : _a.toString().trim()) || null,
     executedBy: currentUser.id,
     // snapshot the test case exactly as it is right now, so a later edit
     // to its title/steps/expected result never rewrites this run's history

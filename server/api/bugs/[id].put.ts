@@ -29,6 +29,7 @@ export default defineEventHandler(async (event) => {
     linkedTestCaseId?: number | null
     releaseId?: number | null
     stepsToReproduce?: string | null
+    devNotes?: string | null
   }>(event)
 
   const fields: Record<string, unknown> = {}
@@ -61,6 +62,10 @@ export default defineEventHandler(async (event) => {
 
   if (body.stepsToReproduce !== undefined) {
     fields.steps_to_reproduce = body.stepsToReproduce || null
+  }
+
+  if (body.devNotes !== undefined) {
+    fields.dev_notes = body.devNotes || null
   }
 
   if (body.releaseId !== undefined) {

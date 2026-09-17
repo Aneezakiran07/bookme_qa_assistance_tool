@@ -11,7 +11,7 @@ export default defineEventHandler(async (event) => {
     testCaseId: number
     releaseId: number
     result: string
-    notes?: string | null
+    actualResult?: string | null
   }>(event)
 
   const testCaseId = Number(body?.testCaseId)
@@ -51,7 +51,7 @@ export default defineEventHandler(async (event) => {
     testCaseId,
     releaseId,
     result: body.result as 'Pass' | 'Fail' | 'Blocked' | 'Not Run',
-    notes: body.notes?.toString().trim() || null,
+    actualResult: body.actualResult?.toString().trim() || null,
     executedBy: currentUser.id,
     // snapshot the test case exactly as it is right now, so a later edit
     // to its title/steps/expected result never rewrites this run's history

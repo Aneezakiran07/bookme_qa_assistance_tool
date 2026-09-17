@@ -8,11 +8,24 @@ export interface MediaAttachment {
   url: string
   public_id: string
   file_type: 'image' | 'video'
+  uploaded_by_role?: string | null
 }
 
+// readonly renders a plain gallery with no dropzone and no delete button,
+// used for showing the other side's proof (qa looking at developer
+// screenshots, or a developer looking at qa's). filterRoles narrows which
+// bucket of attachments this instance displays and, implicitly, which
+// bucket it's meant to be adding to, since the server always tags a new
+// upload with the uploader's own session role rather than anything this
+// component sends
 const props = withDefaults(
-  defineProps<{ bugId: number; initialAttachments?: MediaAttachment[] }>(),
-  { initialAttachments: () => [] }
+  defineProps<{
+    bugId: number
+    initialAttachments?: MediaAttachment[]
+    readonly?: boolean
+    filterRoles?: string[]
+  }>(),
+  { initialAttachments: () => [], readonly: false, filterRoles: undefined }
 )
 
 const emit = defineEmits<{ 'update:attachments': [MediaAttachment[]] }>()
@@ -22,6 +35,15 @@ const toast = useToast()
 // seeded from the bug detail page so previously uploaded screenshots and
 // videos show up immediately instead of starting from an empty dropzone
 const attachments = ref<MediaAttachment[]>([...props.initialAttachments])
+
+// narrows the full attachment list down to this instance's bucket (qa
+// reproduction proof vs developer fix proof); when no filterRoles is
+// given every attachment is shown, same as before this prop existed
+const visibleAttachments = computed(() => {
+  if (!props.filterRoles?.length) return attachments.value
+  return attachments.value.filter((a) => a.uploaded_by_role && props.filterRoles!.includes(a.uploaded_by_role))
+})
+
 const uploading = ref(false)
 const dragOver = ref(false)
 const fileInput = ref<HTMLInputElement>()
@@ -84,6 +106,7 @@ function onDrop(event: DragEvent) {
 <template>
   <div>
     <div
+      v-if="!readonly"
       class="flex cursor-pointer flex-col items-center justify-center gap-2 rounded-lg
              border-2 border-dashed p-6 text-center transition-colors"
       :class="dragOver
@@ -109,9 +132,16 @@ function onDrop(event: DragEvent) {
       />
     </div>
 
-    <div v-if="attachments.length" class="mt-3 grid grid-cols-3 gap-3 sm:grid-cols-4">
+    <p
+      v-if="readonly && !visibleAttachments.length"
+      class="text-sm text-gray-400 dark:text-white/40"
+    >
+      No attachments yet.
+    </p>
+
+    <div v-if="visibleAttachments.length" class="mt-3 grid grid-cols-3 gap-3 sm:grid-cols-4">
       <div
-        v-for="(attachment, index) in attachments"
+        v-for="(attachment, index) in visibleAttachments"
         :key="attachment.id"
         class="group relative overflow-hidden rounded-md border border-black/10 dark:border-white/10"
       >
@@ -130,6 +160,7 @@ function onDrop(event: DragEvent) {
           @click="openLightbox(index)"
         />
         <button
+          v-if="!readonly"
           type="button"
           class="absolute right-1 top-1 flex h-6 w-6 items-center justify-center
                  rounded-full bg-black/70 text-white opacity-0 transition-opacity
@@ -146,7 +177,7 @@ function onDrop(event: DragEvent) {
 
     <MediaLightbox
       v-model="lightboxOpen"
-      :attachments="attachments"
+      :attachments="visibleAttachments"
       :start-index="lightboxIndex"
     />
   </div>
