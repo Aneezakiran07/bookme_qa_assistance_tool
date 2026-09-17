@@ -13025,7 +13025,22 @@ _QjOtzdFec9AMTG8hZdSJPLlUdBq9rPB1DnY5NP3IdSQ,
 _wH6JrtIxmaSoA8lCPWFnE9z4lQeXW6H5z3l5aymEQw
 ];
 
-const assets = {};
+const assets = {
+  "/index.mjs": {
+    "type": "text/javascript; charset=utf-8",
+    "etag": "\"9d43d-1m2osdi1xy6l84zRdkOyDMESYB8\"",
+    "mtime": "2026-09-17T10:16:21.701Z",
+    "size": 644157,
+    "path": "index.mjs"
+  },
+  "/index.mjs.map": {
+    "type": "application/json",
+    "etag": "\"274403-oEivBiw+PBRrovyssAvmDNtTz/c\"",
+    "mtime": "2026-09-17T10:16:21.704Z",
+    "size": 2573315,
+    "path": "index.mjs.map"
+  }
+};
 
 function readAsset (id) {
   const serverDir = dirname$1(fileURLToPath(globalThis._importMeta_.url));
@@ -15590,6 +15605,7 @@ const releaseRepository = {
       `;
     }
   }
+  //
 };
 
 const executionRepository = {

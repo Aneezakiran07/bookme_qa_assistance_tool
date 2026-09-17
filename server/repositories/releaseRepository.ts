@@ -250,5 +250,5 @@ export const releaseRepository = {
         on conflict do nothing
       `
     }
-  }
+  }//
 }
