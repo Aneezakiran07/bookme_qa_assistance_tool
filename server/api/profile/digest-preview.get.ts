@@ -4,19 +4,13 @@ import { karachiNow, mondayOfThisWeek } from '~~/server/utils/karachiDate'
 // builds the digest content for the signed in user only, so the profile
 // page can render it as a live preview.
 //
-// developers get a day/week toggle, same shape as leads: pick a period
-// and see the bugs on their plate that actually had activity in it
-// (assigned, status changed, resolved, whatever) with their current
-// status, nothing else. the bug list uses cursor pagination rather than
-// offset/limit -- see getDeveloperBugsForPeriod for why.
-//
-// qa leads, admins, and testers now get the exact same "my bugs"
-// scoping as developers: whatever's owner_id'd to them, via the same
-// getDeveloperBugsForPeriod query. there is no more per-user module
-// scoping (user_modules is gone) -- bug assignment is the only
-// per-user scoping concept left in the app. their digest still pairs
-// this list with the same project-wide numbers (open bug counts, pass
-// rate) as before.
+// developer only feature: QA Lead, Tester, and Admin accounts get
+// nothing from this endpoint (403 below), not just a hidden section on
+// the profile page. a developer picks a day/week period and sees the
+// bugs on their plate that had activity in it (assigned, status
+// changed, resolved, whatever) with their current status, nothing else.
+// the bug list uses cursor pagination rather than offset/limit -- see
+// getDeveloperBugsForPeriod for why.
 //
 // karachiNow/mondayOfThisWeek live in server/utils/karachiDate.ts and
 // are shared with the developer bugs directory's period filter, so both
@@ -43,6 +37,14 @@ function formatBugRows(bugs: { id: number; title: string; severity: string; stat
 
 export default defineEventHandler(async (event) => {
   const currentUser = event.context.currentUser
+
+  // the digest (this live preview, and the emailed version) is a
+  // Developer only feature. QA Lead, Tester, and Admin accounts get
+  // nothing here, not just a hidden section on the page
+  if (currentUser.role !== 'Developer') {
+    throw createError({ statusCode: 403, statusMessage: 'Digest is only available to Developer accounts' })
+  }
+
   const query = getQuery(event)
 
   const range = query.range === 'week' ? 'week' : 'day'
@@ -57,51 +59,8 @@ export default defineEventHandler(async (event) => {
   const periodStart = range === 'week' ? weekStart : today
   const periodEnd = today
 
-  if (currentUser.role === 'Developer') {
-    // scrolling further down the bug list only ever needs more bug
-    // rows for the same period
-    if (bugsOnly) {
-      const { bugs, totalCount } = await dashboardRepository.getDeveloperBugsForPeriod(
-        currentUser.id,
-        periodStart,
-        periodEnd,
-        limit,
-        cursor
-      )
-      const last = bugs[bugs.length - 1]
-      return {
-        bugs: formatBugRows(bugs),
-        bugsLimit: limit,
-        bugsTotalCount: totalCount,
-        bugsHasMore: bugs.length === limit,
-        nextCursor: last ? { lastStatusChangeAt: last.last_status_change_at, id: last.id } : null
-      }
-    }
-
-    const { bugs, totalCount } = await dashboardRepository.getDeveloperBugsForPeriod(
-      currentUser.id,
-      periodStart,
-      periodEnd,
-      limit,
-      cursor
-    )
-    const last = bugs[bugs.length - 1]
-
-    return {
-      scope: 'developer' as const,
-      range,
-      weekStart,
-      weekEnd: today,
-      bugs: formatBugRows(bugs),
-      bugsLimit: limit,
-      bugsTotalCount: totalCount,
-      bugsHasMore: bugs.length === limit,
-      nextCursor: last ? { lastStatusChangeAt: last.last_status_change_at, id: last.id } : null
-    }
-  }
-
-  // QA Lead / Admin / Tester -- same "bugs assigned to me" scoping as
-  // developers, via owner_id, now that module assignment is gone.
+  // scrolling further down the bug list only ever needs more bug
+  // rows for the same period
   if (bugsOnly) {
     const { bugs, totalCount } = await dashboardRepository.getDeveloperBugsForPeriod(
       currentUser.id,
@@ -128,37 +87,12 @@ export default defineEventHandler(async (event) => {
     cursor
   )
   const last = bugs[bugs.length - 1]
-  const metrics = await dashboardRepository.getSnapshotMetrics(null, null)
 
-  if (range === 'day') {
-    const passRateDay = await dashboardRepository.getPassRate(today, today, null, null)
-    return {
-      scope: 'lead' as const,
-      range,
-      openBugs: metrics.open_bugs,
-      openCriticalHigh: metrics.open_critical_high,
-      passRate: passRateDay.pass_rate,
-      passedExecutions: passRateDay.passed_executions,
-      totalExecutions: passRateDay.total_executions,
-      bugs: formatBugRows(bugs),
-      bugsLimit: limit,
-      bugsTotalCount: totalCount,
-      bugsHasMore: bugs.length === limit,
-      nextCursor: last ? { lastStatusChangeAt: last.last_status_change_at, id: last.id } : null
-    }
-  }
-
-  const passRateWeek = await dashboardRepository.getPassRate(weekStart, today, null, null)
   return {
-    scope: 'lead' as const,
+    scope: 'developer' as const,
     range,
-    openBugs: metrics.open_bugs,
-    openCriticalHigh: metrics.open_critical_high,
     weekStart,
     weekEnd: today,
-    passRate: passRateWeek.pass_rate,
-    passedExecutions: passRateWeek.passed_executions,
-    totalExecutions: passRateWeek.total_executions,
     bugs: formatBugRows(bugs),
     bugsLimit: limit,
     bugsTotalCount: totalCount,

@@ -1,17 +1,14 @@
 <script setup lang="ts">
-// personal profile page: display name and avatar, plus a permanent,
-// read only preview of the digest content for this user. avatar picks
-// from a small fixed set of cute svg options (see AvatarPickerModal /
-// app/utils/avatarOptions.ts) and saves the instant you click one,
-// separately from the display name save button below it. notifications
-// and digests are on for everyone by default now, so there is nothing
-// left to toggle for enabling them. every role gets the same day/week
-// filter here: everyone sees the bugs assigned to them (owner_id) that
-// had activity in the picked period with whatever status they're
-// currently in, plus qa leads/admins/testers also see the same project
-// wide set of numbers for that same period -- same list shape and
-// infinite-scroll pagination for every role now, since bug assignment
-// is the only per-user scoping concept left in the app.
+// personal profile page: display name and avatar, plus, for Developer
+// accounts only, a permanent read only preview of their digest content.
+// avatar picks from a small fixed set of cute svg options (see
+// AvatarPickerModal / app/utils/avatarOptions.ts) and saves the instant
+// you click one, separately from the display name save button below
+// it. QA Lead, Tester, and Admin accounts don't get a digest at all,
+// so the section below is skipped entirely for them. for a developer,
+// the digest is scoped to the bugs assigned to them (owner_id) that
+// had activity in the picked day/week period, with infinite-scroll
+// pagination on that bug list.
 definePageMeta({ layout: 'default' })
 
 interface ProfileData {
@@ -42,28 +39,7 @@ interface DeveloperDigest {
   nextCursor: { lastStatusChangeAt: string; id: number } | null
 }
 
-interface LeadDigest {
-  scope: 'lead'
-  range: 'day' | 'week'
-  openBugs: number
-  openCriticalHigh: number
-  weekStart?: string
-  weekEnd?: string
-  passRate: number
-  passedExecutions: number
-  totalExecutions: number
-  // bugs assigned to this QA Lead/Tester/Admin (owner_id) with activity
-  // in the picked period -- same shape and pagination as the
-  // developer's bug list, since bug assignment is now the only
-  // per-user scoping concept in the app
-  bugs: DigestBugRow[]
-  bugsLimit: number
-  bugsTotalCount: number
-  bugsHasMore: boolean
-  nextCursor: { lastStatusChangeAt: string; id: number } | null
-}
-
-type DigestPreview = DeveloperDigest | LeadDigest
+type DigestPreview = DeveloperDigest
 
 const PAGE_SIZE = 10
 
@@ -156,8 +132,17 @@ onBeforeUnmount(() => scrollObserver?.disconnect())
 // day/week is a full refetch from scratch (cursor reset) rather than a
 // client side filter, since it's a genuinely different query for both
 // scopes, not a hidden subset of the same one.
-watch(activeRange, (range) => loadDigest(range))
-await loadDigest('day')
+//
+// the digest itself (both the live preview here and the emailed
+// version) is a Developer only feature now -- QA Lead, Tester, and
+// Admin accounts don't get one, so there's nothing to fetch or show
+// for them on this page.
+const isDeveloper = computed(() => data.value?.role === 'Developer')
+
+watch(activeRange, (range) => {
+  if (isDeveloper.value) loadDigest(range)
+})
+if (isDeveloper.value) await loadDigest('day')
 
 const displayName = ref('')
 
@@ -313,8 +298,9 @@ async function selectAvatar(avatarId: string) {
       />
     </div>
 
-    <!-- digest preview -->
+    <!-- digest preview: developers only -->
     <section
+      v-if="isDeveloper"
       class="rounded-lg border border-gray-200 bg-white p-6 dark:border-zinc-800 dark:bg-black"
     >
       <div class="mb-1 flex items-center justify-between gap-4">
@@ -345,17 +331,11 @@ async function selectAvatar(avatarId: string) {
         </div>
       </div>
       <p class="mb-5 text-xs text-gray-400 dark:text-zinc-500">
-        <template v-if="digest?.scope === 'developer' && activeRange === 'day'">
+        <template v-if="activeRange === 'day'">
           Bugs on your plate with any activity today, with their current status.
         </template>
-        <template v-else-if="digest?.scope === 'developer'">
-          Bugs on your plate with any activity this calendar week so far ({{ digest?.weekStart }} to {{ digest?.weekEnd }}), with their current status.
-        </template>
-        <template v-else-if="activeRange === 'day'">
-          A live preview of today's activity so far. QA Lead and Tester accounts no longer receive this as an email.
-        </template>
         <template v-else>
-          A recap of what happened this calendar week so far ({{ digest?.weekStart }} to {{ digest?.weekEnd }}).
+          Bugs on your plate with any activity this calendar week so far ({{ digest?.weekStart }} to {{ digest?.weekEnd }}), with their current status.
         </template>
       </p>
 
@@ -363,7 +343,7 @@ async function selectAvatar(avatarId: string) {
         Loading digest preview...
       </div>
 
-      <template v-else-if="digest?.scope === 'developer'">
+      <template v-else-if="digest">
         <div class="mt-1">
           <p class="mb-2 text-xs font-medium text-gray-600 dark:text-zinc-300">
             Your bugs ({{ digest.bugsTotalCount }})
@@ -389,67 +369,6 @@ async function selectAvatar(avatarId: string) {
           </ul>
           <p v-else class="text-sm text-gray-400 dark:text-zinc-500">
             {{ activeRange === 'day' ? 'Nothing on your bugs moved today.' : 'Nothing on your bugs moved this week.' }}
-          </p>
-
-          <div v-if="digest.bugsHasMore" ref="bugListEnd" class="mt-3 flex justify-center py-2">
-            <span v-if="loadingMoreBugs" class="text-xs text-gray-400 dark:text-zinc-500">
-              Loading more...
-            </span>
-          </div>
-          <p v-else-if="digest.bugs.length" class="mt-3 text-center text-xs text-gray-400 dark:text-zinc-500">
-            Showing all {{ digest.bugsTotalCount }} bugs.
-          </p>
-        </div>
-      </template>
-
-      <template v-else-if="digest?.scope === 'lead'">
-        <div class="grid grid-cols-2 gap-3 sm:grid-cols-3">
-          <div class="rounded-md border border-gray-200 p-3 dark:border-zinc-800">
-            <p class="text-xs text-gray-400 dark:text-zinc-500">Open bugs (right now)</p>
-            <p class="text-xl font-semibold text-gray-900 dark:text-white">{{ digest.openBugs }}</p>
-          </div>
-          <div class="rounded-md border border-gray-200 p-3 dark:border-zinc-800">
-            <p class="text-xs text-gray-400 dark:text-zinc-500">Open Critical/High (right now)</p>
-            <p class="text-xl font-semibold text-gray-900 dark:text-white">{{ digest.openCriticalHigh }}</p>
-          </div>
-          <div class="rounded-md border border-gray-200 p-3 dark:border-zinc-800">
-            <p class="text-xs text-gray-400 dark:text-zinc-500">
-              {{ activeRange === 'day' ? "Today's pass rate" : "This week's pass rate" }}
-            </p>
-            <p class="text-xl font-semibold text-gray-900 dark:text-white">
-              {{ digest.passRate }}%
-              <span class="text-xs font-normal text-gray-400 dark:text-zinc-500">
-                ({{ digest.passedExecutions }}/{{ digest.totalExecutions }})
-              </span>
-            </p>
-          </div>
-        </div>
-
-        <div class="mt-4">
-          <p class="mb-2 text-xs font-medium text-gray-600 dark:text-zinc-300">
-            Your bugs ({{ digest.bugsTotalCount }})
-          </p>
-          <ul v-if="digest.bugs.length" class="space-y-2">
-            <li
-              v-for="bug in digest.bugs"
-              :key="bug.id"
-            >
-              <NuxtLink
-                :to="`/bugs/${bug.id}`"
-                class="flex items-center justify-between gap-3 rounded-md border border-gray-200 px-3 py-2 transition-colors hover:border-purple-300 hover:bg-purple-50 dark:border-zinc-800 dark:hover:border-purple-500/40 dark:hover:bg-zinc-900"
-              >
-                <div class="min-w-0">
-                  <p class="truncate text-sm text-gray-900 dark:text-white">
-                    <span class="font-mono text-xs text-gray-400 dark:text-zinc-500">{{ bug.code }}</span>
-                    {{ bug.title }}
-                  </p>
-                </div>
-                <StatusBadge :status="bug.status" size="sm" />
-              </NuxtLink>
-            </li>
-          </ul>
-          <p v-else class="text-sm text-gray-400 dark:text-zinc-500">
-            {{ activeRange === 'day' ? 'Nothing assigned to you moved today.' : 'Nothing assigned to you moved this week.' }}
           </p>
 
           <div v-if="digest.bugsHasMore" ref="bugListEnd" class="mt-3 flex justify-center py-2">
