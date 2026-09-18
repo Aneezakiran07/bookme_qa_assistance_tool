@@ -352,7 +352,7 @@ async function selectAvatar(avatarId: string) {
           Bugs on your plate with any activity this calendar week so far ({{ digest?.weekStart }} to {{ digest?.weekEnd }}), with their current status.
         </template>
         <template v-else-if="activeRange === 'day'">
-          Emailed to you once a day. This is a live preview of what tonight's digest looks like right now.
+          A live preview of today's activity so far. QA Lead and Tester accounts no longer receive this as an email.
         </template>
         <template v-else>
           A recap of what happened this calendar week so far ({{ digest?.weekStart }} to {{ digest?.weekEnd }}).

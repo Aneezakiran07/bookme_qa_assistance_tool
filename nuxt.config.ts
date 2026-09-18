@@ -28,6 +28,13 @@ export default defineNuxtConfig({
   compatibilityDate: '2026-01-01',
   future: { compatibilityVersion: 4 },
 
+  app: {
+    head: {
+      title: 'Bookme QA Tool',
+      titleTemplate: '%s',
+    },
+  },
+
   modules: [
     '@nuxtjs/tailwindcss',
     'nuxt-auth-utils',
@@ -84,6 +91,9 @@ export default defineNuxtConfig({
       apiSecret: process.env.CLOUDINARY_API_SECRET,
     },
     firebaseAdmin: {
+      // these fall back to build time values but get overridden at runtime
+      // by NUXT_FIREBASE_ADMIN_PROJECT_ID, NUXT_FIREBASE_ADMIN_CLIENT_EMAIL,
+      // and NUXT_FIREBASE_ADMIN_PRIVATE_KEY if those are set on the server
       projectId: process.env.FIREBASE_PROJECT_ID,
       clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
       privateKey: process.env.FIREBASE_PRIVATE_KEY,

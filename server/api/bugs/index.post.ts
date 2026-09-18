@@ -19,6 +19,7 @@ export default defineEventHandler(async (event) => {
     releaseId?: number | null
     stepsToReproduce?: string | null
     actualResult?: string | null
+    ownerId?: number | null
   }>(event)
 
   const title = body?.title?.trim()
@@ -53,7 +54,8 @@ export default defineEventHandler(async (event) => {
     releaseId: body.releaseId ?? null,
     stepsToReproduce: body.stepsToReproduce || null,
     actualResult: body.actualResult || null,
-    reportedBy: currentUser.id
+    reportedBy: currentUser.id,
+    ownerId: body.ownerId ?? null
   })
 
   // audits the bug's starting point so the timeline on the detail page

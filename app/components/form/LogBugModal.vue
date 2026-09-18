@@ -36,10 +36,16 @@ const form = reactive({
   priority: 'High',
   environmentBuild: '',
   stepsToReproduce: '',
-  actualResult: ''
+  actualResult: '',
+  ownerId: null as number | null
 })
 
 const saving = ref(false)
+
+// once the bug is created, the modal stays open and switches into this
+// step so a proof screenshot/video can be attached right away instead of
+// forcing a second trip to the bug detail page
+const createdBug = ref<{ id: number; title: string } | null>(null)
 
 // the bug already open against this test case, if any. Set right after
 // the modal opens; drives the duplicate warning banner below
@@ -88,6 +94,8 @@ watch(
     form.environmentBuild = ''
     form.stepsToReproduce = props.initialSteps ?? ''
     form.actualResult = props.initialActualResult ?? ''
+    form.ownerId = null
+    createdBug.value = null
     checkForExistingBug()
   }
 )
@@ -149,7 +157,8 @@ async function save() {
         linkedTestCaseId: props.initialTestCaseId ?? null,
         releaseId: props.initialReleaseId ?? null,
         stepsToReproduce: form.stepsToReproduce || null,
-        actualResult: form.actualResult || null
+        actualResult: form.actualResult || null,
+        ownerId: form.ownerId
       }
     })
     toast.add({
@@ -158,7 +167,10 @@ async function save() {
       life: 3000
     })
     emit('created', created)
-    visible.value = false
+    // stay open on a proof-attaching step instead of closing right away,
+    // so a screenshot/video can be added without a second trip to the
+    // bug's own detail page
+    createdBug.value = created
   } catch (error) {
     toast.add({
       severity: 'error',
@@ -173,8 +185,18 @@ async function save() {
 </script>
 
 <template>
-  <BaseModal v-model="visible" title="Log a bug from this failure" width="42rem">
-    <div class="space-y-4">
+  <BaseModal
+    v-model="visible"
+    :title="createdBug ? `Bug #${createdBug.id} logged — add proof` : 'Log a bug from this failure'"
+    width="42rem"
+  >
+    <div v-if="createdBug" class="space-y-3">
+      <p class="text-sm text-gray-600 dark:text-zinc-300">
+        Optionally attach a screenshot or short video showing the issue. This can also be added later from the bug's own page.
+      </p>
+      <MediaUploader :bug-id="createdBug.id" />
+    </div>
+    <div v-else class="space-y-4">
       <div
         v-if="existingBug"
         class="rounded-md border border-purple-300 bg-purple-50 p-3 text-sm dark:border-purple-500/30 dark:bg-purple-500/10"
@@ -260,6 +282,13 @@ async function save() {
 
       <div>
         <label class="mb-1 block text-xs font-medium text-gray-600 dark:text-zinc-300">
+          Assign to
+        </label>
+        <UserAvatarSelect v-model="form.ownerId" placeholder="Unassigned" />
+      </div>
+
+      <div>
+        <label class="mb-1 block text-xs font-medium text-gray-600 dark:text-zinc-300">
           Environment / Build
         </label>
         <InputText
@@ -297,15 +326,20 @@ async function save() {
     </div>
 
     <template #footer>
-      <BaseButton variant="secondary" label="Cancel" @click="visible = false" />
-      <BaseButton
-        v-if="!blockedByDuplicate"
-        variant="primary"
-        label="Save Bug"
-        :loading="saving"
-        :disabled="!canSave"
-        @click="save"
-      />
+      <template v-if="createdBug">
+        <BaseButton variant="primary" label="Done" @click="visible = false" />
+      </template>
+      <template v-else>
+        <BaseButton variant="secondary" label="Cancel" @click="visible = false" />
+        <BaseButton
+          v-if="!blockedByDuplicate"
+          variant="primary"
+          label="Save Bug"
+          :loading="saving"
+          :disabled="!canSave"
+          @click="save"
+        />
+      </template>
     </template>
   </BaseModal>
 </template>

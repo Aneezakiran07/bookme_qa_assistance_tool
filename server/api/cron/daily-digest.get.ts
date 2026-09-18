@@ -31,7 +31,10 @@ export default defineEventHandler(async (event) => {
 
   const users = await userRepository.listActive()
   const developers = users.filter((u) => u.role === 'Developer')
-  const leads = users.filter((u) => u.role === 'QA Lead' || u.role === 'Admin' || u.role === 'Tester')
+  // QA Lead and Tester no longer receive the daily digest email at all --
+  // only Admin still gets the project-wide summary below. Developers are
+  // unaffected and keep getting their own bug digest above.
+  const leads = users.filter((u) => u.role === 'Admin')
 
   let sent = 0
   let skipped = 0

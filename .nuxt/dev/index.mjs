@@ -9673,7 +9673,7 @@ const serverDiagnostics = /* #__PURE__ */ defineDiagnostics({
 	}
 });
 
-const appHead = {"meta":[{"name":"viewport","content":"width=device-width, initial-scale=1"},{"charset":"utf-8"}],"link":[],"style":[],"script":[],"noscript":[]};
+const appHead = {"meta":[{"name":"viewport","content":"width=device-width, initial-scale=1"},{"charset":"utf-8"}],"link":[],"style":[],"script":[],"noscript":[],"title":"Bookme QA Tool","titleTemplate":"%s"};
 
 const appRootTag = "div";
 
@@ -14514,12 +14514,13 @@ const bugRepository = {
     return (_a = rows[0]) != null ? _a : null;
   },
   async create(input) {
+    var _a;
     const sql = useDb();
     const rows = await sql`
       insert into bugs (
         title, module_id, severity, priority, status,
         environment_build, linked_test_case_id, release_id,
-        steps_to_reproduce, actual_result, reported_by
+        steps_to_reproduce, actual_result, reported_by, owner_id
       )
       values (
         ${input.title},
@@ -14532,7 +14533,8 @@ const bugRepository = {
         ${input.releaseId},
         ${input.stepsToReproduce},
         ${input.actualResult},
-        ${input.reportedBy}
+        ${input.reportedBy},
+        ${(_a = input.ownerId) != null ? _a : null}
       )
       returning *
     `;
@@ -14962,7 +14964,7 @@ const moduleRepository = {
 const VALID_SEVERITIES = ["Critical", "High", "Medium", "Low"];
 const VALID_PRIORITIES$2 = ["High", "Medium", "Low"];
 const index_post$2 = defineEventHandler(async (event) => {
-  var _a, _b, _c, _d, _e;
+  var _a, _b, _c, _d, _e, _f;
   const currentUser = event.context.currentUser;
   const body = await readBody(event);
   const title = (_a = body == null ? void 0 : body.title) == null ? void 0 : _a.trim();
@@ -14993,7 +14995,8 @@ const index_post$2 = defineEventHandler(async (event) => {
     releaseId: (_e = body.releaseId) != null ? _e : null,
     stepsToReproduce: body.stepsToReproduce || null,
     actualResult: body.actualResult || null,
-    reportedBy: currentUser.id
+    reportedBy: currentUser.id,
+    ownerId: (_f = body.ownerId) != null ? _f : null
   });
   await bugStatusHistoryRepository.create({
     bugId: created.id,
@@ -15454,7 +15457,7 @@ const dailyDigest_get = defineEventHandler(async (event) => {
   const today = (/* @__PURE__ */ new Date()).toISOString().slice(0, 10);
   const users = await userRepository.listActive();
   const developers = users.filter((u) => u.role === "Developer");
-  const leads = users.filter((u) => u.role === "QA Lead" || u.role === "Admin" || u.role === "Tester");
+  const leads = users.filter((u) => u.role === "Admin");
   let sent = 0;
   let skipped = 0;
   let failed = 0;

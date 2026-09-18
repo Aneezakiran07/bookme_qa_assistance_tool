@@ -280,13 +280,14 @@ export const bugRepository = {
     stepsToReproduce: string | null
     actualResult: string | null
     reportedBy: number
+    ownerId?: number | null
   }): Promise<BugRecord> {
     const sql = useDb()
     const rows = await sql`
       insert into bugs (
         title, module_id, severity, priority, status,
         environment_build, linked_test_case_id, release_id,
-        steps_to_reproduce, actual_result, reported_by
+        steps_to_reproduce, actual_result, reported_by, owner_id
       )
       values (
         ${input.title},
@@ -299,7 +300,8 @@ export const bugRepository = {
         ${input.releaseId},
         ${input.stepsToReproduce},
         ${input.actualResult},
-        ${input.reportedBy}
+        ${input.reportedBy},
+        ${input.ownerId ?? null}
       )
       returning *
     `

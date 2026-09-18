@@ -160,7 +160,7 @@ async function deleteModule(row: ModuleRow) {
     <div class="flex flex-wrap items-start justify-between gap-4">
       <div>
         <h1 class="text-xl font-semibold text-gray-900 dark:text-white">
-          App Map / Module Taxonomy
+          Modules
         </h1>
         <p class="mt-1 text-sm text-gray-500 dark:text-zinc-400">
           Define core application modules to organize requirements, tests, and bugs.

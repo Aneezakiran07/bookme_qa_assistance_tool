@@ -53,8 +53,9 @@ const PERIOD_OPTIONS: { label: string; value: Period }[] = [
 
 const activePeriod = ref<Period>('all')
 
-// "Assigned to Me" is the default scope per spec
-const activeScope = ref<Scope>('mine')
+// "All Team Bugs" is the default scope now, so a developer immediately
+// sees everything and can reassign, instead of only their own bugs
+const activeScope = ref<Scope>('team')
 
 // label-only rename for Critical -- still filters on the real severity
 // value 'Critical' underneath
@@ -101,6 +102,7 @@ const PERIOD_LABELS: Record<Period, string> = {
 
 const emptyMessage = computed(() => {
   if (activeScope.value === 'mine' && activePeriod.value === 'all') return 'No bugs assigned to you. Nice work.'
+  if (activeScope.value === 'team' && activePeriod.value === 'all') return 'No bugs match this view.'
   return `No bugs match this view${PERIOD_LABELS[activePeriod.value]}.`
 })
 
@@ -123,6 +125,7 @@ const columns = [
   { field: 'title', header: 'Title' },
   { field: 'module_name', header: 'Module', sortable: true },
   { field: 'status', header: 'Status' },
+  { field: 'assignee', header: 'Assignee', style: 'min-width: 12rem' },
   { field: 'reported_by_email', header: 'Reporter' },
   { field: 'created_on', sortField: 'reported_at', header: 'Created On', sortable: true }
 ]
@@ -150,6 +153,31 @@ async function updateStatus(bug: DeveloperBugRow, status: string) {
     })
   } finally {
     savingBugId.value = null
+  }
+}
+
+// same reassign flow as the QA Bug Tracker and the bug detail page --
+// lets a developer hand a bug to a teammate right from this table
+const assigningBugId = ref<number | null>(null)
+
+async function reassignOwner(bug: DeveloperBugRow, ownerId: number | null) {
+  assigningBugId.value = bug.id
+  try {
+    await $fetch(`/api/bugs/${bug.id}`, {
+      method: 'PUT',
+      body: { ownerId }
+    })
+    toast.add({ severity: 'success', summary: 'Assignee updated', life: 2500 })
+    await refresh()
+  } catch (error) {
+    toast.add({
+      severity: 'error',
+      summary: 'Could not reassign this bug',
+      detail: (error as any)?.data?.statusMessage ?? 'Please try again.',
+      life: 5000
+    })
+  } finally {
+    assigningBugId.value = null
   }
 }
 
@@ -253,6 +281,15 @@ function viewBug(bug: DeveloperBugRow) {
           class="w-36"
           :pt="dropdownPt"
           @update:model-value="(status: string) => updateStatus(row, status)"
+        />
+      </template>
+
+      <template #cell-assignee="{ data: row }">
+        <UserAvatarSelect
+          :model-value="row.owner_id"
+          placeholder="Unassigned"
+          :disabled="assigningBugId === row.id"
+          @update:model-value="(ownerId: number | null) => reassignOwner(row, ownerId)"
         />
       </template>
 

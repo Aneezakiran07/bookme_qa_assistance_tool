@@ -64,11 +64,11 @@ const projectLinks = computed<NavLink[]>(() => {
 })
 
 const managementLinksStandard: NavLink[] = [
-  { label: 'App Map', to: '/management/modules', icon: 'pi pi-sitemap' },
+  { label: 'Modules', to: '/management/modules', icon: 'pi pi-sitemap' },
 ]
 
 const managementLinksWithUsers: NavLink[] = [
-  { label: 'App Map', to: '/management/modules', icon: 'pi pi-sitemap' },
+  { label: 'Modules', to: '/management/modules', icon: 'pi pi-sitemap' },
   { label: 'User Approvals', to: '/admin/users', icon: 'pi pi-users' },
 ]
 
@@ -79,6 +79,10 @@ const managementLinksWithUsers: NavLink[] = [
 const managementLinks = computed(() =>
   canManageUsers.value ? managementLinksWithUsers : managementLinksStandard
 )
+
+// single flat nav list, no PROJECT / MANAGEMENT section split -- every
+// role just sees its own set of links one after another
+const navLinks = computed<NavLink[]>(() => [...projectLinks.value, ...managementLinks.value])
 
 const roleBadgeClass = computed(() => {
   return isAdmin.value
@@ -108,46 +112,21 @@ async function handleLogout() {
     </div>
 
     <!-- nav -->
-    <nav class="flex-1 space-y-6 overflow-y-auto px-3 py-5">
-      <div>
-        <p class="mb-2 px-3 text-xs font-semibold tracking-wider text-gray-400 dark:text-zinc-500">
-          PROJECT
-        </p>
-        <ul class="space-y-1">
-          <li v-for="link in projectLinks" :key="link.to">
-            <NuxtLink
-              :to="link.to"
-              class="flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium text-gray-600
-                     transition-colors hover:bg-gray-100 dark:text-zinc-400 dark:hover:bg-zinc-900"
-              active-class="!bg-purple-600/10 !text-purple-600 dark:!text-purple-400"
-              exact-active-class="!bg-purple-600/10 !text-purple-600 dark:!text-purple-400"
-            >
-              <i :class="link.icon" class="text-base" />
-              <span>{{ link.label }}</span>
-            </NuxtLink>
-          </li>
-        </ul>
-      </div>
-
-      <div>
-        <p class="mb-2 px-3 text-xs font-semibold tracking-wider text-gray-400 dark:text-zinc-500">
-          MANAGEMENT
-        </p>
-        <ul class="space-y-1">
-          <li v-for="link in managementLinks" :key="link.to">
-            <NuxtLink
-              :to="link.to"
-              class="flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium text-gray-600
-                     transition-colors hover:bg-gray-100 dark:text-zinc-400 dark:hover:bg-zinc-900"
-              active-class="!bg-purple-600/10 !text-purple-600 dark:!text-purple-400"
-              exact-active-class="!bg-purple-600/10 !text-purple-600 dark:!text-purple-400"
-            >
-              <i :class="link.icon" class="text-base" />
-              <span>{{ link.label }}</span>
-            </NuxtLink>
-          </li>
-        </ul>
-      </div>
+    <nav class="flex-1 space-y-1 overflow-y-auto px-3 py-5">
+      <ul class="space-y-1">
+        <li v-for="link in navLinks" :key="link.to">
+          <NuxtLink
+            :to="link.to"
+            class="flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium text-gray-600
+                   transition-colors hover:bg-gray-100 dark:text-zinc-400 dark:hover:bg-zinc-900"
+            active-class="!bg-purple-600/10 !text-purple-600 dark:!text-purple-400"
+            exact-active-class="!bg-purple-600/10 !text-purple-600 dark:!text-purple-400"
+          >
+            <i :class="link.icon" class="text-base" />
+            <span>{{ link.label }}</span>
+          </NuxtLink>
+        </li>
+      </ul>
     </nav>
 
     <!-- user profile -->

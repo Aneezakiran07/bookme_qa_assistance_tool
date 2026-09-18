@@ -11,8 +11,9 @@ const props = withDefaults(
   defineProps<{
     modelValue: number | null
     placeholder?: string
+    disabled?: boolean
   }>(),
-  { placeholder: 'Assign to...' }
+  { placeholder: 'Assign to...', disabled: false }
 )
 
 defineEmits<{ 'update:modelValue': [number | null] }>()
@@ -43,6 +44,7 @@ const ROLE_SHORT: Record<string, string> = {
     option-label="email"
     option-value="id"
     :placeholder="placeholder"
+    :disabled="disabled"
     filter
     class="w-full"
     :pt="dropdownPt"

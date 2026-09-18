@@ -124,7 +124,7 @@ const columns = [
   { field: 'title', header: 'Title & Module' },
   { field: 'severity', header: 'Severity', sortable: true },
   { field: 'status', header: 'Status', sortable: true },
-  { field: 'owner', header: 'Owner/Assignee' },
+  { field: 'owner', header: 'Owner/Assignee', style: 'min-width: 12rem' },
   { field: 'release_link', header: 'Release / TC Link' }
 ]
 
@@ -145,17 +145,38 @@ const SEVERITY_CLASSES: Record<string, string> = {
   Low: 'bg-blue-100 text-blue-700 border-blue-200 dark:bg-blue-500/15 dark:text-blue-400 dark:border-blue-500/30'
 }
 
-function initials(email: string) {
-  const name = email.split('@')[0]
-  return name.slice(0, 2).toUpperCase()
-}
-
 // -- report bug modal (reuses the same LogBugModal the FAIL workflow uses) --
 const reportModalOpen = ref(false)
 
 function onBugCreated() {
   refresh()
   refreshMetrics()
+}
+
+// -- inline owner/assignee dropdown, same PUT the bug detail page's
+// reassignOwner uses -- kept in this table instead of a separate field
+// so the existing Owner/Assignee column just becomes editable in place
+const assigningBugId = ref<number | null>(null)
+
+async function reassignOwner(bug: BugRow, ownerId: number | null) {
+  assigningBugId.value = bug.id
+  try {
+    await $fetch(`/api/bugs/${bug.id}`, {
+      method: 'PUT',
+      body: { ownerId }
+    })
+    toast.add({ severity: 'success', summary: 'Owner updated', life: 2500 })
+    await refresh()
+  } catch (error) {
+    toast.add({
+      severity: 'error',
+      summary: 'Could not reassign this bug',
+      detail: (error as any)?.data?.statusMessage ?? 'Please try again.',
+      life: 5000
+    })
+  } finally {
+    assigningBugId.value = null
+  }
 }
 
 // -- inline status dropdown, same pattern as the developer bugs page --
@@ -312,16 +333,12 @@ async function updateStatus(bug: BugRow, status: string) {
       </template>
 
       <template #cell-owner="{ data: row }">
-        <div v-if="row.owner_email" class="flex items-center gap-2">
-          <span
-            class="flex h-6 w-6 items-center justify-center rounded-full bg-purple-100
-                   text-xs font-semibold text-purple-700 dark:bg-purple-500/20 dark:text-purple-300"
-          >
-            {{ initials(row.owner_email) }}
-          </span>
-          <span class="text-sm text-gray-700 dark:text-zinc-300">{{ row.owner_email }}</span>
-        </div>
-        <span v-else class="text-xs text-gray-400 dark:text-zinc-500">Unassigned</span>
+        <UserAvatarSelect
+          :model-value="row.owner_id"
+          placeholder="Unassigned"
+          :disabled="assigningBugId === row.id"
+          @update:model-value="(ownerId: number | null) => reassignOwner(row, ownerId)"
+        />
       </template>
 
       <template #cell-release_link="{ data: row }">
