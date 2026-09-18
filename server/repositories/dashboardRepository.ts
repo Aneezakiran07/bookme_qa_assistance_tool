@@ -351,23 +351,146 @@ export const dashboardRepository = {
     return rows[0] as DeveloperSummary
   },
 
-  // bugs currently assigned to this developer, most recently updated
-  // first. Closed is excluded so the table stays focused on what still
-  // needs their attention -- same-day closes are already surfaced by
-  // the "Bugs Resolved Today" card above
-  async getDeveloperBugs(userId: number, limit = 50): Promise<DeveloperBugRow[]> {
+  // bugs assigned to this developer, most recently updated first, one
+  // page at a time.
+  // uses cursor pagination (last_status_change_at, id) instead of
+  // offset/limit: offset pagination re-numbers every row on each fetch,
+  // so if a bug's status changes between two scroll-loads (someone
+  // else edits it, or the user resolves one), the next "page" can skip
+  // a row or repeat one. a cursor pins the query to "everything after
+  // the last row I actually saw," which stays correct regardless of
+  // what changes elsewhere in the table.
+  // mode picks which slice of their bugs to show:
+  // - 'all'      archived = false, any status -- open AND resolved, so
+  //              a bug someone just fixed or closed today doesn't
+  //              vanish from view just because it's no longer "open"
+  // - 'open'     archived = false, status != 'Closed' -- the working
+  //              queue, resolved bugs excluded
+  // - 'archived' archived = true, any status -- the separate archive
+  // totalCount is a separate, cursor independent query so it always
+  // reflects the true total for the current mode, not just what is
+  // left after the cursor.
+  async getDeveloperBugs(
+    userId: number,
+    limit = 50,
+    options: { mode?: 'all' | 'open' | 'archived'; cursor?: { lastStatusChangeAt: string; id: number } | null } = {}
+  ): Promise<{ bugs: DeveloperBugRow[]; totalCount: number }> {
     const sql = useDb()
+    const mode = options.mode ?? 'all'
+    const cursor = options.cursor ?? null
+    const archived = mode === 'archived'
+    const excludeClosed = mode === 'open'
+
+    const countRows = await sql`
+      select count(*)::int as total
+      from bugs
+      where archived = ${archived}
+        and owner_id = ${userId}
+        and (${!excludeClosed} or status != 'Closed')
+    `
+    const totalCount = (countRows[0] as any).total as number
+
     const rows = await sql`
       select
         b.id, b.title, b.severity, b.status, b.module_id, b.last_status_change_at,
         m.name as module_name
       from bugs b
       join modules m on m.id = b.module_id
-      where b.archived = false and b.owner_id = ${userId} and b.status != 'Closed'
-      order by b.last_status_change_at desc
+      where b.archived = ${archived}
+        and b.owner_id = ${userId}
+        and (${!excludeClosed} or b.status != 'Closed')
+        and (
+          ${cursor?.lastStatusChangeAt ?? null}::timestamptz is null
+          or (b.last_status_change_at, b.id) < (${cursor?.lastStatusChangeAt ?? null}::timestamptz, ${cursor?.id ?? null}::int)
+        )
+      order by b.last_status_change_at desc, b.id desc
       limit ${limit}
     `
-    return rows as DeveloperBugRow[]
+    return { bugs: rows as DeveloperBugRow[], totalCount }
+  },
+
+  // profile page's day/week digest: bugs owned by this developer that
+  // actually had activity (assigned, status changed, resolved, etc) in
+  // the given window, rather than a fixed all/open/archived slice of
+  // their whole queue. last_status_change_at already gets stamped on
+  // creation and on every status change (see bugs.put.ts), so filtering
+  // on it within [periodStart, periodEnd] is exactly "what happened to
+  // your bugs on this day / this week," current status and all -- it
+  // deliberately ignores the archived flag, since archiving is a
+  // separate later action and shouldn't hide something that happened
+  // during the period being looked at.
+  async getDeveloperBugsForPeriod(
+    userId: number,
+    periodStart: string,
+    periodEnd: string,
+    limit = 50,
+    cursor: { lastStatusChangeAt: string; id: number } | null = null
+  ): Promise<{ bugs: DeveloperBugRow[]; totalCount: number }> {
+    const sql = useDb()
+
+    const countRows = await sql`
+      select count(*)::int as total
+      from bugs
+      where owner_id = ${userId}
+        and last_status_change_at >= ${periodStart}::date
+        and last_status_change_at < (${periodEnd}::date + interval '1 day')
+    `
+    const totalCount = (countRows[0] as any).total as number
+
+    const rows = await sql`
+      select
+        b.id, b.title, b.severity, b.status, b.module_id, b.last_status_change_at,
+        m.name as module_name
+      from bugs b
+      join modules m on m.id = b.module_id
+      where b.owner_id = ${userId}
+        and b.last_status_change_at >= ${periodStart}::date
+        and b.last_status_change_at < (${periodEnd}::date + interval '1 day')
+        and (
+          ${cursor?.lastStatusChangeAt ?? null}::timestamptz is null
+          or (b.last_status_change_at, b.id) < (${cursor?.lastStatusChangeAt ?? null}::timestamptz, ${cursor?.id ?? null}::int)
+        )
+      order by b.last_status_change_at desc, b.id desc
+      limit ${limit}
+    `
+    return { bugs: rows as DeveloperBugRow[], totalCount }
+  },
+
+  // this week's recap for a developer: how many bugs were newly assigned
+  // to them (from the assignment log, so a reassignment counts same as
+  // the schema intends -- this counts "was assigned to you at some
+  // point this week," not "is still assigned to you," since a bug
+  // reassigned away mid-week genuinely was still assigned to them for
+  // part of it) and how many they resolved. "resolved" is read from
+  // bug_status_history rather than bugs.last_status_change_at or
+  // bugs.archived, so a bug that was fixed earlier in the week and
+  // later reopened, or later archived, still counts as resolved for
+  // that week instead of disappearing just because its current state
+  // moved on again
+  async getDeveloperWeeklyRecap(
+    userId: number,
+    weekStart: string,
+    weekEnd: string
+  ): Promise<{ assignedThisWeek: number; resolvedThisWeek: number }> {
+    const sql = useDb()
+    const assignedRows = await sql`
+      select count(distinct bug_id)::int as count
+      from bug_assignment_log
+      where assigned_to = ${userId}
+        and assigned_at::date between ${weekStart}::date and ${weekEnd}::date
+    `
+    const resolvedRows = await sql`
+      select count(distinct h.bug_id)::int as count
+      from bug_status_history h
+      join bugs b on b.id = h.bug_id
+      where b.owner_id = ${userId}
+        and h.new_status in ('Fixed', 'Closed')
+        and h.changed_at::date between ${weekStart}::date and ${weekEnd}::date
+    `
+    return {
+      assignedThisWeek: (assignedRows[0] as any).count,
+      resolvedThisWeek: (resolvedRows[0] as any).count
+    }
   },
 
   // which modules this developer's open bugs are concentrated in, so

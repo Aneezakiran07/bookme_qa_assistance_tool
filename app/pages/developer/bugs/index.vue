@@ -1,7 +1,8 @@
 <script setup lang="ts">
 // Bugs Directory: streamlined bug list for the Developer role, with
-// explicit scope control (mine / reported by me / all team) instead of
-// the old fixed quick-filter tabs, plus module/severity/status/search
+// explicit scope control (mine / all team) instead of
+// the old fixed quick-filter tabs, plus a period filter (all time /
+// today / this week / this month) and module/severity/status/search
 // filters. no release filter, no report-bug flow, no execution context
 // -- just the bugs a developer needs to see. QA's full tracker with all
 // of that extra context still lives at /bugs.
@@ -27,16 +28,30 @@ interface ModuleOption {
   name: string
 }
 
-type Scope = 'mine' | 'reported' | 'team'
+type Scope = 'mine' | 'team'
+type Period = 'all' | 'day' | 'week' | 'month'
 
 const toast = useToast()
 const dropdownPt = useDropdownPt()
 
 const SCOPE_OPTIONS: { label: string; value: Scope }[] = [
   { label: 'Assigned to Me', value: 'mine' },
-  { label: 'Reported by Me', value: 'reported' },
   { label: 'All Team Bugs', value: 'team' }
 ]
+
+// "All time" is the default so the directory keeps showing its full
+// history like before -- day/week/month just narrow it down to bugs
+// with recent activity (last_status_change_at), same idea as the
+// profile page's digest, just with a bit more range since this is the
+// full directory, not a quick daily preview.
+const PERIOD_OPTIONS: { label: string; value: Period }[] = [
+  { label: 'All Time', value: 'all' },
+  { label: 'Today', value: 'day' },
+  { label: 'This Week', value: 'week' },
+  { label: 'This Month', value: 'month' }
+]
+
+const activePeriod = ref<Period>('all')
 
 // "Assigned to Me" is the default scope per spec
 const activeScope = ref<Scope>('mine')
@@ -55,11 +70,12 @@ const selectedSeverity = ref<string | null>(null)
 const selectedStatus = ref<string | null>(null)
 
 const modulesFetch = useFetch<ModuleOption[]>('/api/modules')
-const bugsFetch = useFetch<{ scope: Scope; bugs: DeveloperBugRow[] }>(
+const bugsFetch = useFetch<{ scope: Scope; period: Period; bugs: DeveloperBugRow[] }>(
   '/api/developer/bugs',
   {
     query: computed(() => ({
       scope: activeScope.value,
+      period: activePeriod.value,
       ...(selectedModuleId.value ? { moduleId: selectedModuleId.value } : {}),
       ...(selectedSeverity.value ? { severity: selectedSeverity.value } : {}),
       ...(selectedStatus.value ? { status: selectedStatus.value } : {})
@@ -75,6 +91,18 @@ const { data, refresh, pending: loading } = bugsFetch
 const moduleOptions = computed(() => [{ id: null, name: 'All Modules' }, ...(moduleOptionsData.value ?? [])])
 
 const bugs = computed(() => data.value?.bugs ?? [])
+
+const PERIOD_LABELS: Record<Period, string> = {
+  all: '',
+  day: ' today',
+  week: ' this week',
+  month: ' this month'
+}
+
+const emptyMessage = computed(() => {
+  if (activeScope.value === 'mine' && activePeriod.value === 'all') return 'No bugs assigned to you. Nice work.'
+  return `No bugs match this view${PERIOD_LABELS[activePeriod.value]}.`
+})
 
 const SEVERITY_CLASSES: Record<string, string> = {
   Critical:
@@ -152,6 +180,14 @@ function viewBug(bug: DeveloperBugRow) {
         :pt="dropdownPt"
       />
       <Select
+        v-model="activePeriod"
+        :options="PERIOD_OPTIONS"
+        option-label="label"
+        option-value="value"
+        class="w-36"
+        :pt="dropdownPt"
+      />
+      <Select
         v-model="selectedModuleId"
         :options="moduleOptions"
         option-label="name"
@@ -188,7 +224,7 @@ function viewBug(bug: DeveloperBugRow) {
       :loading="loading"
       search-placeholder="Search by title or bug code..."
       actions-header="Actions"
-      :empty-message="activeScope === 'mine' ? 'No bugs assigned to you. Nice work.' : 'No bugs match this view.'"
+      :empty-message="emptyMessage"
     >
       <template #cell-bug_code="{ data: row }">
         <span class="font-mono text-xs text-gray-500 dark:text-zinc-400">{{ row.bug_code }}</span>

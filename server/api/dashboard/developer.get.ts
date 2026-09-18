@@ -13,11 +13,11 @@ export default defineEventHandler(async (event) => {
   const currentUser = event.context.currentUser
   const userId = currentUser.id
 
-  const [summary, bugs, hotspots] = await Promise.all([
+  const [summary, bugsPage, hotspots] = await Promise.all([
     dashboardRepository.getDeveloperSummary(userId),
-    dashboardRepository.getDeveloperBugs(userId),
+    dashboardRepository.getDeveloperBugs(userId, 50, { mode: 'open' }),
     dashboardRepository.getDeveloperHotspots(userId)
   ])
 
-  return { summary, bugs, hotspots }
+  return { summary, bugs: bugsPage.bugs, hotspots }
 })

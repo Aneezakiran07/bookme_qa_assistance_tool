@@ -37,12 +37,14 @@ export interface BugFilters {
   releaseId?: number
 }
 
-export type DeveloperBugScope = 'mine' | 'reported' | 'team'
+export type DeveloperBugScope = 'mine' | 'team'
 
 export interface DeveloperBugFilters {
   moduleId?: number
   severity?: string
   status?: string
+  periodStart?: string
+  periodEnd?: string
 }
 
 export interface BugMetrics {
@@ -135,19 +137,26 @@ export const bugRepository = {
   // short of Closed. "pending" (verification) means the developer has
   // already moved the bug to Fixed or handed it to Retest and is
   // waiting on QA to confirm it, not a status of its own.
+  //
+  // periodStart/periodEnd are an optional activity window on top of the
+  // scope and the other filters -- same "did this bug's last_status_change_at
+  // fall in this window" idea as the profile page's day/week digest, just
+  // exposed here too (day/week/month) so a developer can look further back
+  // than "right now" without leaving the full directory. left unset, the
+  // directory behaves exactly as before: every non archived bug in scope,
+  // no matter when it last moved.
   async listForDeveloper(
     userId: number,
     scope: DeveloperBugScope,
     filters: DeveloperBugFilters = {}
   ): Promise<BugWithMeta[]> {
     const sql = useDb()
-    // "mine" is restricted to bugs owned by this developer, "reported" to
-    // bugs this developer filed themselves, and "team" intentionally sees
-    // everyone's -- severity/status are now plain optional equality
-    // filters layered on top of whichever scope is active, same as
-    // moduleId already was, rather than scope-specific baked-in clauses
+    // "mine" is restricted to bugs owned by this developer, and "team"
+    // intentionally sees everyone's -- severity/status are now plain
+    // optional equality filters layered on top of whichever scope is
+    // active, same as moduleId already was, rather than scope-specific
+    // baked-in clauses
     const scopeOwnerId = scope === 'mine' ? userId : null
-    const scopeReportedBy = scope === 'reported' ? userId : null
 
     const rows = await sql`
       select
@@ -169,10 +178,11 @@ export const bugRepository = {
       where
         b.archived = false
         and (${scopeOwnerId}::int is null or b.owner_id = ${scopeOwnerId}::int)
-        and (${scopeReportedBy}::int is null or b.reported_by = ${scopeReportedBy}::int)
         and (${filters.moduleId ?? null}::int is null or b.module_id = ${filters.moduleId ?? null}::int)
         and (${filters.severity ?? null}::text is null or b.severity = ${filters.severity ?? null}::text)
         and (${filters.status ?? null}::text is null or b.status = ${filters.status ?? null}::text)
+        and (${filters.periodStart ?? null}::date is null or b.last_status_change_at >= ${filters.periodStart ?? null}::date)
+        and (${filters.periodEnd ?? null}::date is null or b.last_status_change_at < (${filters.periodEnd ?? null}::date + interval '1 day'))
       order by b.reported_at desc
     `
     return rows as BugWithMeta[]

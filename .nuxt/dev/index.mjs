@@ -9957,6 +9957,23 @@ function useFirebaseAuth() {
   return getAuth();
 }
 
+const KARACHI_OFFSET_MS = 5 * 60 * 60 * 1e3;
+function karachiNow() {
+  return new Date(Date.now() + KARACHI_OFFSET_MS);
+}
+function mondayOfThisWeek(karachiToday2) {
+  const day = karachiToday2.getUTCDay();
+  const diffToMonday = day === 0 ? 6 : day - 1;
+  const monday = new Date(karachiToday2);
+  monday.setUTCDate(karachiToday2.getUTCDate() - diffToMonday);
+  return monday.toISOString().slice(0, 10);
+}
+function firstOfThisMonth(karachiToday2) {
+  const firstDay = new Date(karachiToday2);
+  firstDay.setUTCDate(1);
+  return firstDay.toISOString().slice(0, 10);
+}
+
 var inlineStyles$i = {
   root: {
     position: 'relative'
@@ -13058,22 +13075,7 @@ _QjOtzdFec9AMTG8hZdSJPLlUdBq9rPB1DnY5NP3IdSQ,
 _wH6JrtIxmaSoA8lCPWFnE9z4lQeXW6H5z3l5aymEQw
 ];
 
-const assets = {
-  "/index.mjs": {
-    "type": "text/javascript; charset=utf-8",
-    "etag": "\"9f02e-z5SFczvqAjjACDLAgPnvHvAOQ9o\"",
-    "mtime": "2026-09-17T16:04:31.314Z",
-    "size": 651310,
-    "path": "index.mjs"
-  },
-  "/index.mjs.map": {
-    "type": "application/json",
-    "etag": "\"279a03-9Osn/dIKbsgFwBXbX/WdGR+Oe38\"",
-    "mtime": "2026-09-17T16:04:31.315Z",
-    "size": 2595331,
-    "path": "index.mjs.map"
-  }
-};
+const assets = {};
 
 function readAsset (id) {
   const serverDir = dirname$1(fileURLToPath(globalThis._importMeta_.url));
@@ -14418,11 +14420,18 @@ const bugRepository = {
   // short of Closed. "pending" (verification) means the developer has
   // already moved the bug to Fixed or handed it to Retest and is
   // waiting on QA to confirm it, not a status of its own.
+  //
+  // periodStart/periodEnd are an optional activity window on top of the
+  // scope and the other filters -- same "did this bug's last_status_change_at
+  // fall in this window" idea as the profile page's day/week digest, just
+  // exposed here too (day/week/month) so a developer can look further back
+  // than "right now" without leaving the full directory. left unset, the
+  // directory behaves exactly as before: every non archived bug in scope,
+  // no matter when it last moved.
   async listForDeveloper(userId, scope, filters = {}) {
-    var _a, _b, _c, _d, _e, _f;
+    var _a, _b, _c, _d, _e, _f, _g, _h, _i, _j;
     const sql = useDb();
     const scopeOwnerId = scope === "mine" ? userId : null;
-    const scopeReportedBy = scope === "reported" ? userId : null;
     const rows = await sql`
       select
         b.*,
@@ -14443,10 +14452,11 @@ const bugRepository = {
       where
         b.archived = false
         and (${scopeOwnerId}::int is null or b.owner_id = ${scopeOwnerId}::int)
-        and (${scopeReportedBy}::int is null or b.reported_by = ${scopeReportedBy}::int)
         and (${(_a = filters.moduleId) != null ? _a : null}::int is null or b.module_id = ${(_b = filters.moduleId) != null ? _b : null}::int)
         and (${(_c = filters.severity) != null ? _c : null}::text is null or b.severity = ${(_d = filters.severity) != null ? _d : null}::text)
         and (${(_e = filters.status) != null ? _e : null}::text is null or b.status = ${(_f = filters.status) != null ? _f : null}::text)
+        and (${(_g = filters.periodStart) != null ? _g : null}::date is null or b.last_status_change_at >= ${(_h = filters.periodStart) != null ? _h : null}::date)
+        and (${(_i = filters.periodEnd) != null ? _i : null}::date is null or b.last_status_change_at < (${(_j = filters.periodEnd) != null ? _j : null}::date + interval '1 day'))
       order by b.reported_at desc
     `;
     return rows;
@@ -15277,23 +15287,128 @@ const dashboardRepository = {
     `;
     return rows[0];
   },
-  // bugs currently assigned to this developer, most recently updated
-  // first. Closed is excluded so the table stays focused on what still
-  // needs their attention -- same-day closes are already surfaced by
-  // the "Bugs Resolved Today" card above
-  async getDeveloperBugs(userId, limit = 50) {
+  // bugs assigned to this developer, most recently updated first, one
+  // page at a time.
+  // uses cursor pagination (last_status_change_at, id) instead of
+  // offset/limit: offset pagination re-numbers every row on each fetch,
+  // so if a bug's status changes between two scroll-loads (someone
+  // else edits it, or the user resolves one), the next "page" can skip
+  // a row or repeat one. a cursor pins the query to "everything after
+  // the last row I actually saw," which stays correct regardless of
+  // what changes elsewhere in the table.
+  // mode picks which slice of their bugs to show:
+  // - 'all'      archived = false, any status -- open AND resolved, so
+  //              a bug someone just fixed or closed today doesn't
+  //              vanish from view just because it's no longer "open"
+  // - 'open'     archived = false, status != 'Closed' -- the working
+  //              queue, resolved bugs excluded
+  // - 'archived' archived = true, any status -- the separate archive
+  // totalCount is a separate, cursor independent query so it always
+  // reflects the true total for the current mode, not just what is
+  // left after the cursor.
+  async getDeveloperBugs(userId, limit = 50, options = {}) {
+    var _a, _b, _c, _d, _e;
     const sql = useDb();
+    const mode = (_a = options.mode) != null ? _a : "all";
+    const cursor = (_b = options.cursor) != null ? _b : null;
+    const archived = mode === "archived";
+    const excludeClosed = mode === "open";
+    const countRows = await sql`
+      select count(*)::int as total
+      from bugs
+      where archived = ${archived}
+        and owner_id = ${userId}
+        and (${!excludeClosed} or status != 'Closed')
+    `;
+    const totalCount = countRows[0].total;
     const rows = await sql`
       select
         b.id, b.title, b.severity, b.status, b.module_id, b.last_status_change_at,
         m.name as module_name
       from bugs b
       join modules m on m.id = b.module_id
-      where b.archived = false and b.owner_id = ${userId} and b.status != 'Closed'
-      order by b.last_status_change_at desc
+      where b.archived = ${archived}
+        and b.owner_id = ${userId}
+        and (${!excludeClosed} or b.status != 'Closed')
+        and (
+          ${(_c = cursor == null ? void 0 : cursor.lastStatusChangeAt) != null ? _c : null}::timestamptz is null
+          or (b.last_status_change_at, b.id) < (${(_d = cursor == null ? void 0 : cursor.lastStatusChangeAt) != null ? _d : null}::timestamptz, ${(_e = cursor == null ? void 0 : cursor.id) != null ? _e : null}::int)
+        )
+      order by b.last_status_change_at desc, b.id desc
       limit ${limit}
     `;
-    return rows;
+    return { bugs: rows, totalCount };
+  },
+  // profile page's day/week digest: bugs owned by this developer that
+  // actually had activity (assigned, status changed, resolved, etc) in
+  // the given window, rather than a fixed all/open/archived slice of
+  // their whole queue. last_status_change_at already gets stamped on
+  // creation and on every status change (see bugs.put.ts), so filtering
+  // on it within [periodStart, periodEnd] is exactly "what happened to
+  // your bugs on this day / this week," current status and all -- it
+  // deliberately ignores the archived flag, since archiving is a
+  // separate later action and shouldn't hide something that happened
+  // during the period being looked at.
+  async getDeveloperBugsForPeriod(userId, periodStart, periodEnd, limit = 50, cursor = null) {
+    var _a, _b, _c;
+    const sql = useDb();
+    const countRows = await sql`
+      select count(*)::int as total
+      from bugs
+      where owner_id = ${userId}
+        and last_status_change_at >= ${periodStart}::date
+        and last_status_change_at < (${periodEnd}::date + interval '1 day')
+    `;
+    const totalCount = countRows[0].total;
+    const rows = await sql`
+      select
+        b.id, b.title, b.severity, b.status, b.module_id, b.last_status_change_at,
+        m.name as module_name
+      from bugs b
+      join modules m on m.id = b.module_id
+      where b.owner_id = ${userId}
+        and b.last_status_change_at >= ${periodStart}::date
+        and b.last_status_change_at < (${periodEnd}::date + interval '1 day')
+        and (
+          ${(_a = cursor == null ? void 0 : cursor.lastStatusChangeAt) != null ? _a : null}::timestamptz is null
+          or (b.last_status_change_at, b.id) < (${(_b = cursor == null ? void 0 : cursor.lastStatusChangeAt) != null ? _b : null}::timestamptz, ${(_c = cursor == null ? void 0 : cursor.id) != null ? _c : null}::int)
+        )
+      order by b.last_status_change_at desc, b.id desc
+      limit ${limit}
+    `;
+    return { bugs: rows, totalCount };
+  },
+  // this week's recap for a developer: how many bugs were newly assigned
+  // to them (from the assignment log, so a reassignment counts same as
+  // the schema intends -- this counts "was assigned to you at some
+  // point this week," not "is still assigned to you," since a bug
+  // reassigned away mid-week genuinely was still assigned to them for
+  // part of it) and how many they resolved. "resolved" is read from
+  // bug_status_history rather than bugs.last_status_change_at or
+  // bugs.archived, so a bug that was fixed earlier in the week and
+  // later reopened, or later archived, still counts as resolved for
+  // that week instead of disappearing just because its current state
+  // moved on again
+  async getDeveloperWeeklyRecap(userId, weekStart, weekEnd) {
+    const sql = useDb();
+    const assignedRows = await sql`
+      select count(distinct bug_id)::int as count
+      from bug_assignment_log
+      where assigned_to = ${userId}
+        and assigned_at::date between ${weekStart}::date and ${weekEnd}::date
+    `;
+    const resolvedRows = await sql`
+      select count(distinct h.bug_id)::int as count
+      from bug_status_history h
+      join bugs b on b.id = h.bug_id
+      where b.owner_id = ${userId}
+        and h.new_status in ('Fixed', 'Closed')
+        and h.changed_at::date between ${weekStart}::date and ${weekEnd}::date
+    `;
+    return {
+      assignedThisWeek: assignedRows[0].count,
+      resolvedThisWeek: resolvedRows[0].count
+    };
   },
   // which modules this developer's open bugs are concentrated in, so
   // they can see at a glance where most of their current workload sits
@@ -15319,7 +15434,7 @@ const dailyDigest_get = defineEventHandler(async (event) => {
   const today = (/* @__PURE__ */ new Date()).toISOString().slice(0, 10);
   const users = await userRepository.listActive();
   const developers = users.filter((u) => u.role === "Developer");
-  const leads = users.filter((u) => u.role === "QA Lead" || u.role === "Admin");
+  const leads = users.filter((u) => u.role === "QA Lead" || u.role === "Admin" || u.role === "Tester");
   let sent = 0;
   let skipped = 0;
   let failed = 0;
@@ -15331,7 +15446,7 @@ const dailyDigest_get = defineEventHandler(async (event) => {
         skipped += 1;
         continue;
       }
-      const bugs = await dashboardRepository.getDeveloperBugs(dev.id, 10);
+      const { bugs } = await dashboardRepository.getDeveloperBugs(dev.id, 10, { mode: "open" });
       const bugListHtml = bugs.map((b) => {
         const bugCode = `BUG-${String(b.id).padStart(3, "0")}`;
         return `<li><a href="${appUrl}/bugs/${b.id}">${bugCode}</a> &mdash; ${b.title} (${b.severity}, ${b.status})</li>`;
@@ -15444,12 +15559,12 @@ const dailySnapshot_get$1 = /*#__PURE__*/Object.freeze(/*#__PURE__*/Object.defin
 const developer_get = defineEventHandler(async (event) => {
   const currentUser = event.context.currentUser;
   const userId = currentUser.id;
-  const [summary, bugs, hotspots] = await Promise.all([
+  const [summary, bugsPage, hotspots] = await Promise.all([
     dashboardRepository.getDeveloperSummary(userId),
-    dashboardRepository.getDeveloperBugs(userId),
+    dashboardRepository.getDeveloperBugs(userId, 50, { mode: "open" }),
     dashboardRepository.getDeveloperHotspots(userId)
   ]);
-  return { summary, bugs, hotspots };
+  return { summary, bugs: bugsPage.bugs, hotspots };
 });
 
 const developer_get$1 = /*#__PURE__*/Object.freeze(/*#__PURE__*/Object.defineProperty({
@@ -15520,18 +15635,26 @@ const scope_get$1 = /*#__PURE__*/Object.freeze(/*#__PURE__*/Object.definePropert
   default: scope_get
 }, Symbol.toStringTag, { value: 'Module' }));
 
-const VALID_SCOPES = ["mine", "reported", "team"];
+const VALID_SCOPES = ["mine", "team"];
+const VALID_PERIODS = ["all", "day", "week", "month"];
 const bugs_get = defineEventHandler(async (event) => {
   const currentUser = event.context.currentUser;
   const userId = currentUser.id;
   const query = getQuery$1(event);
   const scope = VALID_SCOPES.includes(query.scope) ? query.scope : "mine";
+  const period = VALID_PERIODS.includes(query.period) ? query.period : "all";
+  const now = karachiNow();
+  const today = now.toISOString().slice(0, 10);
+  const periodStart = period === "day" ? today : period === "week" ? mondayOfThisWeek(now) : period === "month" ? firstOfThisMonth(now) : void 0;
+  const periodEnd = period === "all" ? void 0 : today;
   const bugs = await bugRepository.listForDeveloper(userId, scope, {
     moduleId: query.moduleId ? Number(query.moduleId) : void 0,
     severity: query.severity ? String(query.severity) : void 0,
-    status: query.status ? String(query.status) : void 0
+    status: query.status ? String(query.status) : void 0,
+    periodStart,
+    periodEnd
   });
-  return { scope, bugs };
+  return { scope, period, bugs };
 });
 
 const bugs_get$1 = /*#__PURE__*/Object.freeze(/*#__PURE__*/Object.defineProperty({
@@ -16152,36 +16275,100 @@ const index$7 = /*#__PURE__*/Object.freeze(/*#__PURE__*/Object.defineProperty({
   default: index$6
 }, Symbol.toStringTag, { value: 'Module' }));
 
+function parseCursor(query) {
+  const ts = query.cursorTs;
+  const id = query.cursorId;
+  if (typeof ts !== "string" || !ts) return null;
+  const parsedId = Number(id);
+  if (!Number.isFinite(parsedId)) return null;
+  return { lastStatusChangeAt: ts, id: parsedId };
+}
 const digestPreview_get = defineEventHandler(async (event) => {
   const currentUser = event.context.currentUser;
-  const today = (/* @__PURE__ */ new Date()).toISOString().slice(0, 10);
+  const query = getQuery$1(event);
+  const range = query.range === "week" ? "week" : "day";
+  const limit = Math.min(Math.max(Number(query.limit) || 10, 1), 200);
+  const bugsOnly = query.bugsOnly === "true";
+  const cursor = parseCursor(query);
+  const now = karachiNow();
+  const today = now.toISOString().slice(0, 10);
+  const weekStart = mondayOfThisWeek(now);
   if (currentUser.role === "Developer") {
-    const summary = await dashboardRepository.getDeveloperSummary(currentUser.id);
-    const bugs = await dashboardRepository.getDeveloperBugs(currentUser.id, 10);
+    const periodStart = range === "week" ? weekStart : today;
+    const periodEnd = today;
+    if (bugsOnly) {
+      const { bugs: bugs2, totalCount: totalCount2 } = await dashboardRepository.getDeveloperBugsForPeriod(
+        currentUser.id,
+        periodStart,
+        periodEnd,
+        limit,
+        cursor
+      );
+      const last2 = bugs2[bugs2.length - 1];
+      return {
+        bugs: bugs2.map((b) => ({
+          id: b.id,
+          code: `BUG-${String(b.id).padStart(3, "0")}`,
+          title: b.title,
+          severity: b.severity,
+          status: b.status
+        })),
+        bugsLimit: limit,
+        bugsTotalCount: totalCount2,
+        bugsHasMore: bugs2.length === limit,
+        nextCursor: last2 ? { lastStatusChangeAt: last2.last_status_change_at, id: last2.id } : null
+      };
+    }
+    const { bugs, totalCount } = await dashboardRepository.getDeveloperBugsForPeriod(
+      currentUser.id,
+      periodStart,
+      periodEnd,
+      limit,
+      cursor
+    );
+    const last = bugs[bugs.length - 1];
     return {
       scope: "developer",
-      openBugs: summary.my_open_bugs,
-      criticalHighOpen: summary.critical_high_open,
-      pendingRetest: summary.pending_retest,
-      resolvedToday: summary.resolved_today,
+      range,
+      weekStart,
+      weekEnd: today,
       bugs: bugs.map((b) => ({
         id: b.id,
         code: `BUG-${String(b.id).padStart(3, "0")}`,
         title: b.title,
         severity: b.severity,
         status: b.status
-      }))
+      })),
+      bugsLimit: limit,
+      bugsTotalCount: totalCount,
+      bugsHasMore: bugs.length === limit,
+      nextCursor: last ? { lastStatusChangeAt: last.last_status_change_at, id: last.id } : null
     };
   }
   const metrics = await dashboardRepository.getSnapshotMetrics(null, null);
-  const passRate = await dashboardRepository.getPassRate(today, today, null, null);
+  if (range === "day") {
+    const passRateDay = await dashboardRepository.getPassRate(today, today, null, null);
+    return {
+      scope: "lead",
+      range,
+      openBugs: metrics.open_bugs,
+      openCriticalHigh: metrics.open_critical_high,
+      passRate: passRateDay.pass_rate,
+      passedExecutions: passRateDay.passed_executions,
+      totalExecutions: passRateDay.total_executions
+    };
+  }
+  const passRateWeek = await dashboardRepository.getPassRate(weekStart, today, null, null);
   return {
     scope: "lead",
+    range,
     openBugs: metrics.open_bugs,
     openCriticalHigh: metrics.open_critical_high,
-    passRate: passRate.pass_rate,
-    passedExecutions: passRate.passed_executions,
-    totalExecutions: passRate.total_executions
+    weekStart,
+    weekEnd: today,
+    passRate: passRateWeek.pass_rate,
+    passedExecutions: passRateWeek.passed_executions,
+    totalExecutions: passRateWeek.total_executions
   };
 });
 

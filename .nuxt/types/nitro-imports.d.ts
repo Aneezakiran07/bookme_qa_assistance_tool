@@ -91,6 +91,7 @@ declare global {
   const dynamicEventHandler: typeof import('../../node_modules/h3/dist/index').dynamicEventHandler
   const eventHandler: typeof import('../../node_modules/h3/dist/index').eventHandler
   const fetchWithEvent: typeof import('../../node_modules/h3/dist/index').fetchWithEvent
+  const firstOfThisMonth: typeof import('../../server/utils/karachiDate').firstOfThisMonth
   const fromNodeMiddleware: typeof import('../../node_modules/h3/dist/index').fromNodeMiddleware
   const fromPlainHandler: typeof import('../../node_modules/h3/dist/index').fromPlainHandler
   const fromWebHandler: typeof import('../../node_modules/h3/dist/index').fromWebHandler
@@ -132,7 +133,10 @@ declare global {
   const isPreflightRequest: typeof import('../../node_modules/h3/dist/index').isPreflightRequest
   const isStream: typeof import('../../node_modules/h3/dist/index').isStream
   const isWebResponse: typeof import('../../node_modules/h3/dist/index').isWebResponse
+  const karachiNow: typeof import('../../server/utils/karachiDate').karachiNow
+  const karachiToday: typeof import('../../server/utils/karachiDate').karachiToday
   const lazyEventHandler: typeof import('../../node_modules/h3/dist/index').lazyEventHandler
+  const mondayOfThisWeek: typeof import('../../server/utils/karachiDate').mondayOfThisWeek
   const nitroPlugin: typeof import('../../node_modules/nitropack/dist/runtime/internal/plugin').nitroPlugin
   const parseCookies: typeof import('../../node_modules/h3/dist/index').parseCookies
   const passwordNeedsReHash: typeof import('../../node_modules/nuxt-auth-utils/dist/runtime/server/utils/password').passwordNeedsReHash
@@ -414,3 +418,4 @@ export { useCloudinary } from 'C:/dev/bookmeqa/server/utils/cloudinary';
 export { requireCronSecret } from 'C:/dev/bookmeqa/server/utils/cronAuth';
 export { sendEmail } from 'C:/dev/bookmeqa/server/utils/email';
 export { useFirebaseAuth } from 'C:/dev/bookmeqa/server/utils/firebaseAdmin';
+export { karachiNow, karachiToday, mondayOfThisWeek, firstOfThisMonth } from 'C:/dev/bookmeqa/server/utils/karachiDate';

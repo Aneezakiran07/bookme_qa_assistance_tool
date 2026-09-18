@@ -5,11 +5,11 @@
 // methods the dashboards already use).
 //
 // Developers get their own open/blocker/pending/resolved numbers plus a
-// short list of what's still open. QA Leads and Admins get a much
-// shorter project-wide summary instead: open bug counts and today's
-// pass rate. anyone with nothing open and nothing that happened today
-// is skipped so people don't get an empty "nothing happened" email
-// every night.
+// short list of what's still open. QA Leads, Admins, and Testers get a
+// much shorter project-wide summary instead: open bug counts and
+// today's pass rate. anyone with nothing open and nothing that happened
+// today is skipped so people don't get an empty "nothing happened"
+// email every night.
 //
 // same CRON_SECRET gate as daily-snapshot, pulled into requireCronSecret
 // so both routes share one validation path instead of duplicating it.
@@ -28,7 +28,7 @@ export default defineEventHandler(async (event) => {
 
   const users = await userRepository.listActive()
   const developers = users.filter((u) => u.role === 'Developer')
-  const leads = users.filter((u) => u.role === 'QA Lead' || u.role === 'Admin')
+  const leads = users.filter((u) => u.role === 'QA Lead' || u.role === 'Admin' || u.role === 'Tester')
 
   let sent = 0
   let skipped = 0
@@ -44,7 +44,7 @@ export default defineEventHandler(async (event) => {
         continue
       }
 
-      const bugs = await dashboardRepository.getDeveloperBugs(dev.id, 10)
+      const { bugs } = await dashboardRepository.getDeveloperBugs(dev.id, 10, { mode: 'open' })
       const bugListHtml = bugs
         .map((b) => {
           const bugCode = `BUG-${String(b.id).padStart(3, '0')}`

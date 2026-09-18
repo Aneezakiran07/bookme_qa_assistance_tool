@@ -1,6 +1,10 @@
 <script setup lang="ts">
-// builds a readable title and breadcrumb trail straight from the current
-// route path, so any new page automatically gets a header without extra wiring
+// builds a readable title straight from the current route path, so any
+// new page automatically gets a header without extra wiring. there used
+// to be a breadcrumb trail here too, but it was removed because several
+// of the parent segments it linked to were not real routes, so clicking
+// them led to broken or undefined pages. the app does not rely on deep
+// nested routes anyway, so a single page title is enough.
 
 const route = useRoute()
 
@@ -12,14 +16,6 @@ function toTitle(segment: string) {
 }
 
 const segments = computed(() => route.path.split('/').filter(Boolean))
-
-const breadcrumbs = computed(() => {
-  const crumbs = segments.value.map((segment, index) => ({
-    label: toTitle(segment),
-    to: '/' + segments.value.slice(0, index + 1).join('/'),
-  }))
-  return [{ label: 'Dashboard', to: '/' }, ...crumbs]
-})
 
 const pageTitle = computed(() => {
   if (segments.value.length === 0) return 'Dashboard'
@@ -36,18 +32,6 @@ const pageTitle = computed(() => {
       <h1 class="truncate text-lg font-semibold text-gray-900 dark:text-white">
         {{ pageTitle }}
       </h1>
-      <nav class="mt-0.5 flex items-center gap-1.5 text-xs text-gray-400 dark:text-zinc-500">
-        <template v-for="(crumb, index) in breadcrumbs" :key="crumb.to">
-          <NuxtLink
-            :to="crumb.to"
-            class="truncate hover:text-purple-600 dark:hover:text-purple-400"
-            :class="index === breadcrumbs.length - 1 ? 'text-gray-500 dark:text-zinc-400' : ''"
-          >
-            {{ crumb.label }}
-          </NuxtLink>
-          <i v-if="index < breadcrumbs.length - 1" class="pi pi-angle-right text-[10px]" />
-        </template>
-      </nav>
     </div>
 
     <div class="flex items-center gap-2">
