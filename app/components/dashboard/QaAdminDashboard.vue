@@ -84,10 +84,6 @@ const releaseOptions = computed(() => [
 const selectedModuleId = ref<number | null>(null)
 const selectedReleaseId = ref<number | null>(null)
 
-function useAllModules() {
-  selectedModuleId.value = null
-}
-
 const { data, pending: loading } = await useFetch<DashboardResponse>('/api/dashboard/metrics', {
   query: computed(() => ({
     range: selectedRange.value,
@@ -248,14 +244,6 @@ function executionStatusKey(result: string): string {
         placeholder="All Modules"
         class="w-44"
         :pt="dropdownPt"
-      />
-      <BaseButton
-        v-if="selectedModuleId !== null"
-        label="All Modules"
-        size="sm"
-        variant="secondary"
-        icon="pi pi-times"
-        @click="useAllModules"
       />
 
       <Select

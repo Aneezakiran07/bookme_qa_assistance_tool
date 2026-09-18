@@ -74,8 +74,8 @@ const selectedPoint = computed(() =>
 
     <template v-else>
       <div class="overflow-x-auto">
-        <div class="flex h-40 min-w-full items-end gap-2 pb-1" :style="{ minWidth: `${points.length * 28}px` }">
-          <div v-for="(point, index) in points" :key="point.day" class="flex flex-1 flex-col items-center gap-1">
+        <div class="flex h-40 min-w-full items-stretch gap-2 pb-1" :style="{ minWidth: `${points.length * 28}px` }">
+          <div v-for="(point, index) in points" :key="point.day" class="flex h-full flex-1 flex-col items-center gap-1">
             <button
               type="button"
               class="flex w-full max-w-[22px] flex-1 flex-col-reverse overflow-hidden rounded-sm bg-gray-100
