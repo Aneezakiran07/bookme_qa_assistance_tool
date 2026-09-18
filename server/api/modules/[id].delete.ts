@@ -1,11 +1,17 @@
 import { moduleRepository } from '~~/server/repositories/moduleRepository'
 import { requireRole } from '~~/server/utils/authorize'
 
-// blocks deletion when the module is still referenced by any requirement
-// or test case (both tables define module_id as `not null references
-// modules(id)`, so a plain delete would fail at the DB level anyway) --
-// this returns a friendly, specific message instead of a raw FK-violation
-// error so the frontend can toast it directly.
+// soft delete only: flips `archived` to true instead of removing the row,
+// same pattern as requirements/bugs/test_cases. This isn't just for
+// consistency -- requirements.module_id / test_cases.module_id have no
+// `on delete cascade`, so once anything has ever pointed at a module
+// (including an archived test case kept around only for its execution
+// history), a real hard delete becomes permanently impossible for that
+// row. Soft delete sidesteps that instead of special-casing it.
+//
+// still blocks when the module has *active* requirements or test cases
+// (archived ones don't count -- see countLinkedItems), so a module
+// doesn't disappear out from under things people are still using.
 export default defineEventHandler(async (event) => {
   requireRole(event, ['Admin', 'QA Lead'])
 
@@ -30,6 +36,6 @@ export default defineEventHandler(async (event) => {
     })
   }
 
-  const deleted = await moduleRepository.delete(id)
-  return { deleted: true, module: deleted }
+  const archived = await moduleRepository.archive(id)
+  return { archived: true, module: archived }
 })

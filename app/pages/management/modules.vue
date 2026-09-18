@@ -134,7 +134,7 @@ const confirmDialogRef = ref<{ open: (opts: any) => Promise<boolean> }>()
 async function deleteModule(row: ModuleRow) {
   const confirmed = await confirmDialogRef.value?.open({
     title: 'Delete this module?',
-    message: `"${row.name}" will be permanently removed. This can't be undone.`,
+    message: `"${row.name}" will be removed from the active list. Anything already tagged to it (including any archived items) keeps that link.`,
     confirmLabel: 'Delete',
     danger: true
   })

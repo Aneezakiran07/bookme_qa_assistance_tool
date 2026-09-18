@@ -105,7 +105,10 @@ export const dashboardRepository = {
         count(*)::int as total_requirements,
         count(*) filter (
           where exists (
-            select 1 from requirement_test_case_links l where l.requirement_id = r.id
+            select 1
+            from requirement_test_case_links l
+            join test_cases tc on tc.id = l.test_case_id
+            where l.requirement_id = r.id and tc.archived = false
           )
         )::int as covered_requirements
       from requirements r
@@ -118,7 +121,8 @@ export const dashboardRepository = {
         count(*)::int as total_test_cases,
         count(*) filter (where type = 'Automated')::int as automated_test_cases
       from test_cases
-      where (${moduleId}::int is null or module_id = ${moduleId}::int)
+      where archived = false
+        and (${moduleId}::int is null or module_id = ${moduleId}::int)
     `
 
     const bugRows = await sql`

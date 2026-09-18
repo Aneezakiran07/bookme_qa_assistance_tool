@@ -39,9 +39,11 @@ export const requirementRepository = {
           join modules m on m.id = r.module_id
           left join users u on u.id = r.created_by
           left join (
-            select requirement_id, count(*) as cnt
-            from requirement_test_case_links
-            group by requirement_id
+            select l.requirement_id, count(*) as cnt
+            from requirement_test_case_links l
+            join test_cases tc on tc.id = l.test_case_id
+            where tc.archived = false
+            group by l.requirement_id
           ) l on l.requirement_id = r.id
           where r.archived = false and r.module_id = ${moduleId}
           order by r.created_at desc
@@ -56,9 +58,11 @@ export const requirementRepository = {
           join modules m on m.id = r.module_id
           left join users u on u.id = r.created_by
           left join (
-            select requirement_id, count(*) as cnt
-            from requirement_test_case_links
-            group by requirement_id
+            select l.requirement_id, count(*) as cnt
+            from requirement_test_case_links l
+            join test_cases tc on tc.id = l.test_case_id
+            where tc.archived = false
+            group by l.requirement_id
           ) l on l.requirement_id = r.id
           where r.archived = false
           order by r.created_at desc

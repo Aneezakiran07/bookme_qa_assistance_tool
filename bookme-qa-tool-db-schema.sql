@@ -20,12 +20,26 @@ create unique index users_email_lower_idx on users (lower(email));
 
 create table modules (
   id serial primary key,
-  name text unique not null,
+  name text not null,
   created_by integer references users(id),
-  created_at timestamptz default now()
+  created_at timestamptz default now(),
+  archived boolean not null default false  -- soft delete: "Delete" flips this instead of removing
+                                            -- the row. requirements.module_id / test_cases.module_id
+                                            -- are `not null references modules(id)` with no cascade,
+                                            -- so once anything (even an archived, historical row) has
+                                            -- ever pointed at a module, a real hard delete becomes
+                                            -- impossible anyway -- soft delete here sidesteps that
+                                            -- for good instead of special-casing it per caller.
 );
--- DB-level safety net so 'Payments' and 'payments' can't both exist as separate modules
-create unique index modules_name_lower_idx on modules (lower(name));
+-- DB-level safety net so 'Payments' and 'payments' can't both exist as
+-- separate ACTIVE modules. Partial (archived = false) so an archived
+-- module's name frees up for reuse instead of squatting on it forever.
+create unique index modules_name_lower_idx on modules (lower(name)) where archived = false;
+-- migration for an already-deployed db:
+-- alter table modules add column archived boolean not null default false;
+-- alter table modules drop constraint modules_name_key; -- drops the old plain-unique(name) constraint
+-- drop index modules_name_lower_idx;
+-- create unique index modules_name_lower_idx on modules (lower(name)) where archived = false;
 
 -- a user can be scoped to more than one module, e.g. a QA Lead covering payments and search
 create table user_modules (

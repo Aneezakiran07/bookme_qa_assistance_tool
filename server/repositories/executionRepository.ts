@@ -34,6 +34,10 @@ export const executionRepository = {
   // test_case_release_links) with its latest execution state for that
   // release. A test case not linked to this release never appears here,
   // even if it has been executed under a different release in the past.
+  // Archived (soft-deleted) test cases are excluded too, so nobody can
+  // log a fresh execution against something that's been taken out of
+  // active use -- past executions logged before it was archived still
+  // count toward its history, this just stops new ones.
   // Null latest_result means "not yet run in this release".
   async getReleaseState(releaseId: number): Promise<TestCaseExecutionState[]> {
     const sql = useDb()
@@ -66,7 +70,7 @@ export const executionRepository = {
         u.email as last_executed_by_email,
         coalesce(c.cnt, 0) as executions_count
       from test_case_release_links trl
-      join test_cases tc on tc.id = trl.test_case_id
+      join test_cases tc on tc.id = trl.test_case_id and tc.archived = false
       join modules m on m.id = tc.module_id
       left join latest l on l.test_case_id = tc.id
       left join counts c on c.test_case_id = tc.id
