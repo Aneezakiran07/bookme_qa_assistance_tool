@@ -36,7 +36,7 @@ const QA_ROLES = ['QA Lead', 'Tester']
 
 interface AttachmentRow {
   id: number
-  file_url: string
+  url: string
   public_id: string
   file_type: 'image' | 'video'
   uploaded_by: number
@@ -80,10 +80,13 @@ const { data, refresh, pending: loading } = await useFetch<{
 
 const bug = computed(() => data.value?.bug ?? null)
 const attachments = computed(() => data.value?.attachments ?? [])
+// the API now returns attachments with a url field already (mapped in
+// bugAttachmentRepository), so this just narrows the shape for the
+// uploader prop instead of renaming a field that no longer exists
 const attachmentsForUploader = computed(() =>
   attachments.value.map((a) => ({
     id: a.id,
-    url: a.file_url,
+    url: a.url,
     public_id: a.public_id,
     file_type: a.file_type,
     uploaded_by_role: a.uploaded_by_role
