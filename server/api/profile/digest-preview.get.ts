@@ -1,5 +1,4 @@
 import { dashboardRepository } from '~~/server/repositories/dashboardRepository'
-import { userRepository } from '~~/server/repositories/userRepository'
 import { karachiNow, mondayOfThisWeek } from '~~/server/utils/karachiDate'
 
 // builds the digest content for the signed in user only, so the profile
@@ -11,15 +10,13 @@ import { karachiNow, mondayOfThisWeek } from '~~/server/utils/karachiDate'
 // status, nothing else. the bug list uses cursor pagination rather than
 // offset/limit -- see getDeveloperBugsForPeriod for why.
 //
-// qa leads, admins, and testers don't own bugs the same way, so their
-// digest pairs the same project wide numbers (open bug counts, pass
-// rate) with a bug list scoped to the module(s) they're assigned to via
-// user_modules instead of owner_id -- the same scoping the dashboard's
-// module filter already defaults to (see /api/dashboard/scope). anyone
-// scoped to zero modules falls back to every module, matching the
-// project-wide view their aggregate cards already show. the list uses
-// the same cursor pagination and "activity in period" semantics as the
-// developer branch, just scoped by module instead of owner_id.
+// qa leads, admins, and testers now get the exact same "my bugs"
+// scoping as developers: whatever's owner_id'd to them, via the same
+// getDeveloperBugsForPeriod query. there is no more per-user module
+// scoping (user_modules is gone) -- bug assignment is the only
+// per-user scoping concept left in the app. their digest still pairs
+// this list with the same project-wide numbers (open bug counts, pass
+// rate) as before.
 //
 // karachiNow/mondayOfThisWeek live in server/utils/karachiDate.ts and
 // are shared with the developer bugs directory's period filter, so both
@@ -103,12 +100,11 @@ export default defineEventHandler(async (event) => {
     }
   }
 
-  // QA Lead / Admin / Tester
-  const moduleIds = await userRepository.listModuleIdsForUser(currentUser.id)
-
+  // QA Lead / Admin / Tester -- same "bugs assigned to me" scoping as
+  // developers, via owner_id, now that module assignment is gone.
   if (bugsOnly) {
-    const { bugs, totalCount } = await dashboardRepository.getModuleScopedBugsForPeriod(
-      moduleIds,
+    const { bugs, totalCount } = await dashboardRepository.getDeveloperBugsForPeriod(
+      currentUser.id,
       periodStart,
       periodEnd,
       limit,
@@ -124,8 +120,8 @@ export default defineEventHandler(async (event) => {
     }
   }
 
-  const { bugs, totalCount } = await dashboardRepository.getModuleScopedBugsForPeriod(
-    moduleIds,
+  const { bugs, totalCount } = await dashboardRepository.getDeveloperBugsForPeriod(
+    currentUser.id,
     periodStart,
     periodEnd,
     limit,

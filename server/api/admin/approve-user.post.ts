@@ -4,14 +4,14 @@ import { userRepository } from '~~/server/repositories/userRepository'
 const validRoles = ['Admin', 'QA Lead', 'Tester', 'Developer']
 
 // used both to activate a brand new pending user and to change an already
-// active user's role or module scope, the update is the same either way.
-// Admin and QA Lead both get full access here (same tier, two labels) --
-// including being able to assign any role, Admin included, same as
-// Admin always could.
+// active user's role, the update is the same either way. Admin and QA
+// Lead both get full access here (same tier, two labels) -- including
+// being able to assign any role, Admin included, same as Admin always
+// could.
 export default defineEventHandler(async (event) => {
   requireRole(event, ['Admin', 'QA Lead'])
 
-  const body = await readBody<{ userId: number; role: string; moduleIds: number[] }>(event)
+  const body = await readBody<{ userId: number; role: string }>(event)
 
   if (!body?.userId) {
     throw createError({ statusCode: 400, statusMessage: 'userId is required' })
@@ -20,7 +20,7 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 400, statusMessage: 'Invalid role' })
   }
 
-  const user = await userRepository.approve(body.userId, body.role, body.moduleIds ?? [])
+  const user = await userRepository.approve(body.userId, body.role)
   if (!user) {
     throw createError({ statusCode: 404, statusMessage: 'User not found' })
   }

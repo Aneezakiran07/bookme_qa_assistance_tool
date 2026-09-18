@@ -48,9 +48,6 @@ declare module "nitropack/types" {
     '/api/dashboard/metrics': {
       'get': Simplify<Serialize<Awaited<ReturnType<typeof import('../../server/api/dashboard/metrics.get').default>>>>
     }
-    '/api/dashboard/scope': {
-      'get': Simplify<Serialize<Awaited<ReturnType<typeof import('../../server/api/dashboard/scope.get').default>>>>
-    }
     '/api/developer/bugs': {
       'get': Simplify<Serialize<Awaited<ReturnType<typeof import('../../server/api/developer/bugs.get').default>>>>
     }

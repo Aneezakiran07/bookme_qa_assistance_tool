@@ -6,14 +6,12 @@
 // separately from the display name save button below it. notifications
 // and digests are on for everyone by default now, so there is nothing
 // left to toggle for enabling them. every role gets the same day/week
-// filter here: developers see the bugs on their plate that had
-// activity in the picked period with whatever status they're
-// currently in, and qa leads/admins/testers see the same project wide
-// set of numbers for that same period, plus a clickable list of bugs
-// in their assigned module(s) (or every module, if unscoped) that had
-// activity in that period -- same list shape and infinite-scroll
-// pagination as the developer's list, just module-scoped instead of
-// owner-scoped since QA/Tester don't own bugs via owner_id.
+// filter here: everyone sees the bugs assigned to them (owner_id) that
+// had activity in the picked period with whatever status they're
+// currently in, plus qa leads/admins/testers also see the same project
+// wide set of numbers for that same period -- same list shape and
+// infinite-scroll pagination for every role now, since bug assignment
+// is the only per-user scoping concept left in the app.
 definePageMeta({ layout: 'default' })
 
 interface ProfileData {
@@ -54,9 +52,10 @@ interface LeadDigest {
   passRate: number
   passedExecutions: number
   totalExecutions: number
-  // bugs in the modules this QA Lead/Tester/Admin is scoped to (or every
-  // module, if they aren't scoped to any) with activity in the picked
-  // period -- same shape and pagination as the developer's bug list
+  // bugs assigned to this QA Lead/Tester/Admin (owner_id) with activity
+  // in the picked period -- same shape and pagination as the
+  // developer's bug list, since bug assignment is now the only
+  // per-user scoping concept in the app
   bugs: DigestBugRow[]
   bugsLimit: number
   bugsTotalCount: number
@@ -428,7 +427,7 @@ async function selectAvatar(avatarId: string) {
 
         <div class="mt-4">
           <p class="mb-2 text-xs font-medium text-gray-600 dark:text-zinc-300">
-            Bugs in your modules ({{ digest.bugsTotalCount }})
+            Your bugs ({{ digest.bugsTotalCount }})
           </p>
           <ul v-if="digest.bugs.length" class="space-y-2">
             <li
@@ -450,7 +449,7 @@ async function selectAvatar(avatarId: string) {
             </li>
           </ul>
           <p v-else class="text-sm text-gray-400 dark:text-zinc-500">
-            {{ activeRange === 'day' ? 'Nothing in your modules moved today.' : 'Nothing in your modules moved this week.' }}
+            {{ activeRange === 'day' ? 'Nothing assigned to you moved today.' : 'Nothing assigned to you moved this week.' }}
           </p>
 
           <div v-if="digest.bugsHasMore" ref="bugListEnd" class="mt-3 flex justify-center py-2">

@@ -7,7 +7,7 @@ import { userRepository } from '~~/server/repositories/userRepository'
 export default defineEventHandler(async (event) => {
   requireRole(event, ['Admin', 'QA Lead'])
 
-  const users = await userRepository.listAllWithModules()
+  const users = await userRepository.listAll()
 
   const pending = users.filter((u) => u.role === 'Pending' || !u.active)
   const active = users.filter((u) => u.active && u.role !== 'Pending')

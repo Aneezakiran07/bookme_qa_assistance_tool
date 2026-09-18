@@ -13223,15 +13223,14 @@ const userRepository = {
     const rows = await sql`select * from users where role = 'Pending' order by created_at asc`;
     return rows;
   },
-  async approve(userId, role, moduleIds) {
+  async approve(userId, role) {
+    var _a;
     const sql = useDb();
     const rows = await sql`
       update users set role = ${role}, active = true where id = ${userId}
       returning *
     `;
-    if (!rows[0]) return null;
-    await this.setModules(userId, moduleIds);
-    return rows[0];
+    return (_a = rows[0]) != null ? _a : null;
   },
   async findById(userId) {
     var _a;
@@ -13255,47 +13254,15 @@ const userRepository = {
     `;
     return rows;
   },
-  // fetches every user together with the names of the modules they are
-  // scoped to, one row per user with modules collapsed into a json array,
-  // so the admin page can show module chips without a second round trip
-  async listAllWithModules() {
+  // fetches every user for the admin page's two tables. users are no
+  // longer scoped to specific modules -- module assignment was removed,
+  // bug assignment (owner_id on bugs) is the only per-user scoping
+  // concept left in the app -- so this is a plain listing with no module
+  // join.
+  async listAll() {
     const sql = useDb();
-    const rows = await sql`
-      select
-        u.*,
-        coalesce(
-          json_agg(
-            json_build_object('id', m.id, 'name', m.name)
-          ) filter (where m.id is not null),
-          '[]'
-        ) as modules
-      from users u
-      left join user_modules um on um.user_id = u.id
-      left join modules m on m.id = um.module_id
-      group by u.id
-      order by u.created_at asc
-    `;
+    const rows = await sql`select * from users order by created_at asc`;
     return rows;
-  },
-  // replaces a user's module scope entirely rather than only adding to it,
-  // so editing an active user's modules removes ones that were unchecked
-  async setModules(userId, moduleIds) {
-    const sql = useDb();
-    await sql`delete from user_modules where user_id = ${userId}`;
-    for (const moduleId of moduleIds) {
-      await sql`
-        insert into user_modules (user_id, module_id)
-        values (${userId}, ${moduleId})
-        on conflict do nothing
-      `;
-    }
-  },
-  // used by the dashboard's module filter to default to "my modules"
-  // instead of showing org-wide data the moment someone logs in
-  async listModuleIdsForUser(userId) {
-    const sql = useDb();
-    const rows = await sql`select module_id from user_modules where user_id = ${userId}`;
-    return rows.map((r) => r.module_id);
   },
   async setActive(userId, active) {
     const sql = useDb();
@@ -13897,7 +13864,6 @@ const _lazy_KLl63O = () => Promise.resolve().then(function () { return dailyDige
 const _lazy_WE9D1T = () => Promise.resolve().then(function () { return dailySnapshot_get$1; });
 const _lazy_uWu40d = () => Promise.resolve().then(function () { return developer_get$1; });
 const _lazy_zP6TwB = () => Promise.resolve().then(function () { return metrics_get$1; });
-const _lazy_ysByLE = () => Promise.resolve().then(function () { return scope_get$1; });
 const _lazy_qzbHIu = () => Promise.resolve().then(function () { return bugs_get$1; });
 const _lazy_7AoarI = () => Promise.resolve().then(function () { return _releaseId__get$1; });
 const _lazy_xUycYx = () => Promise.resolve().then(function () { return index_post$1; });
@@ -13946,7 +13912,6 @@ const handlers = [
   { route: '/api/cron/daily-snapshot', handler: _lazy_WE9D1T, lazy: true, middleware: false, method: "get" },
   { route: '/api/dashboard/developer', handler: _lazy_uWu40d, lazy: true, middleware: false, method: "get" },
   { route: '/api/dashboard/metrics', handler: _lazy_zP6TwB, lazy: true, middleware: false, method: "get" },
-  { route: '/api/dashboard/scope', handler: _lazy_ysByLE, lazy: true, middleware: false, method: "get" },
   { route: '/api/developer/bugs', handler: _lazy_qzbHIu, lazy: true, middleware: false, method: "get" },
   { route: '/api/executions/:releaseId', handler: _lazy_7AoarI, lazy: true, middleware: false, method: "get" },
   { route: '/api/executions', handler: _lazy_xUycYx, lazy: true, middleware: false, method: "post" },
@@ -14255,7 +14220,6 @@ const styles$1 = /*#__PURE__*/Object.freeze(/*#__PURE__*/Object.defineProperty({
 
 const validRoles$1 = ["Admin", "QA Lead", "Tester", "Developer"];
 const approveUser_post = defineEventHandler(async (event) => {
-  var _a;
   requireRole(event, ["Admin", "QA Lead"]);
   const body = await readBody(event);
   if (!(body == null ? void 0 : body.userId)) {
@@ -14264,7 +14228,7 @@ const approveUser_post = defineEventHandler(async (event) => {
   if (!validRoles$1.includes(body.role)) {
     throw createError({ statusCode: 400, statusMessage: "Invalid role" });
   }
-  const user = await userRepository.approve(body.userId, body.role, (_a = body.moduleIds) != null ? _a : []);
+  const user = await userRepository.approve(body.userId, body.role);
   if (!user) {
     throw createError({ statusCode: 404, statusMessage: "User not found" });
   }
@@ -14293,7 +14257,7 @@ const deactivateUser_post$1 = /*#__PURE__*/Object.freeze(/*#__PURE__*/Object.def
 
 const users_get = defineEventHandler(async (event) => {
   requireRole(event, ["Admin", "QA Lead"]);
-  const users = await userRepository.listAllWithModules();
+  const users = await userRepository.listAll();
   const pending = users.filter((u) => u.role === "Pending" || !u.active);
   const active = users.filter((u) => u.active && u.role !== "Pending");
   return { pending, active };
@@ -15418,56 +15382,6 @@ const dashboardRepository = {
     `;
     return { bugs: rows, totalCount };
   },
-  // -- QA Lead / Tester / Admin digest bug list (profile page's "Your
-  // digest" preview, LeadDigest branch) --
-  //
-  // QA/Tester don't own bugs the way developers do via owner_id, so
-  // "their bugs" is defined as bugs in the module(s) they're scoped to
-  // via user_modules (the same scoping userRepository.listModuleIdsForUser
-  // already provides to default the dashboard's module filter -- see
-  // server/api/dashboard/scope.get.ts). A user scoped to zero modules
-  // (e.g. most Admins, or a QA Lead covering everything) falls back to
-  // every module, matching the project-wide view the aggregate digest
-  // cards already give that same user.
-  //
-  // otherwise this mirrors getDeveloperBugsForPeriod exactly: filtered
-  // on last_status_change_at falling in [periodStart, periodEnd] (same
-  // "what happened in this window" semantics, current status and all),
-  // same cursor pagination for the same reason -- offset pagination
-  // would skip or repeat a row if a bug in scope changes status
-  // mid-scroll.
-  async getModuleScopedBugsForPeriod(moduleIds, periodStart, periodEnd, limit = 50, cursor = null) {
-    var _a, _b, _c;
-    const sql = useDb();
-    const scopeAll = moduleIds.length === 0;
-    const countRows = await sql`
-      select count(*)::int as total
-      from bugs
-      where archived = false
-        and (${scopeAll} or module_id = any(${moduleIds}::int[]))
-        and last_status_change_at >= ${periodStart}::date
-        and last_status_change_at < (${periodEnd}::date + interval '1 day')
-    `;
-    const totalCount = countRows[0].total;
-    const rows = await sql`
-      select
-        b.id, b.title, b.severity, b.status, b.module_id, b.last_status_change_at,
-        m.name as module_name
-      from bugs b
-      join modules m on m.id = b.module_id
-      where b.archived = false
-        and (${scopeAll} or b.module_id = any(${moduleIds}::int[]))
-        and b.last_status_change_at >= ${periodStart}::date
-        and b.last_status_change_at < (${periodEnd}::date + interval '1 day')
-        and (
-          ${(_a = cursor == null ? void 0 : cursor.lastStatusChangeAt) != null ? _a : null}::timestamptz is null
-          or (b.last_status_change_at, b.id) < (${(_b = cursor == null ? void 0 : cursor.lastStatusChangeAt) != null ? _b : null}::timestamptz, ${(_c = cursor == null ? void 0 : cursor.id) != null ? _c : null}::int)
-        )
-      order by b.last_status_change_at desc, b.id desc
-      limit ${limit}
-    `;
-    return { bugs: rows, totalCount };
-  },
   // this week's recap for a developer: how many bugs were newly assigned
   // to them (from the assignment log, so a reassignment counts same as
   // the schema intends -- this counts "was assigned to you at some
@@ -15570,8 +15484,7 @@ const dailyDigest_get = defineEventHandler(async (event) => {
         skipped += 1;
         continue;
       }
-      const moduleIds = await userRepository.listModuleIdsForUser(lead.id);
-      const { bugs } = await dashboardRepository.getModuleScopedBugsForPeriod(moduleIds, today, today, 10);
+      const { bugs } = await dashboardRepository.getDeveloperBugsForPeriod(lead.id, today, today, 10);
       const bugListHtml = bugs.map((b) => {
         const bugCode = `BUG-${String(b.id).padStart(3, "0")}`;
         return `<li><a href="${appUrl}/bugs/${b.id}">${bugCode}</a> &mdash; ${b.title} (${b.severity}, ${b.status})</li>`;
@@ -15586,7 +15499,7 @@ const dailyDigest_get = defineEventHandler(async (event) => {
             <li>Open Critical/High: ${metrics.open_critical_high}</li>
             <li>Today's pass rate: ${passRate.pass_rate}% (${passRate.passed_executions}/${passRate.total_executions})</li>
           </ul>
-          ${bugListHtml ? `<p>Bugs in your modules with activity today:</p><ul>${bugListHtml}</ul>` : ""}
+          ${bugListHtml ? `<p>Your assigned bugs with activity today:</p><ul>${bugListHtml}</ul>` : ""}
         `
       });
       sent += 1;
@@ -15719,17 +15632,6 @@ const metrics_get = defineEventHandler(async (event) => {
 const metrics_get$1 = /*#__PURE__*/Object.freeze(/*#__PURE__*/Object.defineProperty({
   __proto__: null,
   default: metrics_get
-}, Symbol.toStringTag, { value: 'Module' }));
-
-const scope_get = defineEventHandler(async (event) => {
-  const currentUser = event.context.currentUser;
-  const moduleIds = await userRepository.listModuleIdsForUser(currentUser.id);
-  return { moduleIds };
-});
-
-const scope_get$1 = /*#__PURE__*/Object.freeze(/*#__PURE__*/Object.defineProperty({
-  __proto__: null,
-  default: scope_get
 }, Symbol.toStringTag, { value: 'Module' }));
 
 const VALID_SCOPES = ["mine", "team"];
@@ -16435,10 +16337,9 @@ const digestPreview_get = defineEventHandler(async (event) => {
       nextCursor: last2 ? { lastStatusChangeAt: last2.last_status_change_at, id: last2.id } : null
     };
   }
-  const moduleIds = await userRepository.listModuleIdsForUser(currentUser.id);
   if (bugsOnly) {
-    const { bugs: bugs2, totalCount: totalCount2 } = await dashboardRepository.getModuleScopedBugsForPeriod(
-      moduleIds,
+    const { bugs: bugs2, totalCount: totalCount2 } = await dashboardRepository.getDeveloperBugsForPeriod(
+      currentUser.id,
       periodStart,
       periodEnd,
       limit,
@@ -16453,8 +16354,8 @@ const digestPreview_get = defineEventHandler(async (event) => {
       nextCursor: last2 ? { lastStatusChangeAt: last2.last_status_change_at, id: last2.id } : null
     };
   }
-  const { bugs, totalCount } = await dashboardRepository.getModuleScopedBugsForPeriod(
-    moduleIds,
+  const { bugs, totalCount } = await dashboardRepository.getDeveloperBugsForPeriod(
+    currentUser.id,
     periodStart,
     periodEnd,
     limit,
@@ -17063,7 +16964,6 @@ const index$1 = /*#__PURE__*/Object.freeze(/*#__PURE__*/Object.defineProperty({
 
 const validRoles = ["Admin", "QA Lead", "Tester", "Developer"];
 const approve_post = defineEventHandler(async (event) => {
-  var _a;
   requireRole(event, ["Admin", "QA Lead"]);
   const userId = Number(getRouterParam(event, "id"));
   if (!userId || Number.isNaN(userId)) {
@@ -17073,10 +16973,7 @@ const approve_post = defineEventHandler(async (event) => {
   if (!validRoles.includes(body.role)) {
     throw createError({ statusCode: 400, statusMessage: "Invalid role" });
   }
-  if (!((_a = body.moduleIds) == null ? void 0 : _a.length)) {
-    throw createError({ statusCode: 400, statusMessage: "At least one module is required" });
-  }
-  const user = await userRepository.approve(userId, body.role, body.moduleIds);
+  const user = await userRepository.approve(userId, body.role);
   if (!user) {
     throw createError({ statusCode: 404, statusMessage: "User not found" });
   }

@@ -10,16 +10,13 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 400, statusMessage: 'Invalid user id' })
   }
 
-  const body = await readBody<{ role: string; moduleIds: number[] }>(event)
+  const body = await readBody<{ role: string }>(event)
 
   if (!validRoles.includes(body.role)) {
     throw createError({ statusCode: 400, statusMessage: 'Invalid role' })
   }
-  if (!body.moduleIds?.length) {
-    throw createError({ statusCode: 400, statusMessage: 'At least one module is required' })
-  }
 
-  const user = await userRepository.approve(userId, body.role, body.moduleIds)
+  const user = await userRepository.approve(userId, body.role)
   if (!user) {
     throw createError({ statusCode: 404, statusMessage: 'User not found' })
   }

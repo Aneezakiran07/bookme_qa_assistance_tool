@@ -7,12 +7,12 @@
 // Developers get their own open/blocker/pending/resolved numbers plus a
 // short list of what's still open. QA Leads, Admins, and Testers get a
 // shorter project-wide summary instead (open bug counts and today's
-// pass rate), plus a short list of bugs in their assigned module(s)
-// (every module, if unscoped) with activity today -- module-scoped
-// instead of owner-scoped since QA/Tester don't own bugs via owner_id,
-// same idea as the profile page's live digest preview. anyone with
-// nothing open and nothing that happened today is skipped so people
-// don't get an empty "nothing happened" email every night.
+// pass rate), plus a short list of bugs assigned to them with activity
+// today -- the same owner_id-based "my bugs" scoping the developer
+// email above uses, same idea as the profile page's live digest
+// preview. anyone with nothing open and nothing that happened today is
+// skipped so people don't get an empty "nothing happened" email every
+// night.
 //
 // same CRON_SECRET gate as daily-snapshot, pulled into requireCronSecret
 // so both routes share one validation path instead of duplicating it.
@@ -87,12 +87,10 @@ export default defineEventHandler(async (event) => {
         continue
       }
 
-      // same module scoping as the profile page's live preview (empty
-      // scope falls back to every module) and the same "current status
-      // of anything with activity today" bug list the developer email
-      // above already gets, just scoped by module instead of owner_id
-      const moduleIds = await userRepository.listModuleIdsForUser(lead.id)
-      const { bugs } = await dashboardRepository.getModuleScopedBugsForPeriod(moduleIds, today, today, 10)
+      // same "bugs assigned to me" scoping as the profile page's live
+      // preview and the developer email above -- via owner_id, now
+      // that module assignment is gone.
+      const { bugs } = await dashboardRepository.getDeveloperBugsForPeriod(lead.id, today, today, 10)
       const bugListHtml = bugs
         .map((b) => {
           const bugCode = `BUG-${String(b.id).padStart(3, '0')}`
@@ -110,7 +108,7 @@ export default defineEventHandler(async (event) => {
             <li>Open Critical/High: ${metrics.open_critical_high}</li>
             <li>Today's pass rate: ${passRate.pass_rate}% (${passRate.passed_executions}/${passRate.total_executions})</li>
           </ul>
-          ${bugListHtml ? `<p>Bugs in your modules with activity today:</p><ul>${bugListHtml}</ul>` : ''}
+          ${bugListHtml ? `<p>Your assigned bugs with activity today:</p><ul>${bugListHtml}</ul>` : ''}
         `
       })
       sent += 1

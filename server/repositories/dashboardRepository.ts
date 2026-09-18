@@ -463,64 +463,6 @@ export const dashboardRepository = {
     return { bugs: rows as DeveloperBugRow[], totalCount }
   },
 
-  // -- QA Lead / Tester / Admin digest bug list (profile page's "Your
-  // digest" preview, LeadDigest branch) --
-  //
-  // QA/Tester don't own bugs the way developers do via owner_id, so
-  // "their bugs" is defined as bugs in the module(s) they're scoped to
-  // via user_modules (the same scoping userRepository.listModuleIdsForUser
-  // already provides to default the dashboard's module filter -- see
-  // server/api/dashboard/scope.get.ts). A user scoped to zero modules
-  // (e.g. most Admins, or a QA Lead covering everything) falls back to
-  // every module, matching the project-wide view the aggregate digest
-  // cards already give that same user.
-  //
-  // otherwise this mirrors getDeveloperBugsForPeriod exactly: filtered
-  // on last_status_change_at falling in [periodStart, periodEnd] (same
-  // "what happened in this window" semantics, current status and all),
-  // same cursor pagination for the same reason -- offset pagination
-  // would skip or repeat a row if a bug in scope changes status
-  // mid-scroll.
-  async getModuleScopedBugsForPeriod(
-    moduleIds: number[],
-    periodStart: string,
-    periodEnd: string,
-    limit = 50,
-    cursor: { lastStatusChangeAt: string; id: number } | null = null
-  ): Promise<{ bugs: DeveloperBugRow[]; totalCount: number }> {
-    const sql = useDb()
-    const scopeAll = moduleIds.length === 0
-
-    const countRows = await sql`
-      select count(*)::int as total
-      from bugs
-      where archived = false
-        and (${scopeAll} or module_id = any(${moduleIds}::int[]))
-        and last_status_change_at >= ${periodStart}::date
-        and last_status_change_at < (${periodEnd}::date + interval '1 day')
-    `
-    const totalCount = (countRows[0] as any).total as number
-
-    const rows = await sql`
-      select
-        b.id, b.title, b.severity, b.status, b.module_id, b.last_status_change_at,
-        m.name as module_name
-      from bugs b
-      join modules m on m.id = b.module_id
-      where b.archived = false
-        and (${scopeAll} or b.module_id = any(${moduleIds}::int[]))
-        and b.last_status_change_at >= ${periodStart}::date
-        and b.last_status_change_at < (${periodEnd}::date + interval '1 day')
-        and (
-          ${cursor?.lastStatusChangeAt ?? null}::timestamptz is null
-          or (b.last_status_change_at, b.id) < (${cursor?.lastStatusChangeAt ?? null}::timestamptz, ${cursor?.id ?? null}::int)
-        )
-      order by b.last_status_change_at desc, b.id desc
-      limit ${limit}
-    `
-    return { bugs: rows as DeveloperBugRow[], totalCount }
-  },
-
   // this week's recap for a developer: how many bugs were newly assigned
   // to them (from the assignment log, so a reassignment counts same as
   // the schema intends -- this counts "was assigned to you at some

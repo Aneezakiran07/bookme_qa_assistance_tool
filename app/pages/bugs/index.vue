@@ -46,7 +46,6 @@ interface BugMetrics {
 
 const toast = useToast()
 const dropdownPt = useDropdownPt()
-const popoverPt = usePopoverPt()
 
 const SEVERITY_OPTIONS = ['Critical', 'High', 'Medium', 'Low']
 const STATUS_OPTIONS = ['Open', 'In Progress', 'Fixed', 'Retest', 'Closed', 'Reopened']
@@ -159,31 +158,18 @@ function onBugCreated() {
   refreshMetrics()
 }
 
-// -- quick status edit popover --
-const quickEditPopover = ref()
-const quickEditBug = ref<BugRow | null>(null)
-const quickEditSaving = ref(false)
+// -- inline status dropdown, same pattern as the developer bugs page --
+const savingBugId = ref<number | null>(null)
 
-function statusTooltip(current: string, status: string): string | undefined {
-  if (status === current) return 'This is the current status.'
-  return undefined
-}
-
-function openQuickEdit(event: MouseEvent, row: BugRow) {
-  quickEditBug.value = row
-  quickEditPopover.value?.toggle(event)
-}
-
-async function applyQuickStatus(status: string) {
-  if (!quickEditBug.value) return
-  quickEditSaving.value = true
+async function updateStatus(bug: BugRow, status: string) {
+  if (status === bug.status) return
+  savingBugId.value = bug.id
   try {
-    await $fetch(`/api/bugs/${quickEditBug.value.id}`, {
+    await $fetch(`/api/bugs/${bug.id}`, {
       method: 'PUT',
       body: { status }
     })
     toast.add({ severity: 'success', summary: `Marked as ${status}`, life: 2500 })
-    quickEditPopover.value?.hide()
     await Promise.all([refresh(), refreshMetrics()])
   } catch (error) {
     toast.add({
@@ -193,7 +179,7 @@ async function applyQuickStatus(status: string) {
       life: 5000
     })
   } finally {
-    quickEditSaving.value = false
+    savingBugId.value = null
   }
 }
 </script>
@@ -315,7 +301,21 @@ async function applyQuickStatus(status: string) {
       </template>
 
       <template #cell-status="{ data: row }">
-        <StatusBadge :status="row.status" size="sm" />
+        <Select
+          :model-value="row.status"
+          :options="ALL_BUG_STATUSES"
+          :disabled="savingBugId === row.id"
+          class="w-40"
+          :pt="dropdownPt"
+          @update:model-value="(status: string) => updateStatus(row, status)"
+        >
+          <template #value="{ value }">
+            <StatusBadge v-if="value" :status="value" size="sm" />
+          </template>
+          <template #option="{ option }">
+            <StatusBadge :status="option" size="sm" />
+          </template>
+        </Select>
       </template>
 
       <template #cell-owner="{ data: row }">
@@ -362,43 +362,9 @@ async function applyQuickStatus(status: string) {
             icon="pi pi-eye"
             @click="navigateTo(`/bugs/${row.id}`)"
           />
-          <BaseButton
-            label="Status"
-            variant="secondary"
-            size="sm"
-            icon="pi pi-sync"
-            @click="openQuickEdit($event, row)"
-          />
         </div>
       </template>
     </AppDataTable>
-
-    <!-- quick status edit popover -->
-    <Popover ref="quickEditPopover" :pt="popoverPt">
-      <div v-if="quickEditBug" class="w-56 space-y-1 p-1">
-        <p class="px-2 pb-1 text-xs font-semibold uppercase tracking-wide text-gray-400 dark:text-zinc-500">
-          Move to
-        </p>
-        <span
-          v-for="status in ALL_BUG_STATUSES"
-          :key="status"
-          :title="statusTooltip(quickEditBug.status, status)"
-          class="block"
-        >
-          <button
-            type="button"
-            class="flex w-full items-center justify-between rounded-md px-2 py-1.5 text-left text-sm
-                   text-gray-700 hover:bg-gray-100 dark:text-zinc-200 dark:hover:bg-white/10
-                   disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:bg-transparent
-                   dark:disabled:hover:bg-transparent"
-            :disabled="quickEditSaving || status === quickEditBug.status"
-            @click="applyQuickStatus(status)"
-          >
-            {{ status }}
-          </button>
-        </span>
-      </div>
-    </Popover>
 
     <!-- report bug modal, no pre-filled context since this isn't coming from a failed run -->
     <LogBugModal v-model="reportModalOpen" @created="onBugCreated" />

@@ -44,15 +44,13 @@ export const userRepository = {
     return rows as UserRecord[]
   },
 
-  async approve(userId: number, role: string, moduleIds: number[]): Promise<UserRecord | null> {
+  async approve(userId: number, role: string): Promise<UserRecord | null> {
     const sql = useDb()
     const rows = await sql`
       update users set role = ${role}, active = true where id = ${userId}
       returning *
     `
-    if (!rows[0]) return null
-    await this.setModules(userId, moduleIds)
-    return rows[0] as UserRecord
+    return (rows[0] as UserRecord) ?? null
   },
 
   async findById(userId: number): Promise<UserRecord | null> {
@@ -79,49 +77,15 @@ export const userRepository = {
     return rows as UserRecord[]
   },
 
-  // fetches every user together with the names of the modules they are
-  // scoped to, one row per user with modules collapsed into a json array,
-  // so the admin page can show module chips without a second round trip
-  async listAllWithModules(): Promise<(UserRecord & { modules: { id: number; name: string }[] })[]> {
+  // fetches every user for the admin page's two tables. users are no
+  // longer scoped to specific modules -- module assignment was removed,
+  // bug assignment (owner_id on bugs) is the only per-user scoping
+  // concept left in the app -- so this is a plain listing with no module
+  // join.
+  async listAll(): Promise<UserRecord[]> {
     const sql = useDb()
-    const rows = await sql`
-      select
-        u.*,
-        coalesce(
-          json_agg(
-            json_build_object('id', m.id, 'name', m.name)
-          ) filter (where m.id is not null),
-          '[]'
-        ) as modules
-      from users u
-      left join user_modules um on um.user_id = u.id
-      left join modules m on m.id = um.module_id
-      group by u.id
-      order by u.created_at asc
-    `
-    return rows as (UserRecord & { modules: { id: number; name: string }[] })[]
-  },
-
-  // replaces a user's module scope entirely rather than only adding to it,
-  // so editing an active user's modules removes ones that were unchecked
-  async setModules(userId: number, moduleIds: number[]): Promise<void> {
-    const sql = useDb()
-    await sql`delete from user_modules where user_id = ${userId}`
-    for (const moduleId of moduleIds) {
-      await sql`
-        insert into user_modules (user_id, module_id)
-        values (${userId}, ${moduleId})
-        on conflict do nothing
-      `
-    }
-  },
-
-  // used by the dashboard's module filter to default to "my modules"
-  // instead of showing org-wide data the moment someone logs in
-  async listModuleIdsForUser(userId: number): Promise<number[]> {
-    const sql = useDb()
-    const rows = await sql`select module_id from user_modules where user_id = ${userId}`
-    return rows.map((r: any) => r.module_id)
+    const rows = await sql`select * from users order by created_at asc`
+    return rows as UserRecord[]
   },
 
   async setActive(userId: number, active: boolean): Promise<UserRecord> {

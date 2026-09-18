@@ -23,6 +23,13 @@ const maxTotal = computed(() => {
   return Math.max(1, ...totals)
 })
 
+// a day with an entry but zero pass/fail/blocked counts renders as an
+// invisible, zero height bar -- worse than no chart at all, since the
+// axis and "tap a bar" hint still show with nothing to actually tap.
+// treat "every point is zero" the same as "no points" and fall back to
+// the empty state instead.
+const hasData = computed(() => props.points.some((p) => p.pass + p.fail + p.blocked > 0))
+
 function segmentHeight(value: number) {
   return `${Math.max(0, (value / maxTotal.value) * 100)}%`
 }
@@ -61,7 +68,7 @@ const selectedPoint = computed(() =>
       <span class="flex items-center gap-1.5"><span class="h-2 w-2 rounded-full bg-purple-500" /> Blocked</span>
     </div>
 
-    <div v-if="points.length === 0" class="flex h-40 items-center justify-center text-sm text-gray-400 dark:text-zinc-500">
+    <div v-if="!hasData" class="flex h-40 items-center justify-center text-sm text-gray-400 dark:text-zinc-500">
       {{ emptyMessage }}
     </div>
 

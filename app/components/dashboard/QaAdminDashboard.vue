@@ -81,22 +81,8 @@ const releaseOptions = computed(() => [
   ...(releaseOptionsData.value ?? [])
 ])
 
-const { data: scopeData } = await useFetch<{ moduleIds: number[] }>('/api/dashboard/scope')
-const myModuleIds = computed(() => scopeData.value?.moduleIds ?? [])
-// "My Modules" only means something as a single-select default when the
-// person is scoped to exactly one module -- with 0 or several, there is no
-// single id this dropdown could represent, so the quick toggle is hidden
-// and the dashboard just starts on "All Modules" instead of guessing.
-const hasSingleModuleScope = computed(() => myModuleIds.value.length === 1)
-
-const selectedModuleId = ref<number | null>(hasSingleModuleScope.value ? myModuleIds.value[0] : null)
+const selectedModuleId = ref<number | null>(null)
 const selectedReleaseId = ref<number | null>(null)
-
-function useMyModules() {
-  if (hasSingleModuleScope.value) {
-    selectedModuleId.value = myModuleIds.value[0]
-  }
-}
 
 function useAllModules() {
   selectedModuleId.value = null
@@ -262,14 +248,6 @@ function executionStatusKey(result: string): string {
         placeholder="All Modules"
         class="w-44"
         :pt="dropdownPt"
-      />
-      <BaseButton
-        v-if="hasSingleModuleScope"
-        label="My Modules"
-        size="sm"
-        variant="outline"
-        icon="pi pi-user"
-        @click="useMyModules"
       />
       <BaseButton
         v-if="selectedModuleId !== null"

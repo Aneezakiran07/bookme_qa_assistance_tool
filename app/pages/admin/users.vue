@@ -1,16 +1,11 @@
 <script setup lang="ts">
-// user management page: approve pending signups into a real role with
-// module scope, and manage already-active team members (edit scope or
-// deactivate). Admin and QA Lead both get this page -- same permission
-// tier for this pilot, just two different labels -- gated by the
-// manage-users middleware; Tester and Developer are bounced to the
-// dashboard if they hit this route directly.
+// user management page: approve pending signups into a real role, and
+// manage already-active team members (edit role or deactivate). Admin
+// and QA Lead both get this page -- same permission tier for this
+// pilot, just two different labels -- gated by the manage-users
+// middleware; Tester and Developer are bounced to the dashboard if
+// they hit this route directly.
 definePageMeta({ layout: 'default', middleware: ['manage-users'] })
-
-interface ModuleRef {
-  id: number
-  name: string
-}
 
 interface AdminUserRow {
   id: number
@@ -18,7 +13,6 @@ interface AdminUserRow {
   role: 'Pending' | 'Admin' | 'QA Lead' | 'Tester' | 'Developer'
   active: boolean
   created_at: string
-  modules: ModuleRef[]
 }
 
 const ASSIGNABLE_ROLES = ['QA Lead', 'Tester', 'Developer', 'Admin']
@@ -29,8 +23,6 @@ const { data, refresh, pending: loadingUsers } = await useFetch<{
   pending: AdminUserRow[]
   active: AdminUserRow[]
 }>('/api/admin/users')
-
-const { data: moduleOptions } = await useFetch<ModuleRef[]>('/api/modules')
 
 const pendingUsers = computed(() => data.value?.pending ?? [])
 const activeUsers = computed(() => data.value?.active ?? [])
@@ -70,7 +62,6 @@ const pendingColumns = [
 const activeColumns = [
   { field: 'email', header: 'User' },
   { field: 'role', header: 'Role' },
-  { field: 'modules', header: 'Modules' },
 ]
 
 // -- approval / edit modal, shared by both tables --
@@ -78,14 +69,12 @@ const modalOpen = ref(false)
 const modalMode = ref<'approve' | 'edit'>('approve')
 const modalUser = ref<AdminUserRow | null>(null)
 const selectedRole = ref<string>('Tester')
-const selectedModuleIds = ref<number[]>([])
 const saving = ref(false)
 
 function openApprove(user: AdminUserRow) {
   modalMode.value = 'approve'
   modalUser.value = user
   selectedRole.value = user.role === 'Pending' ? 'Tester' : user.role
-  selectedModuleIds.value = user.modules.map((m) => m.id)
   modalOpen.value = true
 }
 
@@ -93,7 +82,6 @@ function openEdit(user: AdminUserRow) {
   modalMode.value = 'edit'
   modalUser.value = user
   selectedRole.value = user.role
-  selectedModuleIds.value = user.modules.map((m) => m.id)
   modalOpen.value = true
 }
 
@@ -106,12 +94,11 @@ async function confirmActivation() {
       body: {
         userId: modalUser.value.id,
         role: selectedRole.value,
-        moduleIds: selectedModuleIds.value,
       },
     })
     toast.add({
       severity: 'success',
-      summary: 'User approved and assigned successfully',
+      summary: 'User approved successfully',
       life: 3000,
     })
     modalOpen.value = false
@@ -190,7 +177,7 @@ async function deactivate(user: AdminUserRow) {
         User Approvals & Role Assignment
       </h1>
       <p class="mt-1 text-sm text-gray-500 dark:text-zinc-400">
-        Approve new signups into a role and module scope, and manage existing team access.
+        Approve new signups into a role, and manage existing team access.
       </p>
     </div>
 
@@ -309,20 +296,6 @@ async function deactivate(user: AdminUserRow) {
           </span>
         </template>
 
-        <template #cell-modules="{ data: row }">
-          <div v-if="row.modules.length" class="flex flex-wrap gap-1">
-            <span
-              v-for="mod in row.modules"
-              :key="mod.id"
-              class="rounded-full bg-gray-100 px-2 py-0.5 text-xs text-gray-600
-                     dark:bg-white/10 dark:text-zinc-300"
-            >
-              {{ mod.name }}
-            </span>
-          </div>
-          <span v-else class="text-xs text-gray-400 dark:text-zinc-500">No modules</span>
-        </template>
-
         <template #actions="{ data: row }">
           <div class="flex items-center gap-2">
             <BaseButton
@@ -347,7 +320,7 @@ async function deactivate(user: AdminUserRow) {
     <!-- approval / edit modal -->
     <BaseModal
       v-model="modalOpen"
-      :title="modalMode === 'approve' ? 'Approve & Assign Role' : 'Edit Role & Modules'"
+      :title="modalMode === 'approve' ? 'Approve & Assign Role' : 'Edit Role'"
       width="28rem"
     >
       <div v-if="modalUser" class="space-y-4">
@@ -370,21 +343,6 @@ async function deactivate(user: AdminUserRow) {
           />
         </div>
 
-        <div>
-          <label class="mb-1 block text-xs font-medium text-gray-600 dark:text-zinc-300">
-            Modules
-          </label>
-          <MultiSelect
-            v-model="selectedModuleIds"
-            :options="moduleOptions ?? []"
-            option-label="name"
-            option-value="id"
-            display="chip"
-            placeholder="Assign modules"
-            class="w-full"
-            :pt="dropdownPt"
-          />
-        </div>
       </div>
 
       <template #footer>

@@ -459,7 +459,7 @@ async function deleteTestCase(row: TestCaseRow) {
         <div class="flex items-center gap-2">
           <BaseButton variant="outline" size="sm" icon="pi pi-pencil" label="Edit" @click="openEdit(row)" />
           <BaseButton
-            variant="secondary"
+            variant="outline"
             size="sm"
             icon="pi pi-copy"
             label="Duplicate"
