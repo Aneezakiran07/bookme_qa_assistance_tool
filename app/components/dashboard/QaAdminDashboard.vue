@@ -124,9 +124,27 @@ const automationCoveragePct = computed(() =>
 )
 
 // -- chart data mappers --
-const trendPoints = computed(() =>
-  trend.value.map((t) => ({ day: t.day, pass: t.pass_count, fail: t.fail_count, blocked: t.blocked_count }))
-)
+const TREND_DONUT_CLASSES: Record<string, { stroke: string; dot: string }> = {
+  Pass: { stroke: 'stroke-emerald-500', dot: 'bg-emerald-500' },
+  Fail: { stroke: 'stroke-red-500', dot: 'bg-red-500' },
+  Blocked: { stroke: 'stroke-purple-500', dot: 'bg-purple-500' }
+}
+const trendSegments = computed(() => {
+  const totals = trend.value.reduce(
+    (acc, t) => ({
+      Pass: acc.Pass + t.pass_count,
+      Fail: acc.Fail + t.fail_count,
+      Blocked: acc.Blocked + t.blocked_count
+    }),
+    { Pass: 0, Fail: 0, Blocked: 0 }
+  )
+  return (['Pass', 'Fail', 'Blocked'] as const).map((key) => ({
+    label: key,
+    value: totals[key],
+    colorClass: TREND_DONUT_CLASSES[key].stroke,
+    dotClass: TREND_DONUT_CLASSES[key].dot
+  }))
+})
 
 const SEVERITY_DONUT_CLASSES: Record<string, { stroke: string; dot: string }> = {
   Critical: { stroke: 'stroke-red-500', dot: 'bg-red-500' },
@@ -330,7 +348,7 @@ function executionStatusKey(result: string): string {
         <p class="mb-3 text-xs font-semibold uppercase tracking-wide text-gray-400 dark:text-zinc-500">
           Test Execution Trend
         </p>
-        <AppTrendChart :points="trendPoints" />
+        <AppDonutChart :segments="trendSegments" empty-message="No executions recorded in this range." />
       </div>
 
       <div class="rounded-lg border border-black/10 bg-white p-5 dark:border-white/10 dark:bg-black">
