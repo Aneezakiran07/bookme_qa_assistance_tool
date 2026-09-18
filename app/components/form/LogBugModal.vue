@@ -172,13 +172,13 @@ async function save() {
     <div class="space-y-4">
       <div
         v-if="existingBug"
-        class="rounded-md border border-amber-300 bg-amber-50 p-3 text-sm dark:border-amber-500/30 dark:bg-amber-500/10"
+        class="rounded-md border border-purple-300 bg-purple-50 p-3 text-sm dark:border-purple-500/30 dark:bg-purple-500/10"
       >
-        <p class="font-medium text-amber-800 dark:text-amber-300">
+        <p class="font-medium text-purple-800 dark:text-purple-300">
           This test case already has an open bug: #{{ existingBug.id }} — {{ existingBug.title }}
           ({{ existingBug.status }})
         </p>
-        <p class="mt-1 text-amber-700 dark:text-amber-400">
+        <p class="mt-1 text-purple-700 dark:text-purple-400">
           Logging another bug here would create a duplicate ticket for the same defect.
         </p>
         <div class="mt-2 flex flex-wrap gap-2">

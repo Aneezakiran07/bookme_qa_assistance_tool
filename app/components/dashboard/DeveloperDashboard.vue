@@ -64,9 +64,9 @@ function formatDate(dateStr: string) {
 const SEVERITY_CLASSES: Record<string, string> = {
   Critical:
     'bg-red-100 text-red-700 border-red-200 dark:bg-red-500/15 dark:text-red-400 dark:border-red-500/30 animate-pulse',
-  High: 'bg-orange-100 text-orange-700 border-orange-200 dark:bg-orange-500/15 dark:text-orange-400 dark:border-orange-500/30',
+  High: 'bg-[#f3e6d8] text-[#7a5233] border-[#e2c9ab] dark:bg-[#a9784f]/15 dark:text-[#cfa77d] dark:border-[#a9784f]/30',
   Medium:
-    'bg-amber-100 text-amber-700 border-amber-200 dark:bg-amber-500/15 dark:text-amber-400 dark:border-amber-500/30',
+    'bg-purple-100 text-purple-700 border-purple-200 dark:bg-purple-500/15 dark:text-purple-400 dark:border-purple-500/30',
   Low: 'bg-blue-100 text-blue-700 border-blue-200 dark:bg-blue-500/15 dark:text-blue-400 dark:border-blue-500/30'
 }
 

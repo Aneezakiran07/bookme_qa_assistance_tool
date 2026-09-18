@@ -33,7 +33,7 @@ const PALETTES: Record<string, Palette> = {
   inProgress: {
     label: 'In Progress',
     classes:
-      'bg-amber-100 text-amber-700 border-amber-200 dark:bg-amber-500/15 dark:text-amber-400 dark:border-amber-500/30'
+      'bg-purple-100 text-purple-700 border-purple-200 dark:bg-purple-500/15 dark:text-purple-400 dark:border-purple-500/30'
   },
   resolved: {
     label: 'Resolved',

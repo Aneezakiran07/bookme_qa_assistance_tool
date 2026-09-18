@@ -148,7 +148,7 @@ async function saveRelease() {
           class="text-sm font-medium"
           :class="{
             'text-green-600 dark:text-green-400': row.pass_rate >= 80,
-            'text-amber-600 dark:text-amber-400': row.pass_rate >= 50 && row.pass_rate < 80,
+            'text-purple-600 dark:text-purple-400': row.pass_rate >= 50 && row.pass_rate < 80,
             'text-red-600 dark:text-red-400': row.pass_rate < 50
           }"
         >

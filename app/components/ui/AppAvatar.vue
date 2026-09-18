@@ -21,11 +21,33 @@ const SIZE_CLASSES: Record<string, string> = {
 
 <template>
   <div
-    class="flex shrink-0 items-center justify-center overflow-hidden rounded-full
-           bg-purple-600/10 dark:bg-white/5"
+    class="flex shrink-0 items-center justify-center overflow-hidden rounded-full bg-transparent"
     :class="SIZE_CLASSES[size]"
     :title="avatar.label"
   >
-    <div class="h-[72%] w-[72%]" v-html="avatar.svg" />
+    <!--
+      the wrapper used to be h-[72%] w-[72%] with no explicit sizing on
+      the svg itself -- without a width/height (or a forced 100%), a raw
+      <svg> falls back to its own intrinsic default box instead of
+      filling this div, so only a sliver of it ever showed up inside the
+      circle, cropped to whatever corner happened to land there. h-full
+      w-full here + forcing the actual <svg> tag to 100%/100% below is
+      what makes the whole character render inside the icon instead of
+      a cropped fragment of it. background: transparent on the svg too,
+      so nothing but the character itself ever paints -- the only
+      background color anyone sees is whatever sits behind this
+      component (the sidebar row, the profile card, etc), never a
+      colored box baked into the avatar.
+    -->
+    <div class="avatar-svg h-full w-full" v-html="avatar.svg" />
   </div>
 </template>
+
+<style scoped>
+.avatar-svg :deep(svg) {
+  display: block;
+  width: 100%;
+  height: 100%;
+  background: transparent;
+}
+</style>

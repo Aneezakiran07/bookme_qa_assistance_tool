@@ -28,7 +28,7 @@ const { user, clear } = useUserSession()
 // name), this ref updates too and the sidebar avatar/name reflect it
 // immediately, without a page reload or any event bus. avatarId can be
 // null for a user who has never opened the avatar picker; AppAvatar's
-// getAvatarById already falls back to the first/default avatar (fox)
+// getAvatarById already falls back to the first/default avatar (cat)
 // in that case, so nothing extra is needed here for "no avatar set yet".
 const { data: profileData } = await useFetch<ProfileData>('/api/profile', {
   key: 'current-user-profile'
@@ -155,7 +155,6 @@ async function handleLogout() {
       <NuxtLink
         to="/profile"
         class="flex items-center gap-3 rounded-md px-2 py-2 transition-colors hover:bg-gray-100 dark:hover:bg-zinc-900"
-        active-class="!bg-purple-600/10"
       >
         <AppAvatar :avatar-id="profileData?.avatarId" size="sm" />
         <div class="min-w-0 flex-1">

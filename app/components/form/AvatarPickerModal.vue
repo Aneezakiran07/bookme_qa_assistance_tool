@@ -39,13 +39,24 @@ const visible = computed({
         @click="$emit('select', option.id)"
       >
         <div
-          class="flex h-12 w-12 items-center justify-center overflow-hidden rounded-full
-                 bg-purple-600/10 dark:bg-white/5"
+          class="flex h-12 w-12 items-center justify-center overflow-hidden rounded-full"
         >
-          <div class="h-[72%] w-[72%]" v-html="option.svg" />
+          <!-- same fix as AppAvatar.vue: force the svg to 100%/100% and
+               transparent so the whole character shows, uncropped, with
+               no baked-in background box -->
+          <div class="avatar-svg h-full w-full" v-html="option.svg" />
         </div>
         <span class="text-[11px] text-gray-500 dark:text-zinc-400">{{ option.label }}</span>
       </button>
     </div>
   </BaseModal>
 </template>
+
+<style scoped>
+.avatar-svg :deep(svg) {
+  display: block;
+  width: 100%;
+  height: 100%;
+  background: transparent;
+}
+</style>

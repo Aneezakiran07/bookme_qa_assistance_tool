@@ -11,6 +11,19 @@ export interface AvatarOption {
 
 export const AVATAR_OPTIONS: AvatarOption[] = [
   {
+    id: 'cat',
+    label: 'Cat',
+    svg: `<svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg">
+      <path d="M14 12 L26 24 L12 26 Z" fill="#8a8f98"/>
+      <path d="M50 12 L38 24 L52 26 Z" fill="#8a8f98"/>
+      <circle cx="32" cy="36" r="20" fill="#aeb4bd"/>
+      <circle cx="24" cy="34" r="3" fill="#1f3a2e"/>
+      <circle cx="40" cy="34" r="3" fill="#1f3a2e"/>
+      <path d="M30 41 Q32 43 34 41" stroke="#1f3a2e" stroke-width="1.6" fill="none" stroke-linecap="round"/>
+      <path d="M8 38 L20 36 M8 42 L20 40 M56 38 L44 36 M56 42 L44 40" stroke="#7a7f88" stroke-width="1.4" stroke-linecap="round"/>
+    </svg>`
+  },
+  {
     id: 'fox',
     label: 'Fox',
     svg: `<svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg">
@@ -23,19 +36,6 @@ export const AVATAR_OPTIONS: AvatarOption[] = [
       <circle cx="24" cy="33" r="3.2" fill="#2b2b2b"/>
       <circle cx="40" cy="33" r="3.2" fill="#2b2b2b"/>
       <path d="M29 40 L35 40 L32 44 Z" fill="#2b2b2b"/>
-    </svg>`
-  },
-  {
-    id: 'cat',
-    label: 'Cat',
-    svg: `<svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg">
-      <path d="M14 12 L26 24 L12 26 Z" fill="#8a8f98"/>
-      <path d="M50 12 L38 24 L52 26 Z" fill="#8a8f98"/>
-      <circle cx="32" cy="36" r="20" fill="#aeb4bd"/>
-      <circle cx="24" cy="34" r="3" fill="#1f3a2e"/>
-      <circle cx="40" cy="34" r="3" fill="#1f3a2e"/>
-      <path d="M30 41 Q32 43 34 41" stroke="#1f3a2e" stroke-width="1.6" fill="none" stroke-linecap="round"/>
-      <path d="M8 38 L20 36 M8 42 L20 40 M56 38 L44 36 M56 42 L44 40" stroke="#7a7f88" stroke-width="1.4" stroke-linecap="round"/>
     </svg>`
   },
   {
@@ -172,7 +172,7 @@ export const AVATAR_OPTIONS: AvatarOption[] = [
   }
 ]
 
-export const DEFAULT_AVATAR_ID = 'fox'
+export const DEFAULT_AVATAR_ID = 'cat'
 
 export function getAvatarById(id: string | null | undefined): AvatarOption {
   return AVATAR_OPTIONS.find((a) => a.id === id) ?? AVATAR_OPTIONS.find((a) => a.id === DEFAULT_AVATAR_ID)!

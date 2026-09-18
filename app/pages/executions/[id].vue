@@ -158,7 +158,7 @@ async function submitResult(result: 'Pass' | 'Fail' | 'Blocked') {
 const PRIORITY_CLASSES: Record<string, string> = {
   High: 'bg-red-100 text-red-700 border-red-200 dark:bg-red-500/15 dark:text-red-400 dark:border-red-500/30',
   Medium:
-    'bg-amber-100 text-amber-700 border-amber-200 dark:bg-amber-500/15 dark:text-amber-400 dark:border-amber-500/30',
+    'bg-purple-100 text-purple-700 border-purple-200 dark:bg-purple-500/15 dark:text-purple-400 dark:border-purple-500/30',
   Low: 'bg-green-100 text-green-700 border-green-200 dark:bg-green-500/15 dark:text-green-400 dark:border-green-500/30'
 }
 
@@ -220,7 +220,7 @@ function statusKey(latest: string | null): string {
         </div>
         <div class="rounded-lg border border-black/10 bg-white p-3 dark:border-white/10 dark:bg-black">
           <p class="text-xs text-gray-500 dark:text-zinc-400">Blocked</p>
-          <p class="mt-1 text-lg font-semibold text-amber-600 dark:text-amber-400">
+          <p class="mt-1 text-lg font-semibold text-purple-600 dark:text-purple-400">
             {{ stats.blocked }}
           </p>
         </div>
@@ -407,9 +407,9 @@ function statusKey(latest: string | null): string {
               </button>
               <button
                 type="button"
-                class="rounded-md border-2 border-amber-500 bg-amber-50 px-4 py-3 text-sm font-semibold
-                       text-amber-700 transition-colors hover:bg-amber-100 disabled:opacity-50
-                       dark:border-amber-500 dark:bg-amber-500/10 dark:text-amber-400 dark:hover:bg-amber-500/20"
+                class="rounded-md border-2 border-purple-500 bg-purple-50 px-4 py-3 text-sm font-semibold
+                       text-purple-700 transition-colors hover:bg-purple-100 disabled:opacity-50
+                       dark:border-purple-500 dark:bg-purple-500/10 dark:text-purple-400 dark:hover:bg-purple-500/20"
                 :disabled="submitting"
                 @click="submitResult('Blocked')"
               >

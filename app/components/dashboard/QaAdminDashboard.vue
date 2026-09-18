@@ -148,8 +148,8 @@ const trendPoints = computed(() =>
 
 const SEVERITY_DONUT_CLASSES: Record<string, { stroke: string; dot: string }> = {
   Critical: { stroke: 'stroke-red-500', dot: 'bg-red-500' },
-  High: { stroke: 'stroke-orange-500', dot: 'bg-orange-500' },
-  Medium: { stroke: 'stroke-amber-500', dot: 'bg-amber-500' },
+  High: { stroke: 'stroke-[#a9784f]', dot: 'bg-[#a9784f]' },
+  Medium: { stroke: 'stroke-purple-500', dot: 'bg-purple-500' },
   Low: { stroke: 'stroke-blue-500', dot: 'bg-blue-500' }
 }
 const severitySegments = computed(() => {
@@ -164,7 +164,7 @@ const severitySegments = computed(() => {
 
 const STATUS_BAR_CLASSES: Record<string, { bar: string; dot: string }> = {
   Open: { bar: 'bg-blue-500', dot: 'bg-blue-500' },
-  'In Progress': { bar: 'bg-amber-500', dot: 'bg-amber-500' },
+  'In Progress': { bar: 'bg-purple-500', dot: 'bg-purple-500' },
   Retest: { bar: 'bg-indigo-500', dot: 'bg-indigo-500' }
 }
 const statusSegments = computed(() => {
@@ -180,7 +180,7 @@ const statusSegments = computed(() => {
 const REQ_STATUS_CLASSES: Record<string, { bar: string; dot: string }> = {
   Draft: { bar: 'bg-gray-400', dot: 'bg-gray-400' },
   Approved: { bar: 'bg-sky-500', dot: 'bg-sky-500' },
-  'In Testing': { bar: 'bg-amber-500', dot: 'bg-amber-500' },
+  'In Testing': { bar: 'bg-purple-500', dot: 'bg-purple-500' },
   Done: { bar: 'bg-emerald-500', dot: 'bg-emerald-500' }
 }
 const requirementsSegments = computed(() => {
@@ -203,7 +203,7 @@ function bugCode(id: number) {
 
 const SEVERITY_TEXT_CLASSES: Record<string, string> = {
   Critical: 'text-red-600 dark:text-red-400',
-  High: 'text-orange-600 dark:text-orange-400'
+  High: 'text-[#8a5c34] dark:text-[#cfa77d]'
 }
 
 function timeAgo(dateStr: string) {

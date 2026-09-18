@@ -15213,7 +15213,14 @@ const dashboardRepository = {
       order by day asc
     `;
     return rows.map((r) => ({
-      day: r.day,
+      // te.execution_date::date comes back from postgres.js as a JS Date
+      // object (midnight UTC), not the plain "YYYY-MM-DD" string this
+      // interface promises. Left as a Date, it serializes over JSON as a
+      // full ISO timestamp like "2026-09-15T00:00:00.000Z", and the chart
+      // then appends its own "T00:00:00" on top of that, producing an
+      // unparseable string and rendering as "Invalid Date" in the UI.
+      // Normalizing here keeps every consumer of this API on a plain date.
+      day: r.day instanceof Date ? r.day.toISOString().slice(0, 10) : String(r.day).slice(0, 10),
       pass_count: r.pass_count,
       fail_count: r.fail_count,
       blocked_count: r.blocked_count

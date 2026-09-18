@@ -30,7 +30,7 @@ const barClass = computed(() => {
     case 'success':
       return 'bg-green-500'
     case 'warning':
-      return 'bg-amber-500'
+      return 'bg-purple-500'
     case 'danger':
       return 'bg-red-500'
     default:

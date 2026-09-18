@@ -132,19 +132,52 @@ async function confirmActivation() {
 const confirmDialogRef = ref<{ open: (opts: any) => Promise<boolean> }>()
 const dropdownPt = useDropdownPt()
 
+// the session, so a self-deactivation gets its own much louder warning
+// -- an Admin or QA Lead deactivating their own account locks
+// themselves out immediately, and unlike deactivating someone else,
+// there is no one left signed in on this page to undo it afterward
+const { user: sessionUser, fetch: refreshSession } = useUserSession()
+
 async function deactivate(user: AdminUserRow) {
-  const confirmed = await confirmDialogRef.value?.open({
-    title: 'Deactivate access?',
-    message: `${user.email} will lose access immediately. You can reactivate them later from this page.`,
-    confirmLabel: 'Deactivate',
-    danger: true,
-  })
+  const isSelf = user.id === sessionUser.value?.id
+
+  const confirmed = await confirmDialogRef.value?.open(
+    isSelf
+      ? {
+          title: 'Deactivate your own access?',
+          message:
+            `This is your own account. Deactivating it will sign you out and lock you out of the ` +
+            `app immediately -- you will NOT be able to undo this yourself, since deactivated users ` +
+            `can't reach this page. Another Admin or QA Lead would have to reactivate you.`,
+          confirmLabel: 'Deactivate my own account',
+          danger: true,
+        }
+      : {
+          title: 'Deactivate access?',
+          message: `${user.email} will lose access immediately. You can reactivate them later from this page.`,
+          confirmLabel: 'Deactivate',
+          danger: true,
+        }
+  )
   if (!confirmed) return
 
   await $fetch('/api/admin/deactivate-user', {
     method: 'POST',
     body: { userId: user.id },
   })
+
+  if (isSelf) {
+    toast.add({ severity: 'success', summary: 'Your access has been deactivated', life: 3000 })
+    // the DB row is updated, but useUserSession()'s reactive state (what
+    // the global auth middleware checks) doesn't know that yet -- refresh
+    // it first, then navigate, so the middleware sees active: false and
+    // sends us to /pending-approval on its own instead of us guessing
+    // where it'll redirect
+    await refreshSession()
+    await navigateTo('/')
+    return
+  }
+
   toast.add({ severity: 'success', summary: 'User access deactivated', life: 3000 })
   await refresh()
 }
@@ -251,8 +284,14 @@ async function deactivate(user: AdminUserRow) {
               {{ initials(row.email) }}
             </span>
             <div class="min-w-0">
-              <p class="truncate text-sm font-medium text-gray-900 dark:text-white">
+              <p class="flex items-center gap-1.5 truncate text-sm font-medium text-gray-900 dark:text-white">
                 {{ displayName(row.email) }}
+                <span
+                  v-if="row.id === sessionUser?.id"
+                  class="shrink-0 rounded-full bg-purple-100 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-purple-700 dark:bg-purple-500/15 dark:text-purple-400"
+                >
+                  You
+                </span>
               </p>
               <p class="truncate text-xs text-gray-500 dark:text-zinc-400">
                 {{ row.email }}
