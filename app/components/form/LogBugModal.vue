@@ -42,10 +42,92 @@ const form = reactive({
 
 const saving = ref(false)
 
-// once the bug is created, the modal stays open and switches into this
-// step so a proof screenshot/video can be attached right away instead of
-// forcing a second trip to the bug detail page
+// once the bug is created, the modal stays open briefly while any staged
+// attachments upload, then closes on its own instead of forcing a second
+// trip to the bug detail page
 const createdBug = ref<{ id: number; title: string } | null>(null)
+const uploadingAttachments = ref(false)
+
+// a screenshot or video picked in the form, before the bug exists. Held as
+// a plain File plus a local preview url so the picker can sit right in the
+// form instead of only appearing after the bug is saved
+interface StagedFile {
+  localId: string
+  file: File
+  previewUrl: string
+  type: 'image' | 'video'
+}
+const stagedFiles = ref<StagedFile[]>([])
+const stagedDragOver = ref(false)
+const stagedFileInput = ref<HTMLInputElement>()
+
+function pickStagedFiles() {
+  stagedFileInput.value?.click()
+}
+
+function addStagedFiles(fileList: FileList | null) {
+  if (!fileList?.length) return
+  for (const file of Array.from(fileList)) {
+    stagedFiles.value.push({
+      localId: `${Date.now()}-${Math.random().toString(36).slice(2)}`,
+      file,
+      previewUrl: URL.createObjectURL(file),
+      type: file.type.startsWith('video') ? 'video' : 'image'
+    })
+  }
+  if (stagedFileInput.value) stagedFileInput.value.value = ''
+}
+
+function onStagedDrop(event: DragEvent) {
+  stagedDragOver.value = false
+  addStagedFiles(event.dataTransfer?.files ?? null)
+}
+
+function removeStagedFile(localId: string) {
+  const match = stagedFiles.value.find((f) => f.localId === localId)
+  if (match) URL.revokeObjectURL(match.previewUrl)
+  stagedFiles.value = stagedFiles.value.filter((f) => f.localId !== localId)
+}
+
+// every staged file's preview url is a blob url tied to this modal
+// instance, so they're released whichever way the form clears: reset on
+// reopen, or cleared out after a successful save
+function clearStagedFiles() {
+  stagedFiles.value.forEach((f) => URL.revokeObjectURL(f.previewUrl))
+  stagedFiles.value = []
+}
+
+// fires once the bug exists. best effort: a failed attachment does not
+// block the bug itself from being logged, since it can always be added
+// later from the bug's own detail page
+async function uploadStagedFiles(bugId: number) {
+  if (!stagedFiles.value.length) return
+  uploadingAttachments.value = true
+  let failures = 0
+  try {
+    for (const staged of stagedFiles.value) {
+      try {
+        const form = new FormData()
+        form.append('bugId', String(bugId))
+        form.append('file', staged.file)
+        await $fetch('/api/bugs/attachments', { method: 'POST', body: form })
+      } catch {
+        failures += 1
+      }
+    }
+  } finally {
+    clearStagedFiles()
+    uploadingAttachments.value = false
+  }
+  if (failures > 0) {
+    toast.add({
+      severity: 'warn',
+      summary: failures === 1 ? '1 attachment failed to upload' : `${failures} attachments failed to upload`,
+      detail: 'The bug was still logged. You can add attachments again from its detail page.',
+      life: 6000
+    })
+  }
+}
 
 // the bug already open against this test case, if any. Set right after
 // the modal opens; drives the duplicate warning banner below
@@ -96,6 +178,7 @@ watch(
     form.actualResult = props.initialActualResult ?? ''
     form.ownerId = null
     createdBug.value = null
+    clearStagedFiles()
     checkForExistingBug()
   }
 )
@@ -166,11 +249,10 @@ async function save() {
       summary: `Bug #${created.id} logged`,
       life: 3000
     })
-    emit('created', created)
-    // stay open on a proof-attaching step instead of closing right away,
-    // so a screenshot/video can be added without a second trip to the
-    // bug's own detail page
     createdBug.value = created
+    await uploadStagedFiles(created.id)
+    emit('created', created)
+    visible.value = false
   } catch (error) {
     toast.add({
       severity: 'error',
@@ -187,16 +269,10 @@ async function save() {
 <template>
   <BaseModal
     v-model="visible"
-    :title="createdBug ? `Bug #${createdBug.id} logged — add proof` : 'Log a bug from this failure'"
+    title="Log a bug from this failure"
     width="42rem"
   >
-    <div v-if="createdBug" class="space-y-3">
-      <p class="text-sm text-gray-600 dark:text-zinc-300">
-        Optionally attach a screenshot or short video showing the issue. This can also be added later from the bug's own page.
-      </p>
-      <MediaUploader :bug-id="createdBug.id" />
-    </div>
-    <div v-else class="space-y-4">
+    <div class="space-y-4">
       <div
         v-if="existingBug"
         class="rounded-md border border-purple-300 bg-purple-50 p-3 text-sm dark:border-purple-500/30 dark:bg-purple-500/10"
@@ -322,24 +398,85 @@ async function save() {
           Carried over from the failing test run, edit if you want to add more detail.
         </p>
       </div>
+
+      <div>
+        <label class="mb-1 block text-xs font-medium text-gray-600 dark:text-zinc-300">
+          Attachments (optional)
+        </label>
+        <div
+          class="flex cursor-pointer flex-col items-center justify-center gap-2 rounded-lg
+                 border-2 border-dashed p-6 text-center transition-colors"
+          :class="stagedDragOver
+            ? 'border-purple-500 bg-purple-50 dark:bg-purple-950/20'
+            : 'border-black/15 dark:border-white/15'"
+          @click="pickStagedFiles"
+          @dragover.prevent="stagedDragOver = true"
+          @dragleave.prevent="stagedDragOver = false"
+          @drop.prevent="onStagedDrop"
+        >
+          <i class="pi pi-image text-2xl text-gray-400 dark:text-white/40" />
+          <p class="text-sm text-gray-600 dark:text-white/60">
+            Drag & drop a screenshot or video, or click to browse
+          </p>
+          <input
+            ref="stagedFileInput"
+            type="file"
+            accept="image/*,video/*"
+            multiple
+            class="hidden"
+            @change="addStagedFiles(($event.target as HTMLInputElement).files)"
+          />
+        </div>
+
+        <div v-if="stagedFiles.length" class="mt-3 grid grid-cols-3 gap-3 sm:grid-cols-4">
+          <div
+            v-for="staged in stagedFiles"
+            :key="staged.localId"
+            class="group relative overflow-hidden rounded-md border border-black/10 dark:border-white/10"
+          >
+            <video
+              v-if="staged.type === 'video'"
+              :src="staged.previewUrl"
+              class="h-24 w-full object-cover"
+              muted
+            />
+            <img
+              v-else
+              :src="staged.previewUrl"
+              class="h-24 w-full object-cover"
+              alt="Attachment preview"
+            />
+            <button
+              type="button"
+              class="absolute right-1 top-1 flex h-6 w-6 items-center justify-center
+                     rounded-full bg-black/70 text-white opacity-0 transition-opacity
+                     group-hover:opacity-100 group-focus-within:opacity-100
+                     focus:opacity-100 focus:outline-none focus:ring-2 focus:ring-purple-400
+                     focus:ring-offset-1"
+              aria-label="Remove attachment"
+              @click.stop="removeStagedFile(staged.localId)"
+            >
+              <i class="pi pi-times text-xs" />
+            </button>
+          </div>
+        </div>
+        <p v-if="uploadingAttachments" class="mt-2 text-xs text-gray-400 dark:text-zinc-500">
+          Uploading attachments...
+        </p>
+      </div>
       </div>
     </div>
 
     <template #footer>
-      <template v-if="createdBug">
-        <BaseButton variant="primary" label="Done" @click="visible = false" />
-      </template>
-      <template v-else>
-        <BaseButton variant="secondary" label="Cancel" @click="visible = false" />
-        <BaseButton
-          v-if="!blockedByDuplicate"
-          variant="primary"
-          label="Save Bug"
-          :loading="saving"
-          :disabled="!canSave"
-          @click="save"
-        />
-      </template>
+      <BaseButton variant="secondary" label="Cancel" :disabled="saving || uploadingAttachments" @click="visible = false" />
+      <BaseButton
+        v-if="!blockedByDuplicate"
+        variant="primary"
+        label="Save Bug"
+        :loading="saving || uploadingAttachments"
+        :disabled="!canSave"
+        @click="save"
+      />
     </template>
   </BaseModal>
 </template>
