@@ -36,6 +36,17 @@ const toast = useToast()
 // videos show up immediately instead of starting from an empty dropzone
 const attachments = ref<MediaAttachment[]>([...props.initialAttachments])
 
+// the parent page can refetch the bug after this component already has
+// local state (for example right after an upload or a status change),
+// so this keeps the local list in sync instead of freezing at whatever
+// was passed in on first mount
+watch(
+  () => props.initialAttachments,
+  (next) => {
+    attachments.value = [...(next ?? [])]
+  }
+)
+
 // narrows the full attachment list down to this instance's bucket (qa
 // reproduction proof vs developer fix proof); when no filterRoles is
 // given every attachment is shown, same as before this prop existed

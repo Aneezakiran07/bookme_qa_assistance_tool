@@ -1,12 +1,22 @@
 import { useDb } from '../db/client'
 
+// the database column is file_url but every frontend consumer (the
+// MediaAttachment interface, MediaUploader, MediaLightbox) reads from
+// .url, so every row coming out of this repository is remapped here
+// instead of patching each call site separately
+function mapRow(row: any) {
+  if (!row) return row
+  const { file_url, ...rest } = row
+  return { ...rest, url: file_url }
+}
+
 export const bugAttachmentRepository = {
   async listByBug(bugId: number) {
     const sql = useDb()
     const rows = await sql`
       select * from bug_attachments where bug_id = ${bugId} order by uploaded_at asc
     `
-    return rows
+    return rows.map(mapRow)
   },
 
   async create(
@@ -23,7 +33,7 @@ export const bugAttachmentRepository = {
       values (${bugId}, ${fileUrl}, ${publicId}, ${fileType}, ${uploadedBy}, ${uploadedByRole})
       returning *
     `
-    return rows[0]
+    return mapRow(rows[0])
   },
 
   async delete(attachmentId: number) {
@@ -32,6 +42,6 @@ export const bugAttachmentRepository = {
       delete from bug_attachments where id = ${attachmentId}
       returning *
     `
-    return rows[0]
+    return mapRow(rows[0])
   }
 }
