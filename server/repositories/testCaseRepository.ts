@@ -44,9 +44,10 @@ export const testCaseRepository = {
       from test_cases tc
       join modules m on m.id = tc.module_id
       left join (
-        select test_case_id, array_agg(requirement_id order by requirement_id) as req_ids
-        from requirement_test_case_links
-        group by test_case_id
+        select l.test_case_id, array_agg(l.requirement_id order by l.requirement_id) as req_ids
+        from requirement_test_case_links l
+        join requirements r on r.id = l.requirement_id and r.archived = false
+        group by l.test_case_id
       ) l on l.test_case_id = tc.id
       left join (
         select test_case_id, array_agg(release_id order by release_id) as release_ids
@@ -79,7 +80,10 @@ export const testCaseRepository = {
   async linkedRequirementIds(id: number): Promise<number[]> {
     const sql = useDb()
     const rows = await sql`
-      select requirement_id from requirement_test_case_links where test_case_id = ${id}
+      select l.requirement_id
+      from requirement_test_case_links l
+      join requirements r on r.id = l.requirement_id and r.archived = false
+      where l.test_case_id = ${id}
     `
     return rows.map((r: any) => r.requirement_id)
   },
