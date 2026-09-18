@@ -290,7 +290,7 @@ const confirmDialogRef = ref<{ open: (opts: any) => Promise<boolean> }>()
 async function deleteTestCase(row: TestCaseRow) {
   const confirmed = await confirmDialogRef.value?.open({
     title: 'Delete this test case?',
-    message: `"${row.title}" and its requirement links will be permanently removed. This can't be undone.`,
+    message: `"${row.title}" will be removed from the active list. Its requirement links and execution history are kept.`,
     confirmLabel: 'Delete',
     danger: true
   })

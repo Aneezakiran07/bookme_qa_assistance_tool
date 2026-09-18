@@ -57,8 +57,15 @@ create table test_cases (
   created_by integer references users(id),
   last_modified_by integer references users(id),
   last_modified_at timestamptz default now(),
-  created_at timestamptz default now()
+  created_at timestamptz default now(),
+  archived boolean not null default false  -- soft delete: "Delete" flips this instead of removing
+                                            -- the row, since test_executions.test_case_id is
+                                            -- `on delete restrict` and would 500 on a hard delete
+                                            -- once a test case has any execution history
 );
+-- migration for an already-deployed db:
+-- alter table test_cases add column archived boolean not null default false;
+-- create index idx_test_cases_archived on test_cases(archived);
 
 create table requirement_test_case_links (
   requirement_id integer references requirements(id) on delete cascade,
@@ -207,6 +214,7 @@ create index idx_bugs_release on bugs(release_id);
 create index idx_bugs_archived on bugs(archived);
 create index idx_bug_attachments_bug on bug_attachments(bug_id);
 create index idx_test_cases_module on test_cases(module_id);
+create index idx_test_cases_archived on test_cases(archived);
 create index idx_executions_test_case on test_executions(test_case_id);
 create index idx_executions_release on test_executions(release_id);
 create index idx_executions_date on test_executions(execution_date);

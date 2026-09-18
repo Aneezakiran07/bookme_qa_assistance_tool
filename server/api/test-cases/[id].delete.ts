@@ -1,8 +1,10 @@
 import { testCaseRepository } from '~~/server/repositories/testCaseRepository'
 
-// hard delete: schema has no archived flag on test_cases (unlike
-// requirements), and requirement_test_case_links.test_case_id is
-// `on delete cascade`, so removing the row cleans up its links for free.
+// soft delete only: flips archived to true instead of removing the row.
+// test_executions.test_case_id is `on delete restrict`, so a hard delete
+// would 500 the moment a test case has any execution history -- this
+// keeps that history (and any requirement/release links) intact, same
+// pattern as requirements' delete.
 export default defineEventHandler(async (event) => {
   const id = Number(getRouterParam(event, 'id'))
   if (!id) {
@@ -14,6 +16,6 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 404, statusMessage: 'Test case not found' })
   }
 
-  const deleted = await testCaseRepository.delete(id)
-  return { deleted: true, testCase: deleted }
+  const archived = await testCaseRepository.archive(id)
+  return { archived: true, testCase: archived }
 })

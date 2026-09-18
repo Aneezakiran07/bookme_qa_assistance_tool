@@ -12,6 +12,7 @@ export interface TestCaseRecord {
   last_modified_by: number | null
   last_modified_at: string
   created_at: string
+  archived: boolean
 }
 
 // same shape as TestCaseRecord plus everything the Test Case Repository
@@ -53,7 +54,8 @@ export const testCaseRepository = {
         group by test_case_id
       ) rl on rl.test_case_id = tc.id
       where
-        (${filters.moduleId ?? null}::int is null or tc.module_id = ${filters.moduleId ?? null}::int)
+        tc.archived = false
+        and (${filters.moduleId ?? null}::int is null or tc.module_id = ${filters.moduleId ?? null}::int)
         and (${filters.priority ?? null}::text is null or tc.priority = ${filters.priority ?? null}::text)
         and (${filters.type ?? null}::text is null or tc.type = ${filters.type ?? null}::text)
         and (
@@ -200,9 +202,16 @@ export const testCaseRepository = {
     }
   },
 
-  async delete(id: number): Promise<TestCaseRecord | null> {
+  // soft delete only, matches the schema's archived flag. the row, its
+  // links, and its execution history all stay in place -- test_executions
+  // has an `on delete restrict` FK to test_cases specifically so a hard
+  // delete here would 500 once a test case has any runs logged against it.
+  async archive(id: number): Promise<TestCaseRecord | null> {
     const sql = useDb()
-    const rows = await sql`delete from test_cases where id = ${id} returning *`
+    const rows = await sql`
+      update test_cases set archived = true where id = ${id}
+      returning *
+    `
     return (rows[0] as TestCaseRecord) ?? null
   },
 
