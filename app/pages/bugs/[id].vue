@@ -28,6 +28,7 @@ interface BugDetail {
   reported_at: string
   last_status_change_at: string
   steps_to_reproduce: string | null
+  actual_result: string | null
   dev_notes: string | null
 }
 
@@ -68,6 +69,7 @@ const dropdownPt = useDropdownPt()
 const bugId = Number(route.params.id)
 const { user } = useUserSession()
 const isDeveloper = computed(() => user.value?.role === 'Developer')
+const isQa = computed(() => QA_ROLES.includes(user.value?.role ?? '') || user.value?.role === 'Admin')
 
 const { data, refresh, pending: loading } = await useFetch<{
   bug: BugDetail
@@ -111,7 +113,10 @@ function tcCode(id: number) {
   return `TC-${id.toString().padStart(3, '0')}`
 }
 
-// -- steps to reproduce, read/edit toggle --
+// -- steps to reproduce, read/edit toggle. QA-owned: developers don't
+// need this section at all, so it's hidden entirely for them rather
+// than just shown read-only -- see the template's v-if="!isDeveloper"
+// on the whole card, not just the Edit button --
 const editingSteps = ref(false)
 const stepsDraft = ref('')
 const savingSteps = ref(false)
@@ -139,6 +144,41 @@ async function saveSteps() {
     })
   } finally {
     savingSteps.value = false
+  }
+}
+
+// -- actual result, read/edit toggle. QA-owned, same pattern as steps
+// to reproduce: what actually happened when the bug occurred, as
+// opposed to the linked test case's expected result. visible to
+// developers as read-only context (they need it to fix the bug) but
+// only QA can edit it --
+const editingActualResult = ref(false)
+const actualResultDraft = ref('')
+const savingActualResult = ref(false)
+
+function startEditActualResult() {
+  actualResultDraft.value = bug.value?.actual_result ?? ''
+  editingActualResult.value = true
+}
+
+async function saveActualResult() {
+  savingActualResult.value = true
+  try {
+    await $fetch(`/api/bugs/${bugId}`, {
+      method: 'PUT',
+      body: { actualResult: actualResultDraft.value || null }
+    })
+    editingActualResult.value = false
+    await refresh()
+  } catch (error) {
+    toast.add({
+      severity: 'error',
+      summary: 'Could not save actual result',
+      detail: (error as any)?.data?.statusMessage ?? 'Please try again.',
+      life: 5000
+    })
+  } finally {
+    savingActualResult.value = false
   }
 }
 
@@ -379,8 +419,9 @@ const timelineEntries = computed(() => {
           </p>
         </div>
 
-        <!-- steps to reproduce -->
-        <div class="rounded-lg border border-black/10 bg-white p-5 dark:border-white/10 dark:bg-black">
+        <!-- steps to reproduce: QA-owned, developers don't need this at
+             all so it's hidden entirely rather than shown read-only -->
+        <div v-if="!isDeveloper" class="rounded-lg border border-black/10 bg-white p-5 dark:border-white/10 dark:bg-black">
           <div class="flex items-center justify-between">
             <p class="text-xs font-semibold uppercase tracking-wide text-gray-400 dark:text-zinc-500">
               Steps to Reproduce
@@ -412,6 +453,46 @@ const timelineEntries = computed(() => {
               size="sm"
               :loading="savingSteps"
               @click="saveSteps"
+            />
+          </div>
+        </div>
+
+        <!-- actual result: QA-owned, what actually happened when the bug
+             occurred (as opposed to the linked test case's expected
+             result below). developers see it read-only, since they need
+             this context to fix the bug even though they can't edit it -->
+        <div class="rounded-lg border border-black/10 bg-white p-5 dark:border-white/10 dark:bg-black">
+          <div class="flex items-center justify-between">
+            <p class="text-xs font-semibold uppercase tracking-wide text-gray-400 dark:text-zinc-500">
+              Actual Result
+            </p>
+            <BaseButton
+              v-if="isQa && !editingActualResult"
+              label="Edit"
+              variant="outline"
+              size="sm"
+              icon="pi pi-pencil"
+              @click="startEditActualResult"
+            />
+          </div>
+
+          <RichTextEditor v-if="editingActualResult" v-model="actualResultDraft" class="mt-2" :rows="6" />
+          <div
+            v-else
+            class="mt-2 whitespace-pre-wrap rounded-md border border-black/10 bg-gray-50 p-3 text-sm
+                   text-gray-800 dark:border-white/10 dark:bg-white/5 dark:text-zinc-200"
+          >
+            {{ bug.actual_result || 'No actual result recorded.' }}
+          </div>
+
+          <div v-if="editingActualResult" class="mt-3 flex justify-end gap-2">
+            <BaseButton variant="secondary" label="Cancel" size="sm" @click="editingActualResult = false" />
+            <BaseButton
+              variant="primary"
+              label="Save"
+              size="sm"
+              :loading="savingActualResult"
+              @click="saveActualResult"
             />
           </div>
         </div>
@@ -504,16 +585,17 @@ const timelineEntries = computed(() => {
           />
         </div>
 
-        <!-- developer notes & blockers, kept separate from steps to
-             reproduce: implementation notes, environment quirks, or why a
-             status decision was made, not a second reproduction-steps box -->
+        <!-- developer notes & blockers: the developer's own comment field.
+             kept separate from steps to reproduce and actual result,
+             which are QA-owned. QA can read it for context but can't
+             edit it -- only the developer (or an admin) can -->
         <div class="rounded-lg border border-black/10 bg-white p-5 dark:border-white/10 dark:bg-black">
           <div class="mb-2 flex items-center justify-between">
             <p class="text-xs font-semibold uppercase tracking-wide text-gray-400 dark:text-zinc-500">
               Developer Notes & Blockers
             </p>
             <button
-              v-if="!editingDevNotes"
+              v-if="(isDeveloper || user?.role === 'Admin') && !editingDevNotes"
               type="button"
               class="text-xs font-medium text-purple-600 hover:underline dark:text-purple-400"
               @click="startEditDevNotes"

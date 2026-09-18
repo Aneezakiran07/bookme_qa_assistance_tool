@@ -18,6 +18,7 @@ export default defineEventHandler(async (event) => {
     linkedTestCaseId?: number | null
     releaseId?: number | null
     stepsToReproduce?: string | null
+    actualResult?: string | null
   }>(event)
 
   const title = body?.title?.trim()
@@ -51,6 +52,7 @@ export default defineEventHandler(async (event) => {
     linkedTestCaseId: body.linkedTestCaseId ?? null,
     releaseId: body.releaseId ?? null,
     stepsToReproduce: body.stepsToReproduce || null,
+    actualResult: body.actualResult || null,
     reportedBy: currentUser.id
   })
 

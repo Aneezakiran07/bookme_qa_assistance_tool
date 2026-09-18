@@ -22,10 +22,13 @@ export default defineNuxtRouteMiddleware((to) => {
   const isSignedOutRoute = ONLY_FOR_SIGNED_OUT.includes(to.path)
   const isPendingRoute = ONLY_FOR_PENDING.includes(to.path)
 
-  // not signed in at all: only the login page is allowed
+  // not signed in at all: only the login page is allowed. carry the page
+  // they were trying to reach so login can send them straight back after
+  // signing in, and a reason flag so the login page can show "please log
+  // in to continue" instead of just silently landing there
   if (!loggedIn.value) {
     if (!isSignedOutRoute) {
-      return navigateTo('/login')
+      return navigateTo({ path: '/login', query: { redirect: to.fullPath, reason: 'auth' } })
     }
     return
   }

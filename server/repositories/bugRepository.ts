@@ -12,6 +12,7 @@ export interface BugRecord {
   linked_test_case_id: number | null
   release_id: number | null
   steps_to_reproduce: string | null
+  actual_result: string | null
   dev_notes: string | null
   reported_by: number | null
   reported_at: string
@@ -237,6 +238,7 @@ export const bugRepository = {
     linked_test_case_id: number | null
     release_id: number | null
     steps_to_reproduce: string | null
+    actual_result: string | null
     dev_notes: string | null
     last_status_change_at: string
   }>): Promise<BugRecord | null> {
@@ -276,6 +278,7 @@ export const bugRepository = {
     linkedTestCaseId: number | null
     releaseId: number | null
     stepsToReproduce: string | null
+    actualResult: string | null
     reportedBy: number
   }): Promise<BugRecord> {
     const sql = useDb()
@@ -283,7 +286,7 @@ export const bugRepository = {
       insert into bugs (
         title, module_id, severity, priority, status,
         environment_build, linked_test_case_id, release_id,
-        steps_to_reproduce, reported_by
+        steps_to_reproduce, actual_result, reported_by
       )
       values (
         ${input.title},
@@ -295,6 +298,7 @@ export const bugRepository = {
         ${input.linkedTestCaseId},
         ${input.releaseId},
         ${input.stepsToReproduce},
+        ${input.actualResult},
         ${input.reportedBy}
       )
       returning *

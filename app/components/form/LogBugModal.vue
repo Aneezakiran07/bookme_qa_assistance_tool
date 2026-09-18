@@ -1,7 +1,8 @@
 <script setup lang="ts">
 // bug creation modal, opened by the FAIL button on the Test Execution page.
-// It arrives pre-filled with the test case title, module, release link, and
-// the test's steps so a tester can log a bug from a failing run in seconds.
+// It arrives pre-filled with the test case title, module, release link, the
+// test's steps, and whatever the tester typed as the actual result on that
+// failing run, so a tester can log a bug from a failing run in seconds.
 const props = defineProps<{
   modelValue: boolean
   initialTitle?: string
@@ -9,6 +10,7 @@ const props = defineProps<{
   initialReleaseId?: number | null
   initialTestCaseId?: number | null
   initialSteps?: string | null
+  initialActualResult?: string | null
 }>()
 
 const emit = defineEmits<{
@@ -33,7 +35,8 @@ const form = reactive({
   severity: 'High',
   priority: 'High',
   environmentBuild: '',
-  stepsToReproduce: ''
+  stepsToReproduce: '',
+  actualResult: ''
 })
 
 const saving = ref(false)
@@ -84,6 +87,7 @@ watch(
     form.priority = 'High'
     form.environmentBuild = ''
     form.stepsToReproduce = props.initialSteps ?? ''
+    form.actualResult = props.initialActualResult ?? ''
     checkForExistingBug()
   }
 )
@@ -144,7 +148,8 @@ async function save() {
         environmentBuild: form.environmentBuild.trim() || null,
         linkedTestCaseId: props.initialTestCaseId ?? null,
         releaseId: props.initialReleaseId ?? null,
-        stepsToReproduce: form.stepsToReproduce || null
+        stepsToReproduce: form.stepsToReproduce || null,
+        actualResult: form.actualResult || null
       }
     })
     toast.add({
@@ -273,6 +278,20 @@ async function save() {
           placeholder="1. Open the page...&#10;2. Click...&#10;3. Observe..."
           :rows="6"
         />
+      </div>
+
+      <div>
+        <label class="mb-1 block text-xs font-medium text-gray-600 dark:text-zinc-300">
+          Actual result
+        </label>
+        <RichTextEditor
+          v-model="form.actualResult"
+          placeholder="What actually happened when you ran this..."
+          :rows="4"
+        />
+        <p v-if="initialActualResult" class="mt-1 text-xs text-gray-400 dark:text-zinc-500">
+          Carried over from the failing test run, edit if you want to add more detail.
+        </p>
       </div>
       </div>
     </div>

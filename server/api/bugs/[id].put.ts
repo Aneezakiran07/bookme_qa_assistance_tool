@@ -20,6 +20,14 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 404, statusMessage: 'Bug not found' })
   }
 
+  // steps to reproduce and actual result are QA-owned: what the tester
+  // did and what actually happened. dev notes are the developer's own
+  // comment field. each role can only write to its own field -- this
+  // mirrors the UI gating on the bug detail page, but is enforced here
+  // too since a UI-only gate never actually stops a direct API call
+  const isQaRole = currentUser.role === 'QA Lead' || currentUser.role === 'Tester' || currentUser.role === 'Admin'
+  const isDeveloperRole = currentUser.role === 'Developer' || currentUser.role === 'Admin'
+
   const body = await readBody<{
     title?: string
     severity?: string
@@ -30,6 +38,7 @@ export default defineEventHandler(async (event) => {
     linkedTestCaseId?: number | null
     releaseId?: number | null
     stepsToReproduce?: string | null
+    actualResult?: string | null
     devNotes?: string | null
   }>(event)
 
@@ -62,10 +71,23 @@ export default defineEventHandler(async (event) => {
   }
 
   if (body.stepsToReproduce !== undefined) {
+    if (!isQaRole) {
+      throw createError({ statusCode: 403, statusMessage: 'Only QA can edit steps to reproduce' })
+    }
     fields.steps_to_reproduce = body.stepsToReproduce || null
   }
 
+  if (body.actualResult !== undefined) {
+    if (!isQaRole) {
+      throw createError({ statusCode: 403, statusMessage: 'Only QA can edit the actual result' })
+    }
+    fields.actual_result = body.actualResult || null
+  }
+
   if (body.devNotes !== undefined) {
+    if (!isDeveloperRole) {
+      throw createError({ statusCode: 403, statusMessage: 'Only the developer can edit their notes' })
+    }
     fields.dev_notes = body.devNotes || null
   }
 

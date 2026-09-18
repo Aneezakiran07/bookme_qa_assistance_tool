@@ -110,6 +110,10 @@ const stats = computed(() => {
 
 // -- bug modal --
 const logBugModalOpen = ref(false)
+// captured right before form.actual_result gets cleared below, so the
+// modal opens with the tester's own words on what actually happened
+// still carried over, instead of them having to retype it
+const failedActualResult = ref('')
 
 // -- submit execution --
 const submitting = ref(false)
@@ -138,6 +142,7 @@ async function submitResult(result: 'Pass' | 'Fail' | 'Blocked') {
     // so the tester's notes are still fresh in their mind and can be added
     // to the bug's steps-to-reproduce if they want
     if (result === 'Fail') {
+      failedActualResult.value = form.actual_result
       logBugModalOpen.value = true
     }
 
@@ -431,6 +436,7 @@ function statusKey(latest: string | null): string {
       :initial-release-id="release.id"
       :initial-test-case-id="selectedTestCase.id"
       :initial-steps="selectedTestCase.steps"
+      :initial-actual-result="failedActualResult"
     />
   </div>
 </template>

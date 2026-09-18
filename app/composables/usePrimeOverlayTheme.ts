@@ -76,13 +76,38 @@ export function usePopoverPt() {
   }
 }
 
-// toast message stack
+// toast message stack. severity (success/error/warn/info) drives a
+// colored left accent + icon so success and failure are visually
+// distinct at a glance, not just distinguishable by reading the text --
+// pt must be a function here (not a static object like the other
+// helpers) since the color depends on which toast.add() call this is
+// rendering for.
 export function useToastPt() {
+  const SEVERITY_ACCENT: Record<string, string> = {
+    success: '!border-l-emerald-500 dark:!border-l-emerald-500',
+    error: '!border-l-red-500 dark:!border-l-red-500',
+    warn: '!border-l-amber-500 dark:!border-l-amber-500',
+    info: '!border-l-purple-500 dark:!border-l-purple-500'
+  }
+  const SEVERITY_ICON: Record<string, string> = {
+    success: '!text-emerald-500 dark:!text-emerald-400',
+    error: '!text-red-500 dark:!text-red-400',
+    warn: '!text-amber-500 dark:!text-amber-400',
+    info: '!text-purple-500 dark:!text-purple-400'
+  }
+
   return {
     root: { class: 'z-[9999]' },
-    message: {
-      class: '!bg-white !text-gray-900 !border !border-gray-200 dark:!bg-black dark:!text-white dark:!border-white/10',
-    },
+    message: ({ props }: { props: { message?: { severity?: string } } }) => ({
+      class: [
+        '!bg-white !text-gray-900 !border !border-gray-200 dark:!bg-black dark:!text-white dark:!border-white/10',
+        'border-l-4',
+        SEVERITY_ACCENT[props.message?.severity ?? 'info'] ?? SEVERITY_ACCENT.info
+      ]
+    }),
+    messageIcon: ({ props }: { props: { message?: { severity?: string } } }) => ({
+      class: SEVERITY_ICON[props.message?.severity ?? 'info'] ?? SEVERITY_ICON.info
+    }),
     messageContent: {
       class: '!bg-transparent !text-gray-900 dark:!text-white',
     },

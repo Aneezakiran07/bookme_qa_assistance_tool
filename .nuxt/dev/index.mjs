@@ -14519,7 +14519,7 @@ const bugRepository = {
       insert into bugs (
         title, module_id, severity, priority, status,
         environment_build, linked_test_case_id, release_id,
-        steps_to_reproduce, reported_by
+        steps_to_reproduce, actual_result, reported_by
       )
       values (
         ${input.title},
@@ -14531,6 +14531,7 @@ const bugRepository = {
         ${input.linkedTestCaseId},
         ${input.releaseId},
         ${input.stepsToReproduce},
+        ${input.actualResult},
         ${input.reportedBy}
       )
       returning *
@@ -14676,6 +14677,8 @@ const _id__put$8 = defineEventHandler(async (event) => {
   if (!existing) {
     throw createError({ statusCode: 404, statusMessage: "Bug not found" });
   }
+  const isQaRole = currentUser.role === "QA Lead" || currentUser.role === "Tester" || currentUser.role === "Admin";
+  const isDeveloperRole = currentUser.role === "Developer" || currentUser.role === "Admin";
   const body = await readBody(event);
   const fields = {};
   if (body.title !== void 0) {
@@ -14701,9 +14704,21 @@ const _id__put$8 = defineEventHandler(async (event) => {
     fields.environment_build = ((_b = body.environmentBuild) == null ? void 0 : _b.trim()) || null;
   }
   if (body.stepsToReproduce !== void 0) {
+    if (!isQaRole) {
+      throw createError({ statusCode: 403, statusMessage: "Only QA can edit steps to reproduce" });
+    }
     fields.steps_to_reproduce = body.stepsToReproduce || null;
   }
+  if (body.actualResult !== void 0) {
+    if (!isQaRole) {
+      throw createError({ statusCode: 403, statusMessage: "Only QA can edit the actual result" });
+    }
+    fields.actual_result = body.actualResult || null;
+  }
   if (body.devNotes !== void 0) {
+    if (!isDeveloperRole) {
+      throw createError({ statusCode: 403, statusMessage: "Only the developer can edit their notes" });
+    }
     fields.dev_notes = body.devNotes || null;
   }
   if (body.releaseId !== void 0) {
@@ -14977,6 +14992,7 @@ const index_post$2 = defineEventHandler(async (event) => {
     linkedTestCaseId: (_d = body.linkedTestCaseId) != null ? _d : null,
     releaseId: (_e = body.releaseId) != null ? _e : null,
     stepsToReproduce: body.stepsToReproduce || null,
+    actualResult: body.actualResult || null,
     reportedBy: currentUser.id
   });
   await bugStatusHistoryRepository.create({

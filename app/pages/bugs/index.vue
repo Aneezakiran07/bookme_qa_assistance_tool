@@ -308,14 +308,7 @@ async function updateStatus(bug: BugRow, status: string) {
           class="w-40"
           :pt="dropdownPt"
           @update:model-value="(status: string) => updateStatus(row, status)"
-        >
-          <template #value="{ value }">
-            <StatusBadge v-if="value" :status="value" size="sm" />
-          </template>
-          <template #option="{ option }">
-            <StatusBadge :status="option" size="sm" />
-          </template>
-        </Select>
+        />
       </template>
 
       <template #cell-owner="{ data: row }">
