@@ -87,6 +87,31 @@
     border-color: rgb(255 255 255 / 0.1) !important;
   }
 
+  /* the rule above only ever reliably painted the outer message
+     wrapper -- the summary/detail text nodes inside it keep their own
+     default (very dim, low-contrast) color from PrimeVue's theme
+     regardless, since pt class names for them are easy to get wrong
+     and text color set via a parent selector doesn't always inherit
+     through PrimeVue's own internal styling. targeting every text-ish
+     descendant directly, plus the close icon, guarantees legibility
+     without depending on guessing the right pt key. */
+  .dark .p-toast-message-text,
+  .dark .p-toast-summary,
+  .dark .p-toast-detail,
+  .dark .p-toast-message-content {
+    color: #ffffff !important;
+  }
+
+  .dark .p-toast-close-button,
+  .dark .p-toast-icon-close {
+    color: rgb(255 255 255 / 0.6) !important;
+  }
+
+  .dark .p-toast-close-button:hover,
+  .dark .p-toast-icon-close:hover {
+    color: #ffffff !important;
+  }
+
   /* sortable table headers keep a "sorted"/focus highlight after being
      clicked, which reads as a stuck hover state, this app doesn't use
      that affordance so it's turned off everywhere rather than per table.

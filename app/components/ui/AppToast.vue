@@ -7,5 +7,5 @@ const toastPt = useToastPt()
 </script>
 
 <template>
-  <Toast position="top-left" :pt="toastPt" />
+  <Toast position="top-right" :pt="toastPt" />
 </template>
