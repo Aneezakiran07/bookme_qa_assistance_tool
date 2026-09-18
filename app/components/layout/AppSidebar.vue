@@ -9,7 +9,30 @@ interface NavLink {
   icon: string
 }
 
+interface ProfileData {
+  id: number
+  email: string
+  role: string
+  displayName: string | null
+  avatarId: string
+}
+
 const { user, clear } = useUserSession()
+
+// the session cookie only carries id/email/role/active (see
+// server/middleware/00-syncSession.ts), not display name or avatar, so
+// the avatar shown here comes from /api/profile instead. key:
+// 'current-user-profile' matches the key app/pages/profile.vue uses for
+// its own copy of this same fetch -- Nuxt shares one reactive data ref
+// per key, so when the profile page saves a new avatar (or the display
+// name), this ref updates too and the sidebar avatar/name reflect it
+// immediately, without a page reload or any event bus. avatarId can be
+// null for a user who has never opened the avatar picker; AppAvatar's
+// getAvatarById already falls back to the first/default avatar (fox)
+// in that case, so nothing extra is needed here for "no avatar set yet".
+const { data: profileData } = await useFetch<ProfileData>('/api/profile', {
+  key: 'current-user-profile'
+})
 
 const currentUser = computed(() => user.value as {
   email?: string
@@ -17,6 +40,8 @@ const currentUser = computed(() => user.value as {
 } | null)
 
 const isAdmin = computed(() => currentUser.value?.role === 'Admin')
+const isQaLead = computed(() => currentUser.value?.role === 'QA Lead')
+const canManageUsers = computed(() => isAdmin.value || isQaLead.value)
 const isDeveloper = computed(() => currentUser.value?.role === 'Developer')
 
 const projectLinks = computed<NavLink[]>(() => {
@@ -42,27 +67,18 @@ const managementLinksStandard: NavLink[] = [
   { label: 'App Map', to: '/management/modules', icon: 'pi pi-sitemap' },
 ]
 
-const managementLinksAdmin: NavLink[] = [
+const managementLinksWithUsers: NavLink[] = [
   { label: 'App Map', to: '/management/modules', icon: 'pi pi-sitemap' },
   { label: 'User Approvals', to: '/admin/users', icon: 'pi pi-users' },
 ]
 
-// admins can see and use every page, including the full project workflow,
-// the only thing gated by role is the User Approvals link, which only
-// ever shows up for Admins, standard users never see it in the sidebar
+// admins and qa leads can see and use every page, including the full
+// project workflow; the only thing gated by role is the User Approvals
+// link, which shows up for both of those (same permission tier, two
+// labels) and never for Tester or Developer
 const managementLinks = computed(() =>
-  isAdmin.value ? managementLinksAdmin : managementLinksStandard
+  canManageUsers.value ? managementLinksWithUsers : managementLinksStandard
 )
-
-const initials = computed(() => {
-  const email = currentUser.value?.email ?? ''
-  const name = email.split('@')[0] ?? ''
-  const parts = name.split(/[.\-_]/).filter(Boolean)
-  if (parts.length >= 2) {
-    return (parts[0][0] + parts[1][0]).toUpperCase()
-  }
-  return name.slice(0, 2).toUpperCase() || '??'
-})
 
 const roleBadgeClass = computed(() => {
   return isAdmin.value
@@ -141,12 +157,7 @@ async function handleLogout() {
         class="flex items-center gap-3 rounded-md px-2 py-2 transition-colors hover:bg-gray-100 dark:hover:bg-zinc-900"
         active-class="!bg-purple-600/10"
       >
-        <div
-          class="flex h-9 w-9 shrink-0 items-center justify-center rounded-full
-                 bg-purple-600 text-xs font-semibold text-white"
-        >
-          {{ initials }}
-        </div>
+        <AppAvatar :avatar-id="profileData?.avatarId" size="sm" />
         <div class="min-w-0 flex-1">
           <p class="truncate text-sm font-medium text-gray-900 dark:text-white">
             {{ currentUser?.email ?? 'Unknown user' }}

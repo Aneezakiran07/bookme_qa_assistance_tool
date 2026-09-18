@@ -2,9 +2,10 @@ import { requireRole } from '~~/server/utils/authorize'
 import { userRepository } from '~~/server/repositories/userRepository'
 
 // single call the admin page uses to render both tables, splitting the
-// same joined dataset in memory instead of running two separate queries
+// same joined dataset in memory instead of running two separate queries.
+// Admin and QA Lead both get this (same tier, two labels).
 export default defineEventHandler(async (event) => {
-  requireRole(event, ['Admin'])
+  requireRole(event, ['Admin', 'QA Lead'])
 
   const users = await userRepository.listAllWithModules()
 

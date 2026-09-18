@@ -17,6 +17,7 @@ interface _GlobalComponents {
   ThemeToggle: typeof import("../../app/components/ThemeToggle.vue")['default']
   DeveloperDashboard: typeof import("../../app/components/dashboard/DeveloperDashboard.vue")['default']
   QaAdminDashboard: typeof import("../../app/components/dashboard/QaAdminDashboard.vue")['default']
+  AvatarPickerModal: typeof import("../../app/components/form/AvatarPickerModal.vue")['default']
   LogBugModal: typeof import("../../app/components/form/LogBugModal.vue")['default']
   MediaUploader: typeof import("../../app/components/form/MediaUploader.vue")['default']
   ModuleSelect: typeof import("../../app/components/form/ModuleSelect.vue")['default']
@@ -24,6 +25,7 @@ interface _GlobalComponents {
   UserAvatarSelect: typeof import("../../app/components/form/UserAvatarSelect.vue")['default']
   AppSidebar: typeof import("../../app/components/layout/AppSidebar.vue")['default']
   PageHeader: typeof import("../../app/components/layout/PageHeader.vue")['default']
+  AppAvatar: typeof import("../../app/components/ui/AppAvatar.vue")['default']
   AppBreakdownBar: typeof import("../../app/components/ui/AppBreakdownBar.vue")['default']
   AppConfirmDialog: typeof import("../../app/components/ui/AppConfirmDialog.vue")['default']
   AppDataTable: typeof import("../../app/components/ui/AppDataTable.vue")['default']
@@ -188,6 +190,7 @@ interface _GlobalComponents {
   LazyThemeToggle: LazyComponent<typeof import("../../app/components/ThemeToggle.vue")['default']>
   LazyDeveloperDashboard: LazyComponent<typeof import("../../app/components/dashboard/DeveloperDashboard.vue")['default']>
   LazyQaAdminDashboard: LazyComponent<typeof import("../../app/components/dashboard/QaAdminDashboard.vue")['default']>
+  LazyAvatarPickerModal: LazyComponent<typeof import("../../app/components/form/AvatarPickerModal.vue")['default']>
   LazyLogBugModal: LazyComponent<typeof import("../../app/components/form/LogBugModal.vue")['default']>
   LazyMediaUploader: LazyComponent<typeof import("../../app/components/form/MediaUploader.vue")['default']>
   LazyModuleSelect: LazyComponent<typeof import("../../app/components/form/ModuleSelect.vue")['default']>
@@ -195,6 +198,7 @@ interface _GlobalComponents {
   LazyUserAvatarSelect: LazyComponent<typeof import("../../app/components/form/UserAvatarSelect.vue")['default']>
   LazyAppSidebar: LazyComponent<typeof import("../../app/components/layout/AppSidebar.vue")['default']>
   LazyPageHeader: LazyComponent<typeof import("../../app/components/layout/PageHeader.vue")['default']>
+  LazyAppAvatar: LazyComponent<typeof import("../../app/components/ui/AppAvatar.vue")['default']>
   LazyAppBreakdownBar: LazyComponent<typeof import("../../app/components/ui/AppBreakdownBar.vue")['default']>
   LazyAppConfirmDialog: LazyComponent<typeof import("../../app/components/ui/AppConfirmDialog.vue")['default']>
   LazyAppDataTable: LazyComponent<typeof import("../../app/components/ui/AppDataTable.vue")['default']>

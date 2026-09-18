@@ -1,5 +1,5 @@
 // runs on every route, before any page-specific middleware (like
-// admin-only), because .global.ts middleware always executes first and
+// manage-users), because .global.ts middleware always executes first and
 // in file-name order. this is the one place that decides whether someone
 // is allowed to see a page at all, based on their session state:
 //

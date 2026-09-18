@@ -1,6 +1,9 @@
 declare global {
+  const DEFAULT_AVATAR_ID: typeof import('../../server/utils/avatarIds').DEFAULT_AVATAR_ID
   const H3Error: typeof import('../../node_modules/h3/dist/index').H3Error
   const H3Event: typeof import('../../node_modules/h3/dist/index').H3Event
+  const VALID_AVATAR_IDS: typeof import('../../server/utils/avatarIds').VALID_AVATAR_IDS
+  const VALID_PERIODS: typeof import('../../server/utils/karachiDate').VALID_PERIODS
   const __buildAssetsURL: typeof import('../../node_modules/@nuxt/nitro-server/dist/runtime/utils/paths').buildAssetsURL
   const __publicAssetsURL: typeof import('../../node_modules/@nuxt/nitro-server/dist/runtime/utils/paths').publicAssetsURL
   const appendCorsHeaders: typeof import('../../node_modules/h3/dist/index').appendCorsHeaders
@@ -152,6 +155,7 @@ declare global {
   const requireCronSecret: typeof import('../../server/utils/cronAuth').requireCronSecret
   const requireRole: typeof import('../../server/utils/authorize').requireRole
   const requireUserSession: typeof import('../../node_modules/nuxt-auth-utils/dist/runtime/server/utils/session').requireUserSession
+  const resolvePeriodRange: typeof import('../../server/utils/karachiDate').resolvePeriodRange
   const runTask: typeof import('../../node_modules/nitropack/dist/runtime/internal/task').runTask
   const sanitizeStatusCode: typeof import('../../node_modules/h3/dist/index').sanitizeStatusCode
   const sanitizeStatusMessage: typeof import('../../node_modules/h3/dist/index').sanitizeStatusMessage
@@ -346,6 +350,9 @@ declare global {
   // @ts-ignore
   export type { SessionHooks } from '../../node_modules/nuxt-auth-utils/dist/runtime/server/utils/session.d'
   import('../../node_modules/nuxt-auth-utils/dist/runtime/server/utils/session.d')
+  // @ts-ignore
+  export type { Period } from '../../server/utils/karachiDate'
+  import('../../server/utils/karachiDate')
 }
 export { H3Event, H3Error, appendCorsHeaders, appendCorsPreflightHeaders, appendHeader, appendHeaders, appendResponseHeader, appendResponseHeaders, assertMethod, callNodeListener, clearResponseHeaders, clearSession, createApp, createAppEventHandler, createError, createEvent, createEventStream, createRouter, defaultContentType, defineEventHandler, defineLazyEventHandler, defineNodeListener, defineNodeMiddleware, defineRequestMiddleware, defineResponseMiddleware, defineWebSocket, defineWebSocketHandler, deleteCookie, dynamicEventHandler, eventHandler, fetchWithEvent, fromNodeMiddleware, fromPlainHandler, fromWebHandler, getCookie, getHeader, getHeaders, getMethod, getProxyRequestHeaders, getQuery, getRequestFingerprint, getRequestHeader, getRequestHeaders, getRequestHost, getRequestIP, getRequestPath, getRequestProtocol, getRequestURL, getRequestWebStream, getResponseHeader, getResponseHeaders, getResponseStatus, getResponseStatusText, getRouterParam, getRouterParams, getSession, getValidatedQuery, getValidatedRouterParams, handleCacheHeaders, handleCors, isCorsOriginAllowed, isError, isEvent, isEventHandler, isMethod, isPreflightRequest, isStream, isWebResponse, lazyEventHandler, parseCookies, promisifyNodeListener, proxyRequest, readBody, readFormData, readMultipartFormData, readRawBody, readValidatedBody, removeResponseHeader, sanitizeStatusCode, sanitizeStatusMessage, sealSession, send, sendError, sendIterable, sendNoContent, sendProxy, sendRedirect, sendStream, sendWebResponse, serveStatic, setCookie, setHeader, setHeaders, setResponseHeader, setResponseHeaders, setResponseStatus, splitCookiesString, toEventHandler, toNodeListener, toPlainHandler, toWebHandler, toWebRequest, unsealSession, updateSession, useBase, useSession, writeEarlyHints } from 'h3';
 export { useNitroApp } from 'nitropack/runtime/internal/app';
@@ -414,8 +421,9 @@ export { getAtprotoClientMetadata } from 'C:/dev/bookmeqa/node_modules/nuxt-auth
 export { hashPassword, verifyPassword, passwordNeedsReHash } from 'C:/dev/bookmeqa/node_modules/nuxt-auth-utils/dist/runtime/server/utils/password';
 export { sessionHooks, getUserSession, setUserSession, replaceUserSession, clearUserSession, requireUserSession } from 'C:/dev/bookmeqa/node_modules/nuxt-auth-utils/dist/runtime/server/utils/session';
 export { requireRole } from 'C:/dev/bookmeqa/server/utils/authorize';
+export { VALID_AVATAR_IDS, DEFAULT_AVATAR_ID } from 'C:/dev/bookmeqa/server/utils/avatarIds';
 export { useCloudinary } from 'C:/dev/bookmeqa/server/utils/cloudinary';
 export { requireCronSecret } from 'C:/dev/bookmeqa/server/utils/cronAuth';
 export { sendEmail } from 'C:/dev/bookmeqa/server/utils/email';
 export { useFirebaseAuth } from 'C:/dev/bookmeqa/server/utils/firebaseAdmin';
-export { karachiNow, karachiToday, mondayOfThisWeek, firstOfThisMonth } from 'C:/dev/bookmeqa/server/utils/karachiDate';
+export { karachiNow, karachiToday, mondayOfThisWeek, firstOfThisMonth, VALID_PERIODS, resolvePeriodRange } from 'C:/dev/bookmeqa/server/utils/karachiDate';

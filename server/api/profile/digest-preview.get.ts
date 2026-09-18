@@ -1,4 +1,5 @@
 import { dashboardRepository } from '~~/server/repositories/dashboardRepository'
+import { userRepository } from '~~/server/repositories/userRepository'
 import { karachiNow, mondayOfThisWeek } from '~~/server/utils/karachiDate'
 
 // builds the digest content for the signed in user only, so the profile
@@ -10,10 +11,15 @@ import { karachiNow, mondayOfThisWeek } from '~~/server/utils/karachiDate'
 // status, nothing else. the bug list uses cursor pagination rather than
 // offset/limit -- see getDeveloperBugsForPeriod for why.
 //
-// qa leads, admins, and testers don't own bugs the same way, so they
-// get a lighter project wide view instead: open bug counts plus a pass
-// rate, and for them the range query param switches between today's
-// numbers and this week's.
+// qa leads, admins, and testers don't own bugs the same way, so their
+// digest pairs the same project wide numbers (open bug counts, pass
+// rate) with a bug list scoped to the module(s) they're assigned to via
+// user_modules instead of owner_id -- the same scoping the dashboard's
+// module filter already defaults to (see /api/dashboard/scope). anyone
+// scoped to zero modules falls back to every module, matching the
+// project-wide view their aggregate cards already show. the list uses
+// the same cursor pagination and "activity in period" semantics as the
+// developer branch, just scoped by module instead of owner_id.
 //
 // karachiNow/mondayOfThisWeek live in server/utils/karachiDate.ts and
 // are shared with the developer bugs directory's period filter, so both
@@ -26,6 +32,16 @@ function parseCursor(query: Record<string, unknown>): { lastStatusChangeAt: stri
   const parsedId = Number(id)
   if (!Number.isFinite(parsedId)) return null
   return { lastStatusChangeAt: ts, id: parsedId }
+}
+
+function formatBugRows(bugs: { id: number; title: string; severity: string; status: string }[]) {
+  return bugs.map((b) => ({
+    id: b.id,
+    code: `BUG-${String(b.id).padStart(3, '0')}`,
+    title: b.title,
+    severity: b.severity,
+    status: b.status
+  }))
 }
 
 export default defineEventHandler(async (event) => {
@@ -41,10 +57,10 @@ export default defineEventHandler(async (event) => {
   const today = now.toISOString().slice(0, 10)
   const weekStart = mondayOfThisWeek(now)
 
-  if (currentUser.role === 'Developer') {
-    const periodStart = range === 'week' ? weekStart : today
-    const periodEnd = today
+  const periodStart = range === 'week' ? weekStart : today
+  const periodEnd = today
 
+  if (currentUser.role === 'Developer') {
     // scrolling further down the bug list only ever needs more bug
     // rows for the same period
     if (bugsOnly) {
@@ -57,13 +73,7 @@ export default defineEventHandler(async (event) => {
       )
       const last = bugs[bugs.length - 1]
       return {
-        bugs: bugs.map((b) => ({
-          id: b.id,
-          code: `BUG-${String(b.id).padStart(3, '0')}`,
-          title: b.title,
-          severity: b.severity,
-          status: b.status
-        })),
+        bugs: formatBugRows(bugs),
         bugsLimit: limit,
         bugsTotalCount: totalCount,
         bugsHasMore: bugs.length === limit,
@@ -85,13 +95,7 @@ export default defineEventHandler(async (event) => {
       range,
       weekStart,
       weekEnd: today,
-      bugs: bugs.map((b) => ({
-        id: b.id,
-        code: `BUG-${String(b.id).padStart(3, '0')}`,
-        title: b.title,
-        severity: b.severity,
-        status: b.status
-      })),
+      bugs: formatBugRows(bugs),
       bugsLimit: limit,
       bugsTotalCount: totalCount,
       bugsHasMore: bugs.length === limit,
@@ -99,6 +103,35 @@ export default defineEventHandler(async (event) => {
     }
   }
 
+  // QA Lead / Admin / Tester
+  const moduleIds = await userRepository.listModuleIdsForUser(currentUser.id)
+
+  if (bugsOnly) {
+    const { bugs, totalCount } = await dashboardRepository.getModuleScopedBugsForPeriod(
+      moduleIds,
+      periodStart,
+      periodEnd,
+      limit,
+      cursor
+    )
+    const last = bugs[bugs.length - 1]
+    return {
+      bugs: formatBugRows(bugs),
+      bugsLimit: limit,
+      bugsTotalCount: totalCount,
+      bugsHasMore: bugs.length === limit,
+      nextCursor: last ? { lastStatusChangeAt: last.last_status_change_at, id: last.id } : null
+    }
+  }
+
+  const { bugs, totalCount } = await dashboardRepository.getModuleScopedBugsForPeriod(
+    moduleIds,
+    periodStart,
+    periodEnd,
+    limit,
+    cursor
+  )
+  const last = bugs[bugs.length - 1]
   const metrics = await dashboardRepository.getSnapshotMetrics(null, null)
 
   if (range === 'day') {
@@ -110,7 +143,12 @@ export default defineEventHandler(async (event) => {
       openCriticalHigh: metrics.open_critical_high,
       passRate: passRateDay.pass_rate,
       passedExecutions: passRateDay.passed_executions,
-      totalExecutions: passRateDay.total_executions
+      totalExecutions: passRateDay.total_executions,
+      bugs: formatBugRows(bugs),
+      bugsLimit: limit,
+      bugsTotalCount: totalCount,
+      bugsHasMore: bugs.length === limit,
+      nextCursor: last ? { lastStatusChangeAt: last.last_status_change_at, id: last.id } : null
     }
   }
 
@@ -124,6 +162,11 @@ export default defineEventHandler(async (event) => {
     weekEnd: today,
     passRate: passRateWeek.pass_rate,
     passedExecutions: passRateWeek.passed_executions,
-    totalExecutions: passRateWeek.total_executions
+    totalExecutions: passRateWeek.total_executions,
+    bugs: formatBugRows(bugs),
+    bugsLimit: limit,
+    bugsTotalCount: totalCount,
+    bugsHasMore: bugs.length === limit,
+    nextCursor: last ? { lastStatusChangeAt: last.last_status_change_at, id: last.id } : null
   }
 })

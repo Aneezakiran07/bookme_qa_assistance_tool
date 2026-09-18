@@ -35,6 +35,11 @@ export interface BugFilters {
   severity?: string
   status?: string
   releaseId?: number
+  // optional activity window, same idea as DeveloperBugFilters below --
+  // filters on last_status_change_at so the QA/Tester Bug Tracker can
+  // filter by day/week/month exactly like the Developer Bugs Directory
+  periodStart?: string
+  periodEnd?: string
 }
 
 export type DeveloperBugScope = 'mine' | 'team'
@@ -77,6 +82,8 @@ export const bugRepository = {
         and (${filters.severity ?? null}::text is null or b.severity = ${filters.severity ?? null}::text)
         and (${filters.status ?? null}::text is null or b.status = ${filters.status ?? null}::text)
         and (${filters.releaseId ?? null}::int is null or b.release_id = ${filters.releaseId ?? null}::int)
+        and (${filters.periodStart ?? null}::date is null or b.last_status_change_at >= ${filters.periodStart ?? null}::date)
+        and (${filters.periodEnd ?? null}::date is null or b.last_status_change_at < (${filters.periodEnd ?? null}::date + interval '1 day'))
       order by b.reported_at desc
     `
     return rows as BugWithMeta[]

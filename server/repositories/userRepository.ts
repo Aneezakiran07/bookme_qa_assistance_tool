@@ -10,6 +10,7 @@ export interface UserRecord {
   display_name: string | null
   email_notifications: boolean
   daily_digest_enabled: boolean
+  avatar_id: string
 }
 
 // this file is the only place that talks to the users table directly
@@ -132,17 +133,21 @@ export const userRepository = {
     return rows[0] as UserRecord
   },
 
-  // updates the editable fields on the profile page. notifications and
-  // the daily digest are on for everyone by default now, so this only
-  // ever touches the display name
+  // updates the editable fields on the profile page: display name and
+  // the chosen avatar. notifications and the daily digest are on for
+  // everyone by default now, so those aren't touched here. the caller
+  // (the PUT handler) is responsible for merging in whichever field
+  // wasn't sent, so both parameters here are always the final values to
+  // write, never "leave as is" sentinels
   async updateProfile(
     userId: number,
-    fields: { displayName: string | null }
+    fields: { displayName: string | null; avatarId: string }
   ): Promise<UserRecord | null> {
     const sql = useDb()
     const rows = await sql`
       update users set
-        display_name = ${fields.displayName}
+        display_name = ${fields.displayName},
+        avatar_id = ${fields.avatarId}
       where id = ${userId}
       returning *
     `

@@ -51,7 +51,21 @@ const popoverPt = usePopoverPt()
 const SEVERITY_OPTIONS = ['Critical', 'High', 'Medium', 'Low']
 const STATUS_OPTIONS = ['Open', 'In Progress', 'Fixed', 'Retest', 'Closed', 'Reopened']
 
-// -- filters: Module, Severity, Status, Release --
+type Period = 'all' | 'day' | 'week' | 'month'
+
+// same activity-period filter as the Developer Bugs Directory
+// (app/pages/developer/bugs/index.vue) -- "All Time" is the default so
+// this keeps showing the full tracker like before; day/week/month just
+// narrow it down to bugs with recent activity (last_status_change_at).
+const PERIOD_OPTIONS: { label: string; value: Period }[] = [
+  { label: 'All Time', value: 'all' },
+  { label: 'Today', value: 'day' },
+  { label: 'This Week', value: 'week' },
+  { label: 'This Month', value: 'month' }
+]
+
+// -- filters: Period, Module, Severity, Status, Release --
+const activePeriod = ref<Period>('all')
 const selectedModuleId = ref<number | null>(null)
 const selectedSeverity = ref<string | null>(null)
 const selectedStatus = ref<string | null>(null)
@@ -71,6 +85,7 @@ const modulesFetch = useFetch<ModuleOption[]>('/api/modules')
 const releasesFetch = useFetch<ReleaseOption[]>('/api/releases')
 const bugsFetch = useFetch<BugRow[]>('/api/bugs', {
   query: computed(() => ({
+    period: activePeriod.value,
     ...(selectedModuleId.value ? { moduleId: selectedModuleId.value } : {}),
     ...(selectedSeverity.value ? { severity: selectedSeverity.value } : {}),
     ...(selectedStatus.value ? { status: selectedStatus.value } : {}),
@@ -93,6 +108,17 @@ const releaseOptions = computed(() => [
 ])
 const bugs = computed(() => data.value ?? [])
 const metrics = computed(() => metricsData.value ?? { total_open: 0, critical_high_open: 0, in_retest: 0, closed: 0 })
+
+const PERIOD_LABELS: Record<Period, string> = {
+  all: '',
+  day: ' today',
+  week: ' this week',
+  month: ' this month'
+}
+
+const emptyMessage = computed(() =>
+  activePeriod.value === 'all' ? 'No bugs reported yet.' : `No bugs match this view${PERIOD_LABELS[activePeriod.value]}.`
+)
 
 const columns = [
   { field: 'bug_id', sortField: 'id', header: 'Bug ID', sortable: true },
@@ -205,10 +231,18 @@ async function applyQuickStatus(status: string) {
       :columns="columns"
       :loading="loadingBugs"
       search-placeholder="Search bugs..."
-      empty-message="No bugs reported yet."
+      :empty-message="emptyMessage"
       data-key="id"
     >
       <template #toolbar>
+        <Select
+          v-model="activePeriod"
+          :options="PERIOD_OPTIONS"
+          option-label="label"
+          option-value="value"
+          class="w-36"
+          :pt="dropdownPt"
+        />
         <Select
           v-model="selectedModuleId"
           :options="moduleOptions"

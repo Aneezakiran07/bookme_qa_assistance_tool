@@ -1,12 +1,19 @@
 <script setup lang="ts">
-// personal profile page: display name plus a permanent, read only
-// preview of the digest content for this user. notifications and
-// digests are on for everyone by default now, so there is nothing left
-// to toggle for enabling them. every role gets the same day/week
+// personal profile page: display name and avatar, plus a permanent,
+// read only preview of the digest content for this user. avatar picks
+// from a small fixed set of cute svg options (see AvatarPickerModal /
+// app/utils/avatarOptions.ts) and saves the instant you click one,
+// separately from the display name save button below it. notifications
+// and digests are on for everyone by default now, so there is nothing
+// left to toggle for enabling them. every role gets the same day/week
 // filter here: developers see the bugs on their plate that had
 // activity in the picked period with whatever status they're
-// currently in, and qa leads/admins/testers see a project wide set of
-// numbers for that same period.
+// currently in, and qa leads/admins/testers see the same project wide
+// set of numbers for that same period, plus a clickable list of bugs
+// in their assigned module(s) (or every module, if unscoped) that had
+// activity in that period -- same list shape and infinite-scroll
+// pagination as the developer's list, just module-scoped instead of
+// owner-scoped since QA/Tester don't own bugs via owner_id.
 definePageMeta({ layout: 'default' })
 
 interface ProfileData {
@@ -14,6 +21,7 @@ interface ProfileData {
   email: string
   role: string
   displayName: string | null
+  avatarId: string
 }
 
 interface DigestBugRow {
@@ -46,6 +54,14 @@ interface LeadDigest {
   passRate: number
   passedExecutions: number
   totalExecutions: number
+  // bugs in the modules this QA Lead/Tester/Admin is scoped to (or every
+  // module, if they aren't scoped to any) with activity in the picked
+  // period -- same shape and pagination as the developer's bug list
+  bugs: DigestBugRow[]
+  bugsLimit: number
+  bugsTotalCount: number
+  bugsHasMore: boolean
+  nextCursor: { lastStatusChangeAt: string; id: number } | null
 }
 
 type DigestPreview = DeveloperDigest | LeadDigest
@@ -54,7 +70,14 @@ const PAGE_SIZE = 10
 
 const toast = useToast()
 
-const { data, pending: loadingProfile } = await useFetch<ProfileData>('/api/profile')
+// key: 'current-user-profile' so this is the same shared reactive data
+// the sidebar reads (see AppSidebar.vue) -- Nuxt's useFetch/useAsyncData
+// dedupes by key and hands every caller the *same* data ref, so writing
+// to `data.value` below (on save, on avatar pick) updates the sidebar's
+// avatar/name immediately too, with no event bus or store needed.
+const { data, pending: loadingProfile } = await useFetch<ProfileData>('/api/profile', {
+  key: 'current-user-profile'
+})
 
 const activeRange = ref<'day' | 'week'>('day')
 const digest = ref<DigestPreview | null>(null)
@@ -88,7 +111,7 @@ async function loadDigest(range: 'day' | 'week') {
 }
 
 async function seeMoreBugs() {
-  if (!digest.value || digest.value.scope !== 'developer' || !digest.value.bugsHasMore || loadingMoreBugs.value) return
+  if (!digest.value || !digest.value.bugsHasMore || loadingMoreBugs.value) return
   loadingMoreBugs.value = true
   try {
     const cursor = digest.value.nextCursor
@@ -149,13 +172,6 @@ const dirty = computed(() => {
   return displayName.value.trim() !== (data.value.displayName ?? '')
 })
 
-const initials = computed(() => {
-  const name = displayName.value.trim() || data.value?.email?.split('@')[0] || ''
-  const parts = name.split(/[.\-_\s]/).filter(Boolean)
-  if (parts.length >= 2) return (parts[0][0] + parts[1][0]).toUpperCase()
-  return name.slice(0, 2).toUpperCase() || '??'
-})
-
 const saving = ref(false)
 
 async function saveProfile() {
@@ -180,6 +196,36 @@ async function saveProfile() {
     saving.value = false
   }
 }
+
+// avatar picking is decoupled from the display name save above: it
+// writes the instant you click one, so it needs its own PUT that only
+// sends avatarId, not whatever's currently sitting unsaved in the
+// display name field
+const showAvatarModal = ref(false)
+const savingAvatar = ref(false)
+
+async function selectAvatar(avatarId: string) {
+  if (!data.value || avatarId === data.value.avatarId || savingAvatar.value) return
+  savingAvatar.value = true
+  try {
+    const updated = await $fetch<ProfileData>('/api/profile', {
+      method: 'PUT',
+      body: { avatarId }
+    })
+    data.value = updated
+    showAvatarModal.value = false
+    toast.add({ severity: 'success', summary: 'Avatar updated', life: 2500 })
+  } catch (error: any) {
+    toast.add({
+      severity: 'error',
+      summary: 'Could not update avatar',
+      detail: error?.data?.statusMessage ?? 'Something went wrong',
+      life: 4000
+    })
+  } finally {
+    savingAvatar.value = false
+  }
+}
 </script>
 
 <template>
@@ -193,11 +239,18 @@ async function saveProfile() {
       class="rounded-lg border border-gray-200 bg-white p-6 dark:border-zinc-800 dark:bg-black"
     >
       <div class="mb-5 flex items-center gap-4">
-        <div
-          class="flex h-14 w-14 shrink-0 items-center justify-center rounded-full
-                 bg-purple-600 text-lg font-semibold text-white"
-        >
-          {{ initials }}
+        <div class="relative shrink-0">
+          <AppAvatar :avatar-id="data?.avatarId" size="lg" />
+          <button
+            type="button"
+            title="Edit avatar"
+            class="absolute -bottom-1 -right-1 flex h-6 w-6 items-center justify-center rounded-full
+                   border-2 border-white bg-purple-600 text-white shadow-sm transition-colors
+                   hover:bg-purple-700 dark:border-black"
+            @click="showAvatarModal = true"
+          >
+            <i class="pi pi-pencil text-[10px]" />
+          </button>
         </div>
         <div class="min-w-0">
           <h2 class="truncate text-base font-semibold text-gray-900 dark:text-white">
@@ -209,6 +262,14 @@ async function saveProfile() {
           >
             {{ data?.role }}
           </span>
+          <button
+            type="button"
+            class="mt-1 block text-xs font-medium text-purple-600 hover:text-purple-700
+                   dark:text-purple-400 dark:hover:text-purple-300"
+            @click="showAvatarModal = true"
+          >
+            Edit Avatar
+          </button>
         </div>
       </div>
 
@@ -364,7 +425,51 @@ async function saveProfile() {
             </p>
           </div>
         </div>
+
+        <div class="mt-4">
+          <p class="mb-2 text-xs font-medium text-gray-600 dark:text-zinc-300">
+            Bugs in your modules ({{ digest.bugsTotalCount }})
+          </p>
+          <ul v-if="digest.bugs.length" class="space-y-2">
+            <li
+              v-for="bug in digest.bugs"
+              :key="bug.id"
+            >
+              <NuxtLink
+                :to="`/bugs/${bug.id}`"
+                class="flex items-center justify-between gap-3 rounded-md border border-gray-200 px-3 py-2 transition-colors hover:border-purple-300 hover:bg-purple-50 dark:border-zinc-800 dark:hover:border-purple-500/40 dark:hover:bg-zinc-900"
+              >
+                <div class="min-w-0">
+                  <p class="truncate text-sm text-gray-900 dark:text-white">
+                    <span class="font-mono text-xs text-gray-400 dark:text-zinc-500">{{ bug.code }}</span>
+                    {{ bug.title }}
+                  </p>
+                </div>
+                <StatusBadge :status="bug.status" size="sm" />
+              </NuxtLink>
+            </li>
+          </ul>
+          <p v-else class="text-sm text-gray-400 dark:text-zinc-500">
+            {{ activeRange === 'day' ? 'Nothing in your modules moved today.' : 'Nothing in your modules moved this week.' }}
+          </p>
+
+          <div v-if="digest.bugsHasMore" ref="bugListEnd" class="mt-3 flex justify-center py-2">
+            <span v-if="loadingMoreBugs" class="text-xs text-gray-400 dark:text-zinc-500">
+              Loading more...
+            </span>
+          </div>
+          <p v-else-if="digest.bugs.length" class="mt-3 text-center text-xs text-gray-400 dark:text-zinc-500">
+            Showing all {{ digest.bugsTotalCount }} bugs.
+          </p>
+        </div>
       </template>
     </section>
   </div>
+
+  <AvatarPickerModal
+    v-model="showAvatarModal"
+    :selected-id="data?.avatarId"
+    :saving="savingAvatar"
+    @select="selectAvatar"
+  />
 </template>

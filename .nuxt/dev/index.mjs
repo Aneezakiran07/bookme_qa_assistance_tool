@@ -9898,6 +9898,21 @@ function requireRole(event, allowedRoles) {
   return currentUser;
 }
 
+const VALID_AVATAR_IDS = [
+  "fox",
+  "cat",
+  "panda",
+  "robot",
+  "owl",
+  "bunny",
+  "koala",
+  "penguin",
+  "alien",
+  "bear",
+  "dragon",
+  "frog"
+];
+
 let configured = false;
 function useCloudinary() {
   if (!configured) {
@@ -9972,6 +9987,14 @@ function firstOfThisMonth(karachiToday2) {
   const firstDay = new Date(karachiToday2);
   firstDay.setUTCDate(1);
   return firstDay.toISOString().slice(0, 10);
+}
+const VALID_PERIODS = ["all", "day", "week", "month"];
+function resolvePeriodRange(period) {
+  if (period === "all") return { periodStart: void 0, periodEnd: void 0 };
+  const now = karachiNow();
+  const today = now.toISOString().slice(0, 10);
+  const periodStart = period === "day" ? today : period === "week" ? mondayOfThisWeek(now) : firstOfThisMonth(now);
+  return { periodStart, periodEnd: today };
 }
 
 var inlineStyles$i = {
@@ -13282,15 +13305,19 @@ const userRepository = {
     `;
     return rows[0];
   },
-  // updates the editable fields on the profile page. notifications and
-  // the daily digest are on for everyone by default now, so this only
-  // ever touches the display name
+  // updates the editable fields on the profile page: display name and
+  // the chosen avatar. notifications and the daily digest are on for
+  // everyone by default now, so those aren't touched here. the caller
+  // (the PUT handler) is responsible for merging in whichever field
+  // wasn't sent, so both parameters here are always the final values to
+  // write, never "leave as is" sentinels
   async updateProfile(userId, fields) {
     var _a;
     const sql = useDb();
     const rows = await sql`
       update users set
-        display_name = ${fields.displayName}
+        display_name = ${fields.displayName},
+        avatar_id = ${fields.avatarId}
       where id = ${userId}
       returning *
     `;
@@ -14229,7 +14256,7 @@ const styles$1 = /*#__PURE__*/Object.freeze(/*#__PURE__*/Object.defineProperty({
 const validRoles$1 = ["Admin", "QA Lead", "Tester", "Developer"];
 const approveUser_post = defineEventHandler(async (event) => {
   var _a;
-  requireRole(event, ["Admin"]);
+  requireRole(event, ["Admin", "QA Lead"]);
   const body = await readBody(event);
   if (!(body == null ? void 0 : body.userId)) {
     throw createError({ statusCode: 400, statusMessage: "userId is required" });
@@ -14250,7 +14277,7 @@ const approveUser_post$1 = /*#__PURE__*/Object.freeze(/*#__PURE__*/Object.define
 }, Symbol.toStringTag, { value: 'Module' }));
 
 const deactivateUser_post = defineEventHandler(async (event) => {
-  requireRole(event, ["Admin"]);
+  requireRole(event, ["Admin", "QA Lead"]);
   const body = await readBody(event);
   if (!(body == null ? void 0 : body.userId)) {
     throw createError({ statusCode: 400, statusMessage: "userId is required" });
@@ -14265,7 +14292,7 @@ const deactivateUser_post$1 = /*#__PURE__*/Object.freeze(/*#__PURE__*/Object.def
 }, Symbol.toStringTag, { value: 'Module' }));
 
 const users_get = defineEventHandler(async (event) => {
-  requireRole(event, ["Admin"]);
+  requireRole(event, ["Admin", "QA Lead"]);
   const users = await userRepository.listAllWithModules();
   const pending = users.filter((u) => u.role === "Pending" || !u.active);
   const active = users.filter((u) => u.active && u.role !== "Pending");
@@ -14340,7 +14367,7 @@ const session_post$1 = /*#__PURE__*/Object.freeze(/*#__PURE__*/Object.defineProp
 
 const bugRepository = {
   async list(filters = {}) {
-    var _a, _b, _c, _d, _e, _f, _g, _h;
+    var _a, _b, _c, _d, _e, _f, _g, _h, _i, _j, _k, _l;
     const sql = useDb();
     const rows = await sql`
       select
@@ -14362,6 +14389,8 @@ const bugRepository = {
         and (${(_c = filters.severity) != null ? _c : null}::text is null or b.severity = ${(_d = filters.severity) != null ? _d : null}::text)
         and (${(_e = filters.status) != null ? _e : null}::text is null or b.status = ${(_f = filters.status) != null ? _f : null}::text)
         and (${(_g = filters.releaseId) != null ? _g : null}::int is null or b.release_id = ${(_h = filters.releaseId) != null ? _h : null}::int)
+        and (${(_i = filters.periodStart) != null ? _i : null}::date is null or b.last_status_change_at >= ${(_j = filters.periodStart) != null ? _j : null}::date)
+        and (${(_k = filters.periodEnd) != null ? _k : null}::date is null or b.last_status_change_at < (${(_l = filters.periodEnd) != null ? _l : null}::date + interval '1 day'))
       order by b.reported_at desc
     `;
     return rows;
@@ -14847,11 +14876,15 @@ const index_post$5 = /*#__PURE__*/Object.freeze(/*#__PURE__*/Object.defineProper
 
 const index_get$4 = defineEventHandler(async (event) => {
   const query = getQuery$1(event);
+  const period = VALID_PERIODS.includes(query.period) ? query.period : "all";
+  const { periodStart, periodEnd } = resolvePeriodRange(period);
   return bugRepository.list({
     moduleId: query.moduleId ? Number(query.moduleId) : void 0,
     severity: query.severity ? String(query.severity) : void 0,
     status: query.status ? String(query.status) : void 0,
-    releaseId: query.releaseId ? Number(query.releaseId) : void 0
+    releaseId: query.releaseId ? Number(query.releaseId) : void 0,
+    periodStart,
+    periodEnd
   });
 });
 
@@ -15378,6 +15411,56 @@ const dashboardRepository = {
     `;
     return { bugs: rows, totalCount };
   },
+  // -- QA Lead / Tester / Admin digest bug list (profile page's "Your
+  // digest" preview, LeadDigest branch) --
+  //
+  // QA/Tester don't own bugs the way developers do via owner_id, so
+  // "their bugs" is defined as bugs in the module(s) they're scoped to
+  // via user_modules (the same scoping userRepository.listModuleIdsForUser
+  // already provides to default the dashboard's module filter -- see
+  // server/api/dashboard/scope.get.ts). A user scoped to zero modules
+  // (e.g. most Admins, or a QA Lead covering everything) falls back to
+  // every module, matching the project-wide view the aggregate digest
+  // cards already give that same user.
+  //
+  // otherwise this mirrors getDeveloperBugsForPeriod exactly: filtered
+  // on last_status_change_at falling in [periodStart, periodEnd] (same
+  // "what happened in this window" semantics, current status and all),
+  // same cursor pagination for the same reason -- offset pagination
+  // would skip or repeat a row if a bug in scope changes status
+  // mid-scroll.
+  async getModuleScopedBugsForPeriod(moduleIds, periodStart, periodEnd, limit = 50, cursor = null) {
+    var _a, _b, _c;
+    const sql = useDb();
+    const scopeAll = moduleIds.length === 0;
+    const countRows = await sql`
+      select count(*)::int as total
+      from bugs
+      where archived = false
+        and (${scopeAll} or module_id = any(${moduleIds}::int[]))
+        and last_status_change_at >= ${periodStart}::date
+        and last_status_change_at < (${periodEnd}::date + interval '1 day')
+    `;
+    const totalCount = countRows[0].total;
+    const rows = await sql`
+      select
+        b.id, b.title, b.severity, b.status, b.module_id, b.last_status_change_at,
+        m.name as module_name
+      from bugs b
+      join modules m on m.id = b.module_id
+      where b.archived = false
+        and (${scopeAll} or b.module_id = any(${moduleIds}::int[]))
+        and b.last_status_change_at >= ${periodStart}::date
+        and b.last_status_change_at < (${periodEnd}::date + interval '1 day')
+        and (
+          ${(_a = cursor == null ? void 0 : cursor.lastStatusChangeAt) != null ? _a : null}::timestamptz is null
+          or (b.last_status_change_at, b.id) < (${(_b = cursor == null ? void 0 : cursor.lastStatusChangeAt) != null ? _b : null}::timestamptz, ${(_c = cursor == null ? void 0 : cursor.id) != null ? _c : null}::int)
+        )
+      order by b.last_status_change_at desc, b.id desc
+      limit ${limit}
+    `;
+    return { bugs: rows, totalCount };
+  },
   // this week's recap for a developer: how many bugs were newly assigned
   // to them (from the assignment log, so a reassignment counts same as
   // the schema intends -- this counts "was assigned to you at some
@@ -15480,6 +15563,12 @@ const dailyDigest_get = defineEventHandler(async (event) => {
         skipped += 1;
         continue;
       }
+      const moduleIds = await userRepository.listModuleIdsForUser(lead.id);
+      const { bugs } = await dashboardRepository.getModuleScopedBugsForPeriod(moduleIds, today, today, 10);
+      const bugListHtml = bugs.map((b) => {
+        const bugCode = `BUG-${String(b.id).padStart(3, "0")}`;
+        return `<li><a href="${appUrl}/bugs/${b.id}">${bugCode}</a> &mdash; ${b.title} (${b.severity}, ${b.status})</li>`;
+      }).join("");
       await sendEmail({
         to: lead.email,
         subject: `Project daily digest: ${metrics.open_bugs} open bugs`,
@@ -15490,6 +15579,7 @@ const dailyDigest_get = defineEventHandler(async (event) => {
             <li>Open Critical/High: ${metrics.open_critical_high}</li>
             <li>Today's pass rate: ${passRate.pass_rate}% (${passRate.passed_executions}/${passRate.total_executions})</li>
           </ul>
+          ${bugListHtml ? `<p>Bugs in your modules with activity today:</p><ul>${bugListHtml}</ul>` : ""}
         `
       });
       sent += 1;
@@ -15636,17 +15726,13 @@ const scope_get$1 = /*#__PURE__*/Object.freeze(/*#__PURE__*/Object.definePropert
 }, Symbol.toStringTag, { value: 'Module' }));
 
 const VALID_SCOPES = ["mine", "team"];
-const VALID_PERIODS = ["all", "day", "week", "month"];
 const bugs_get = defineEventHandler(async (event) => {
   const currentUser = event.context.currentUser;
   const userId = currentUser.id;
   const query = getQuery$1(event);
   const scope = VALID_SCOPES.includes(query.scope) ? query.scope : "mine";
   const period = VALID_PERIODS.includes(query.period) ? query.period : "all";
-  const now = karachiNow();
-  const today = now.toISOString().slice(0, 10);
-  const periodStart = period === "day" ? today : period === "week" ? mondayOfThisWeek(now) : period === "month" ? firstOfThisMonth(now) : void 0;
-  const periodEnd = period === "all" ? void 0 : today;
+  const { periodStart, periodEnd } = resolvePeriodRange(period);
   const bugs = await bugRepository.listForDeveloper(userId, scope, {
     moduleId: query.moduleId ? Number(query.moduleId) : void 0,
     severity: query.severity ? String(query.severity) : void 0,
@@ -16283,6 +16369,15 @@ function parseCursor(query) {
   if (!Number.isFinite(parsedId)) return null;
   return { lastStatusChangeAt: ts, id: parsedId };
 }
+function formatBugRows(bugs) {
+  return bugs.map((b) => ({
+    id: b.id,
+    code: `BUG-${String(b.id).padStart(3, "0")}`,
+    title: b.title,
+    severity: b.severity,
+    status: b.status
+  }));
+}
 const digestPreview_get = defineEventHandler(async (event) => {
   const currentUser = event.context.currentUser;
   const query = getQuery$1(event);
@@ -16293,58 +16388,72 @@ const digestPreview_get = defineEventHandler(async (event) => {
   const now = karachiNow();
   const today = now.toISOString().slice(0, 10);
   const weekStart = mondayOfThisWeek(now);
+  const periodStart = range === "week" ? weekStart : today;
+  const periodEnd = today;
   if (currentUser.role === "Developer") {
-    const periodStart = range === "week" ? weekStart : today;
-    const periodEnd = today;
     if (bugsOnly) {
-      const { bugs: bugs2, totalCount: totalCount2 } = await dashboardRepository.getDeveloperBugsForPeriod(
+      const { bugs: bugs3, totalCount: totalCount3 } = await dashboardRepository.getDeveloperBugsForPeriod(
         currentUser.id,
         periodStart,
         periodEnd,
         limit,
         cursor
       );
-      const last2 = bugs2[bugs2.length - 1];
+      const last3 = bugs3[bugs3.length - 1];
       return {
-        bugs: bugs2.map((b) => ({
-          id: b.id,
-          code: `BUG-${String(b.id).padStart(3, "0")}`,
-          title: b.title,
-          severity: b.severity,
-          status: b.status
-        })),
+        bugs: formatBugRows(bugs3),
         bugsLimit: limit,
-        bugsTotalCount: totalCount2,
-        bugsHasMore: bugs2.length === limit,
-        nextCursor: last2 ? { lastStatusChangeAt: last2.last_status_change_at, id: last2.id } : null
+        bugsTotalCount: totalCount3,
+        bugsHasMore: bugs3.length === limit,
+        nextCursor: last3 ? { lastStatusChangeAt: last3.last_status_change_at, id: last3.id } : null
       };
     }
-    const { bugs, totalCount } = await dashboardRepository.getDeveloperBugsForPeriod(
+    const { bugs: bugs2, totalCount: totalCount2 } = await dashboardRepository.getDeveloperBugsForPeriod(
       currentUser.id,
       periodStart,
       periodEnd,
       limit,
       cursor
     );
-    const last = bugs[bugs.length - 1];
+    const last2 = bugs2[bugs2.length - 1];
     return {
       scope: "developer",
       range,
       weekStart,
       weekEnd: today,
-      bugs: bugs.map((b) => ({
-        id: b.id,
-        code: `BUG-${String(b.id).padStart(3, "0")}`,
-        title: b.title,
-        severity: b.severity,
-        status: b.status
-      })),
+      bugs: formatBugRows(bugs2),
       bugsLimit: limit,
-      bugsTotalCount: totalCount,
-      bugsHasMore: bugs.length === limit,
-      nextCursor: last ? { lastStatusChangeAt: last.last_status_change_at, id: last.id } : null
+      bugsTotalCount: totalCount2,
+      bugsHasMore: bugs2.length === limit,
+      nextCursor: last2 ? { lastStatusChangeAt: last2.last_status_change_at, id: last2.id } : null
     };
   }
+  const moduleIds = await userRepository.listModuleIdsForUser(currentUser.id);
+  if (bugsOnly) {
+    const { bugs: bugs2, totalCount: totalCount2 } = await dashboardRepository.getModuleScopedBugsForPeriod(
+      moduleIds,
+      periodStart,
+      periodEnd,
+      limit,
+      cursor
+    );
+    const last2 = bugs2[bugs2.length - 1];
+    return {
+      bugs: formatBugRows(bugs2),
+      bugsLimit: limit,
+      bugsTotalCount: totalCount2,
+      bugsHasMore: bugs2.length === limit,
+      nextCursor: last2 ? { lastStatusChangeAt: last2.last_status_change_at, id: last2.id } : null
+    };
+  }
+  const { bugs, totalCount } = await dashboardRepository.getModuleScopedBugsForPeriod(
+    moduleIds,
+    periodStart,
+    periodEnd,
+    limit,
+    cursor
+  );
+  const last = bugs[bugs.length - 1];
   const metrics = await dashboardRepository.getSnapshotMetrics(null, null);
   if (range === "day") {
     const passRateDay = await dashboardRepository.getPassRate(today, today, null, null);
@@ -16355,7 +16464,12 @@ const digestPreview_get = defineEventHandler(async (event) => {
       openCriticalHigh: metrics.open_critical_high,
       passRate: passRateDay.pass_rate,
       passedExecutions: passRateDay.passed_executions,
-      totalExecutions: passRateDay.total_executions
+      totalExecutions: passRateDay.total_executions,
+      bugs: formatBugRows(bugs),
+      bugsLimit: limit,
+      bugsTotalCount: totalCount,
+      bugsHasMore: bugs.length === limit,
+      nextCursor: last ? { lastStatusChangeAt: last.last_status_change_at, id: last.id } : null
     };
   }
   const passRateWeek = await dashboardRepository.getPassRate(weekStart, today, null, null);
@@ -16368,7 +16482,12 @@ const digestPreview_get = defineEventHandler(async (event) => {
     weekEnd: today,
     passRate: passRateWeek.pass_rate,
     passedExecutions: passRateWeek.passed_executions,
-    totalExecutions: passRateWeek.total_executions
+    totalExecutions: passRateWeek.total_executions,
+    bugs: formatBugRows(bugs),
+    bugsLimit: limit,
+    bugsTotalCount: totalCount,
+    bugsHasMore: bugs.length === limit,
+    nextCursor: last ? { lastStatusChangeAt: last.last_status_change_at, id: last.id } : null
   };
 });
 
@@ -16387,7 +16506,8 @@ const index_get$2 = defineEventHandler(async (event) => {
     id: user.id,
     email: user.email,
     role: user.role,
-    displayName: user.display_name
+    displayName: user.display_name,
+    avatarId: user.avatar_id
   };
 });
 
@@ -16400,8 +16520,19 @@ const index_put = defineEventHandler(async (event) => {
   var _a;
   const currentUser = event.context.currentUser;
   const body = await readBody(event);
-  const displayName = ((_a = body == null ? void 0 : body.displayName) == null ? void 0 : _a.trim()) || null;
-  const updated = await userRepository.updateProfile(currentUser.id, { displayName });
+  const existing = await userRepository.findById(currentUser.id);
+  if (!existing) {
+    throw createError({ statusCode: 404, statusMessage: "User not found" });
+  }
+  const displayName = (body == null ? void 0 : body.displayName) !== void 0 ? ((_a = body.displayName) == null ? void 0 : _a.trim()) || null : existing.display_name;
+  let avatarId = existing.avatar_id;
+  if ((body == null ? void 0 : body.avatarId) !== void 0) {
+    if (!VALID_AVATAR_IDS.includes(body.avatarId)) {
+      throw createError({ statusCode: 400, statusMessage: "Unknown avatar" });
+    }
+    avatarId = body.avatarId;
+  }
+  const updated = await userRepository.updateProfile(currentUser.id, { displayName, avatarId });
   if (!updated) {
     throw createError({ statusCode: 404, statusMessage: "User not found" });
   }
@@ -16409,7 +16540,8 @@ const index_put = defineEventHandler(async (event) => {
     id: updated.id,
     email: updated.email,
     role: updated.role,
-    displayName: updated.display_name
+    displayName: updated.display_name,
+    avatarId: updated.avatar_id
   };
 });
 
@@ -16925,7 +17057,7 @@ const index$1 = /*#__PURE__*/Object.freeze(/*#__PURE__*/Object.defineProperty({
 const validRoles = ["Admin", "QA Lead", "Tester", "Developer"];
 const approve_post = defineEventHandler(async (event) => {
   var _a;
-  requireRole(event, ["Admin"]);
+  requireRole(event, ["Admin", "QA Lead"]);
   const userId = Number(getRouterParam(event, "id"));
   if (!userId || Number.isNaN(userId)) {
     throw createError({ statusCode: 400, statusMessage: "Invalid user id" });
@@ -16960,7 +17092,7 @@ const index_get$1 = /*#__PURE__*/Object.freeze(/*#__PURE__*/Object.definePropert
 }, Symbol.toStringTag, { value: 'Module' }));
 
 const pending_get = defineEventHandler(async (event) => {
-  requireRole(event, ["Admin"]);
+  requireRole(event, ["Admin", "QA Lead"]);
   return userRepository.listPending();
 });
 

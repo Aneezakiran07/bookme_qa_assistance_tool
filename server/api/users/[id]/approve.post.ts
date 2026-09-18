@@ -3,7 +3,7 @@ import { userRepository } from '~~/server/repositories/userRepository'
 const validRoles = ['Admin', 'QA Lead', 'Tester', 'Developer']
 
 export default defineEventHandler(async (event) => {
-  requireRole(event, ['Admin'])
+  requireRole(event, ['Admin', 'QA Lead'])
 
   const userId = Number(getRouterParam(event, 'id'))
   if (!userId || Number.isNaN(userId)) {

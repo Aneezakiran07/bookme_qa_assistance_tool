@@ -1,5 +1,5 @@
 import type { NavigationGuard } from 'vue-router'
-export type MiddlewareKey = "admin-only"
+export type MiddlewareKey = "admin-only" | "manage-users"
 declare module 'nuxt/app' {
   interface PageMeta {
     middleware?: MiddlewareKey | NavigationGuard | Array<MiddlewareKey | NavigationGuard>

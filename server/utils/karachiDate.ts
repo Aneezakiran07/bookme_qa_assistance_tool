@@ -28,3 +28,26 @@ export function firstOfThisMonth(karachiToday: Date): string {
   firstDay.setUTCDate(1)
   return firstDay.toISOString().slice(0, 10)
 }
+
+// shared "all time / today / this week / this month" period filter used
+// by both the Developer Bugs Directory and the QA/Tester bug list --
+// resolves a period key into the [periodStart, periodEnd] window the
+// repository layer expects (undefined/undefined for 'all', which keeps
+// the old unfiltered behaviour). Centralized here so every bug-list
+// page that adds this filter computes the exact same boundaries instead
+// of re-deriving them.
+export const VALID_PERIODS = ['all', 'day', 'week', 'month'] as const
+export type Period = (typeof VALID_PERIODS)[number]
+
+export function resolvePeriodRange(period: Period): { periodStart?: string; periodEnd?: string } {
+  if (period === 'all') return { periodStart: undefined, periodEnd: undefined }
+
+  const now = karachiNow()
+  const today = now.toISOString().slice(0, 10)
+  const periodStart =
+    period === 'day' ? today
+    : period === 'week' ? mondayOfThisWeek(now)
+    : firstOfThisMonth(now)
+
+  return { periodStart, periodEnd: today }
+}

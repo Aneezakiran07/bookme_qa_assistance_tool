@@ -6,10 +6,13 @@
 //
 // Developers get their own open/blocker/pending/resolved numbers plus a
 // short list of what's still open. QA Leads, Admins, and Testers get a
-// much shorter project-wide summary instead: open bug counts and
-// today's pass rate. anyone with nothing open and nothing that happened
-// today is skipped so people don't get an empty "nothing happened"
-// email every night.
+// shorter project-wide summary instead (open bug counts and today's
+// pass rate), plus a short list of bugs in their assigned module(s)
+// (every module, if unscoped) with activity today -- module-scoped
+// instead of owner-scoped since QA/Tester don't own bugs via owner_id,
+// same idea as the profile page's live digest preview. anyone with
+// nothing open and nothing that happened today is skipped so people
+// don't get an empty "nothing happened" email every night.
 //
 // same CRON_SECRET gate as daily-snapshot, pulled into requireCronSecret
 // so both routes share one validation path instead of duplicating it.
@@ -84,6 +87,19 @@ export default defineEventHandler(async (event) => {
         continue
       }
 
+      // same module scoping as the profile page's live preview (empty
+      // scope falls back to every module) and the same "current status
+      // of anything with activity today" bug list the developer email
+      // above already gets, just scoped by module instead of owner_id
+      const moduleIds = await userRepository.listModuleIdsForUser(lead.id)
+      const { bugs } = await dashboardRepository.getModuleScopedBugsForPeriod(moduleIds, today, today, 10)
+      const bugListHtml = bugs
+        .map((b) => {
+          const bugCode = `BUG-${String(b.id).padStart(3, '0')}`
+          return `<li><a href="${appUrl}/bugs/${b.id}">${bugCode}</a> &mdash; ${b.title} (${b.severity}, ${b.status})</li>`
+        })
+        .join('')
+
       await sendEmail({
         to: lead.email,
         subject: `Project daily digest: ${metrics.open_bugs} open bugs`,
@@ -94,6 +110,7 @@ export default defineEventHandler(async (event) => {
             <li>Open Critical/High: ${metrics.open_critical_high}</li>
             <li>Today's pass rate: ${passRate.pass_rate}% (${passRate.passed_executions}/${passRate.total_executions})</li>
           </ul>
+          ${bugListHtml ? `<p>Bugs in your modules with activity today:</p><ul>${bugListHtml}</ul>` : ''}
         `
       })
       sent += 1

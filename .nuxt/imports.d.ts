@@ -34,6 +34,7 @@ export { setInterval } from '#app/compat/interval';
 export { definePageMeta, PageMeta } from '#app/composables/pages';
 export { defineLazyHydrationComponent } from '#app/composables/lazy-hydration';
 export { useDropdownPt, useDialogPt, usePopoverPt, useToastPt } from '../app/composables/usePrimeOverlayTheme';
+export { AVATAR_OPTIONS, DEFAULT_AVATAR_ID, getAvatarById, AvatarOption } from '../app/utils/avatarOptions';
 export { ALL_BUG_STATUSES } from '../app/utils/bugStatusTransitions';
 export { useUserSession } from '../node_modules/nuxt-auth-utils/dist/runtime/app/composables/session';
 export { usePrimeVue } from 'primevue/config';

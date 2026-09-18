@@ -17,6 +17,7 @@ type LazyComponent<T> = DefineComponent<HydrationStrategies, {}, {}, {}, {}, {},
 export const ThemeToggle: typeof import("../app/components/ThemeToggle.vue")['default']
 export const DeveloperDashboard: typeof import("../app/components/dashboard/DeveloperDashboard.vue")['default']
 export const QaAdminDashboard: typeof import("../app/components/dashboard/QaAdminDashboard.vue")['default']
+export const AvatarPickerModal: typeof import("../app/components/form/AvatarPickerModal.vue")['default']
 export const LogBugModal: typeof import("../app/components/form/LogBugModal.vue")['default']
 export const MediaUploader: typeof import("../app/components/form/MediaUploader.vue")['default']
 export const ModuleSelect: typeof import("../app/components/form/ModuleSelect.vue")['default']
@@ -24,6 +25,7 @@ export const RichTextEditor: typeof import("../app/components/form/RichTextEdito
 export const UserAvatarSelect: typeof import("../app/components/form/UserAvatarSelect.vue")['default']
 export const AppSidebar: typeof import("../app/components/layout/AppSidebar.vue")['default']
 export const PageHeader: typeof import("../app/components/layout/PageHeader.vue")['default']
+export const AppAvatar: typeof import("../app/components/ui/AppAvatar.vue")['default']
 export const AppBreakdownBar: typeof import("../app/components/ui/AppBreakdownBar.vue")['default']
 export const AppConfirmDialog: typeof import("../app/components/ui/AppConfirmDialog.vue")['default']
 export const AppDataTable: typeof import("../app/components/ui/AppDataTable.vue")['default']
@@ -188,6 +190,7 @@ export const NuxtIsland: typeof import("../node_modules/nuxt/dist/app/components
 export const LazyThemeToggle: LazyComponent<typeof import("../app/components/ThemeToggle.vue")['default']>
 export const LazyDeveloperDashboard: LazyComponent<typeof import("../app/components/dashboard/DeveloperDashboard.vue")['default']>
 export const LazyQaAdminDashboard: LazyComponent<typeof import("../app/components/dashboard/QaAdminDashboard.vue")['default']>
+export const LazyAvatarPickerModal: LazyComponent<typeof import("../app/components/form/AvatarPickerModal.vue")['default']>
 export const LazyLogBugModal: LazyComponent<typeof import("../app/components/form/LogBugModal.vue")['default']>
 export const LazyMediaUploader: LazyComponent<typeof import("../app/components/form/MediaUploader.vue")['default']>
 export const LazyModuleSelect: LazyComponent<typeof import("../app/components/form/ModuleSelect.vue")['default']>
@@ -195,6 +198,7 @@ export const LazyRichTextEditor: LazyComponent<typeof import("../app/components/
 export const LazyUserAvatarSelect: LazyComponent<typeof import("../app/components/form/UserAvatarSelect.vue")['default']>
 export const LazyAppSidebar: LazyComponent<typeof import("../app/components/layout/AppSidebar.vue")['default']>
 export const LazyPageHeader: LazyComponent<typeof import("../app/components/layout/PageHeader.vue")['default']>
+export const LazyAppAvatar: LazyComponent<typeof import("../app/components/ui/AppAvatar.vue")['default']>
 export const LazyAppBreakdownBar: LazyComponent<typeof import("../app/components/ui/AppBreakdownBar.vue")['default']>
 export const LazyAppConfirmDialog: LazyComponent<typeof import("../app/components/ui/AppConfirmDialog.vue")['default']>
 export const LazyAppDataTable: LazyComponent<typeof import("../app/components/ui/AppDataTable.vue")['default']>

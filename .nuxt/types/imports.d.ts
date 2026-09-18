@@ -3,6 +3,8 @@ export {}
 declare global {
   const $fetch: typeof import('../fetch.mjs').$fetch
   const ALL_BUG_STATUSES: typeof import('../../app/utils/bugStatusTransitions').ALL_BUG_STATUSES
+  const AVATAR_OPTIONS: typeof import('../../app/utils/avatarOptions').AVATAR_OPTIONS
+  const DEFAULT_AVATAR_ID: typeof import('../../app/utils/avatarOptions').DEFAULT_AVATAR_ID
   const abortNavigation: typeof import('../../node_modules/nuxt/dist/app/composables/router').abortNavigation
   const addRouteMiddleware: typeof import('../../node_modules/nuxt/dist/app/composables/router').addRouteMiddleware
   const callOnce: typeof import('../../node_modules/nuxt/dist/app/composables/once').callOnce
@@ -30,6 +32,7 @@ declare global {
   const effect: typeof import('vue').effect
   const effectScope: typeof import('vue').effectScope
   const getAppManifest: typeof import('../../node_modules/nuxt/dist/app/composables/manifest').getAppManifest
+  const getAvatarById: typeof import('../../app/utils/avatarOptions').getAvatarById
   const getCurrentInstance: typeof import('vue').getCurrentInstance
   const getCurrentScope: typeof import('vue').getCurrentScope
   const getRouteRules: typeof import('../../node_modules/nuxt/dist/app/composables/manifest').getRouteRules
@@ -214,6 +217,9 @@ declare global {
   // @ts-ignore
   export type { PageMeta } from '../../node_modules/nuxt/dist/app/composables/pages'
   import('../../node_modules/nuxt/dist/app/composables/pages')
+  // @ts-ignore
+  export type { AvatarOption } from '../../app/utils/avatarOptions'
+  import('../../app/utils/avatarOptions')
 }
 // for vue template auto import
 import { UnwrapRef } from 'vue'
@@ -221,6 +227,8 @@ declare module 'vue' {
   interface ComponentCustomProperties {
     readonly $fetch: UnwrapRef<typeof import('../fetch.mjs')['$fetch']>
     readonly ALL_BUG_STATUSES: UnwrapRef<typeof import('../../app/utils/bugStatusTransitions')['ALL_BUG_STATUSES']>
+    readonly AVATAR_OPTIONS: UnwrapRef<typeof import('../../app/utils/avatarOptions')['AVATAR_OPTIONS']>
+    readonly DEFAULT_AVATAR_ID: UnwrapRef<typeof import('../../app/utils/avatarOptions')['DEFAULT_AVATAR_ID']>
     readonly abortNavigation: UnwrapRef<typeof import('../../node_modules/nuxt/dist/app/composables/router')['abortNavigation']>
     readonly addRouteMiddleware: UnwrapRef<typeof import('../../node_modules/nuxt/dist/app/composables/router')['addRouteMiddleware']>
     readonly callOnce: UnwrapRef<typeof import('../../node_modules/nuxt/dist/app/composables/once')['callOnce']>
@@ -248,6 +256,7 @@ declare module 'vue' {
     readonly effect: UnwrapRef<typeof import('vue')['effect']>
     readonly effectScope: UnwrapRef<typeof import('vue')['effectScope']>
     readonly getAppManifest: UnwrapRef<typeof import('../../node_modules/nuxt/dist/app/composables/manifest')['getAppManifest']>
+    readonly getAvatarById: UnwrapRef<typeof import('../../app/utils/avatarOptions')['getAvatarById']>
     readonly getCurrentInstance: UnwrapRef<typeof import('vue')['getCurrentInstance']>
     readonly getCurrentScope: UnwrapRef<typeof import('vue')['getCurrentScope']>
     readonly getRouteRules: UnwrapRef<typeof import('../../node_modules/nuxt/dist/app/composables/manifest')['getRouteRules']>

@@ -1,7 +1,11 @@
 <script setup lang="ts">
-// admin-only page: approve pending signups into a real role with module
-// scope, and manage already-active team members (edit scope or deactivate)
-definePageMeta({ layout: 'default', middleware: ['admin-only'] })
+// user management page: approve pending signups into a real role with
+// module scope, and manage already-active team members (edit scope or
+// deactivate). Admin and QA Lead both get this page -- same permission
+// tier for this pilot, just two different labels -- gated by the
+// manage-users middleware; Tester and Developer are bounced to the
+// dashboard if they hit this route directly.
+definePageMeta({ layout: 'default', middleware: ['manage-users'] })
 
 interface ModuleRef {
   id: number

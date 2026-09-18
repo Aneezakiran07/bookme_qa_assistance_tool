@@ -1,10 +1,8 @@
 import { bugRepository } from '~~/server/repositories/bugRepository'
 import type { DeveloperBugScope } from '~~/server/repositories/bugRepository'
-import { karachiNow, mondayOfThisWeek, firstOfThisMonth } from '~~/server/utils/karachiDate'
+import { VALID_PERIODS, resolvePeriodRange, type Period } from '~~/server/utils/karachiDate'
 
 const VALID_SCOPES: DeveloperBugScope[] = ['mine', 'team']
-const VALID_PERIODS = ['all', 'day', 'week', 'month'] as const
-type Period = (typeof VALID_PERIODS)[number]
 
 // backs the Bugs Directory's scope toolbar: the list for whichever scope
 // is selected, filtered by module/severity/status on top of that, plus
@@ -28,14 +26,7 @@ export default defineEventHandler(async (event) => {
     : 'mine'
   const period: Period = VALID_PERIODS.includes(query.period as Period) ? (query.period as Period) : 'all'
 
-  const now = karachiNow()
-  const today = now.toISOString().slice(0, 10)
-  const periodStart =
-    period === 'day' ? today
-    : period === 'week' ? mondayOfThisWeek(now)
-    : period === 'month' ? firstOfThisMonth(now)
-    : undefined
-  const periodEnd = period === 'all' ? undefined : today
+  const { periodStart, periodEnd } = resolvePeriodRange(period)
 
   const bugs = await bugRepository.listForDeveloper(userId, scope, {
     moduleId: query.moduleId ? Number(query.moduleId) : undefined,
