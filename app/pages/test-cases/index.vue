@@ -626,7 +626,7 @@ async function deleteTestCase(row: TestCaseRow) {
 
         <div>
           <label class="mb-1 block text-xs font-medium text-gray-600 dark:text-zinc-300">
-            Test Steps
+            Test Data
           </label>
           <RichTextEditor
             v-model="form.steps"

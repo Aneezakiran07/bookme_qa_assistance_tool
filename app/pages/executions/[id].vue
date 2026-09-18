@@ -337,7 +337,7 @@ function statusKey(latest: string | null): string {
 
             <div>
               <p class="mb-1.5 text-xs font-semibold uppercase tracking-wide text-gray-400 dark:text-zinc-500">
-                Test Steps
+                Test Data
               </p>
               <div
                 class="whitespace-pre-wrap rounded-md border border-black/10 bg-gray-50 p-3 text-sm
