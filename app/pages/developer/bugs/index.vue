@@ -268,7 +268,10 @@ function viewBug(bug: DeveloperBugRow) {
       </template>
 
       <template #cell-title="{ data: row }">
-        <span class="font-medium text-gray-900 dark:text-white">
+        <span
+          :title="row.title"
+          class="block max-w-[16rem] truncate font-medium text-gray-900 dark:text-white"
+        >
           {{ row.title }}
         </span>
       </template>

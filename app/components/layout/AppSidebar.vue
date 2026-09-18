@@ -18,6 +18,7 @@ interface ProfileData {
 }
 
 const { user, clear } = useUserSession()
+const { collapsed, toggle: toggleSidebar } = useSidebarCollapsed()
 
 // the session cookie only carries id/email/role/active (see
 // server/middleware/00-syncSession.ts), not display name or avatar, so
@@ -98,32 +99,75 @@ async function handleLogout() {
 
 <template>
   <aside
-    class="flex h-screen w-64 shrink-0 flex-col border-r border-gray-200 bg-white
+    class="flex h-screen shrink-0 flex-col border-r border-gray-200 bg-white
+           transition-[width] duration-200 ease-in-out
            dark:border-zinc-800 dark:bg-black"
+    :class="collapsed ? 'w-[4.5rem]' : 'w-64'"
   >
-    <!-- brand -->
-    <div class="flex h-16 items-center gap-2 border-b border-gray-200 px-5 dark:border-zinc-800">
-      <div class="flex h-8 w-8 items-center justify-center rounded-md bg-purple-600 text-sm font-bold text-white">
+    <!-- brand + collapse toggle -->
+    <div
+      class="flex h-16 items-center gap-2 border-b border-gray-200 px-3 dark:border-zinc-800"
+      :class="collapsed ? 'justify-center' : 'justify-between'"
+    >
+      <div v-if="!collapsed" class="flex items-center gap-2 overflow-hidden">
+        <div class="flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-purple-600 text-sm font-bold text-white">
+          Q
+        </div>
+        <span class="truncate text-base font-semibold text-gray-900 dark:text-white">
+          Bookme QA Tool
+        </span>
+      </div>
+      <div
+        v-else
+        class="flex h-8 w-8 items-center justify-center rounded-md bg-purple-600 text-sm font-bold text-white"
+      >
         Q
       </div>
-      <span class="text-base font-semibold text-gray-900 dark:text-white">
-        Bookme QA Tool
-      </span>
+
+      <button
+        v-if="!collapsed"
+        type="button"
+        aria-label="Collapse sidebar"
+        class="shrink-0 rounded-md p-1.5 text-gray-400 transition-colors
+               hover:bg-gray-100 hover:text-gray-600
+               dark:text-zinc-500 dark:hover:bg-zinc-900 dark:hover:text-zinc-300"
+        @click="toggleSidebar"
+      >
+        <i class="pi pi-bars text-base" />
+      </button>
+    </div>
+
+    <!-- collapsed state gets its own expand button under the logo, since
+         there's no room next to it once the brand text is hidden -->
+    <div v-if="collapsed" class="flex justify-center border-b border-gray-200 py-2 dark:border-zinc-800">
+      <button
+        type="button"
+        aria-label="Expand sidebar"
+        title="Expand sidebar"
+        class="rounded-md p-1.5 text-gray-400 transition-colors
+               hover:bg-gray-100 hover:text-gray-600
+               dark:text-zinc-500 dark:hover:bg-zinc-900 dark:hover:text-zinc-300"
+        @click="toggleSidebar"
+      >
+        <i class="pi pi-bars text-base" />
+      </button>
     </div>
 
     <!-- nav -->
-    <nav class="flex-1 space-y-1 overflow-y-auto px-3 py-5">
+    <nav class="flex-1 space-y-1 overflow-y-auto overflow-x-hidden px-3 py-5">
       <ul class="space-y-1">
         <li v-for="link in navLinks" :key="link.to">
           <NuxtLink
             :to="link.to"
+            :title="collapsed ? link.label : undefined"
             class="flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium text-gray-600
                    transition-colors hover:bg-gray-100 dark:text-zinc-400 dark:hover:bg-zinc-900"
+            :class="collapsed ? 'justify-center' : ''"
             active-class="!bg-purple-600/10 !text-purple-600 dark:!text-purple-400"
             exact-active-class="!bg-purple-600/10 !text-purple-600 dark:!text-purple-400"
           >
-            <i :class="link.icon" class="text-base" />
-            <span>{{ link.label }}</span>
+            <i :class="link.icon" class="shrink-0 text-base" />
+            <span v-if="!collapsed" class="truncate">{{ link.label }}</span>
           </NuxtLink>
         </li>
       </ul>
@@ -133,10 +177,12 @@ async function handleLogout() {
     <div class="border-t border-gray-200 p-3 dark:border-zinc-800">
       <NuxtLink
         to="/profile"
+        :title="collapsed ? (currentUser?.email ?? 'Profile') : undefined"
         class="flex items-center gap-3 rounded-md px-2 py-2 transition-colors hover:bg-gray-100 dark:hover:bg-zinc-900"
+        :class="collapsed ? 'justify-center' : ''"
       >
         <AppAvatar :avatar-id="profileData?.avatarId" size="sm" />
-        <div class="min-w-0 flex-1">
+        <div v-if="!collapsed" class="min-w-0 flex-1">
           <p class="truncate text-sm font-medium text-gray-900 dark:text-white">
             {{ currentUser?.email ?? 'Unknown user' }}
           </p>
@@ -148,6 +194,7 @@ async function handleLogout() {
           </span>
         </div>
         <button
+          v-if="!collapsed"
           type="button"
           aria-label="Log out"
           class="shrink-0 rounded-md p-1.5 text-gray-400 transition-colors
@@ -158,6 +205,18 @@ async function handleLogout() {
           <i class="pi pi-sign-out text-sm" />
         </button>
       </NuxtLink>
+      <button
+        v-if="collapsed"
+        type="button"
+        aria-label="Log out"
+        title="Log out"
+        class="mt-1 flex w-full items-center justify-center rounded-md p-1.5 text-gray-400 transition-colors
+               hover:bg-gray-100 hover:text-gray-600
+               dark:text-zinc-500 dark:hover:bg-zinc-900 dark:hover:text-zinc-300"
+        @click="handleLogout"
+      >
+        <i class="pi pi-sign-out text-sm" />
+      </button>
     </div>
   </aside>
 </template>

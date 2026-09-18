@@ -7906,9 +7906,9 @@ const _inlineRuntimeConfig = {
     "apiSecret": "SuZkDNYNBwybDXFVk2ZEtIeZaQc"
   },
   "firebaseAdmin": {
-    "projectId": "bookmeqa-17c96",
-    "clientEmail": "firebase-adminsdk-fbsvc@bookmeqa-17c96.iam.gserviceaccount.com",
-    "privateKey": "-----BEGIN PRIVATE KEY-----\nMIIEvQIBADANBgkqhkiG9w0BAQEFAASCBKcwggSjAgEAAoIBAQC5tE9JPbBe3Ert\nrduiG6OhWvxbiiaU96nthXgr4fF1KjU339be8fMC/Y4U3yiAdhl5NsGrk91gaAax\nZXOSoZmpcl8seMSZyAiTR2gnj//VExxZcg9Mst4QAWO3EaZyqqrqdHY/PSCtERrY\n//jZJw9w9NbwmSXWeyOaSES6GsPgcGWQO+UZHwc8BIq7rFWnI0DB6fpSR9uDC19u\n85JQvYcQ1tQkWVSXgLknWhJ4K/12lTh+8lhm9JzdJ92pnQnp6m/rvxrQ9PLMD07Y\nbUl4x5nk76c+757r/zIAY5CSPpFlPxyq5eUHehuLZDn8PYt7vlJ/SMLskL66u1lS\nxpaUaC6bAgMBAAECggEASfGVhnzVTxhZj4VkSIrH33Z6uLpsPXHWTFkSbirD+drK\nIQr0pIZjtKOgoQfwuSINZ5oZiMfSZNJXI+jZGaBWLsX3Rp557h/b5kUPIH2yqTW4\nWpdTpz8rs+TRvzH8fHkfoEaqVOjyq2b9sT1PaawndltPgLMCgYI7vXGcSBxjNWju\nKW/7OSRz7ba+syItmdx5zl0AzGOmrDVllwXOURuBkswUJ9CQ4LEi//A1SGdmH8TE\n3biTxgOQpByrFmGx19OQxWmYWjupaF1J0xZ2l7htR0qas1ZsYVMzkmYtezn4Rjua\n+JtHmPJxkyM52EPbn2n5+pFg+xcmG2BKXKum2xQNSQKBgQDcmSWF9JMEgF9OkEV8\nKpeRvM+1lANZwHJouckvHads1lpiYsW3TF2MgcwDKcVDTOykcMlP24WfOvXFZdeo\nhJ3J4IOzigPPI3nJoO9L3Q7yFz3w0OeVQVzFQd1w9bxlRgCwoKoN4H1Z61IxHpws\nD++nphQlrvmTeqeys8RDN2SkswKBgQDXgZ1cu7CRQLaPgLd3ge4+iyel39GXLA9/\nF/qiJuYk1wyaw3U+zMXpoMzE0SEQtLpS0rEf0/2komnS+bEo2thdBwFUbv3bUscl\n3lcA41H+GdnvJwoL9GulZY2xcxXydMeKflB/oQtgzHBM3VvM60TrbFMLc+NkQvZB\n5WbGrxdSeQKBgG5nt3/ziCEYnpqTWjNqnbEy7kHSclrZFmmTkj0iekjefx3+kTXL\n4oYP8CslHLUyKr2iNR7in12yBI9nCSguN0pyM3gH+yAQgUOIaDtvx6siNr3vz/fD\nXsrazBlc441MG8xKnNGVKSd3vwsWZtMmpqshU7QIfqBxIr0te2yorJZBAoGAHA/+\nw9KU/XUl0K38Ng2vTmmkcg8hJcRRCEXBF1hlY6q1M3n8TH8xzmhoAcERwzElih9x\nfSmHv+Z+TUDCdwV4YzTEUZBacjLnR+EaBz2SsboADQpSXpgnZFRDDTZlRzs5uKkW\nJmh8KNC2VuwERjzkrptefQFMPQQTOSV8KqcmLFECgYEAxrI+LrARjz5qopDNmtFD\nT7+VShgzDv+1JIoW42nuSUslqBQEG142iHa0TqGiHaTe/mqXsZVl2QnQMUUYgDbo\njbhiyr2/MZoeFtqdUpfmk4PnLhWIIFepuSebAXGhM4BdtTKq+zkCvTNvND4y1AR9\nMsfMrPoZwuViIm5UO7DVZek=\n-----END PRIVATE KEY-----\n"
+    "projectId": "",
+    "clientEmail": "",
+    "privateKey": ""
   },
   "oneSignal": {
     "appId": "",

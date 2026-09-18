@@ -299,8 +299,11 @@ async function updateStatus(bug: BugRow, status: string) {
       </template>
 
       <template #cell-title="{ data: row }">
-        <div class="max-w-sm">
-          <p class="text-sm font-bold text-gray-900 dark:text-white">
+        <div class="max-w-[16rem]">
+          <p
+            :title="row.title"
+            class="truncate text-sm font-bold text-gray-900 dark:text-white"
+          >
             {{ row.title }}
           </p>
           <span
