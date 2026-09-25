@@ -85,5 +85,13 @@ export const invitationRepository = {
       returning *
     `
     return (rows[0] as InvitationRecord) ?? null
+  },
+
+  // used to roll back an invitation row when a later step in invite
+  // creation (currently sendOobCode) fails, so the email is not left
+  // blocked by a row that never actually got an email sent
+  async deleteById(id: number): Promise<void> {
+    const sql = useDb()
+    await sql`delete from invitations where id = ${id}`
   }
 }

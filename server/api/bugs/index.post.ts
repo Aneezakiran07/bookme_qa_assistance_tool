@@ -1,71 +1,104 @@
-import { bugRepository } from '~~/server/repositories/bugRepository'
-import { moduleRepository } from '~~/server/repositories/moduleRepository'
-import { bugStatusHistoryRepository } from '~~/server/repositories/bugStatusHistoryRepository'
+import crypto from 'node:crypto'
+import { requireRole } from '~~/server/utils/authorize'
+import { useFirebaseAuth } from '~~/server/utils/firebaseAdmin'
+import { userRepository } from '~~/server/repositories/userRepository'
+import { invitationRepository } from '~~/server/repositories/invitationRepository'
 
-const VALID_SEVERITIES = ['Critical', 'High', 'Medium', 'Low']
-const VALID_PRIORITIES = ['High', 'Medium', 'Low']
+const validRoles = ['Admin', 'QA Lead', 'Tester', 'Developer']
+const INVITE_EXPIRY_DAYS = 7
 
-// Minimal create endpoint for the FAIL -> Log Bug flow on Test Executions.
-// The full Bugs module (list/detail/edit/lifecycle) will extend this file.
+// Admin/QA Lead invites someone by email + role. No password is set here --
+// the invitee gets a Firebase "reset password" email (continueUrl carries
+// mode=invite so the frontend can tell an invite apart from a genuine
+// password reset) and either sets a password or continues with Google from
+// the accept-invite page.
 export default defineEventHandler(async (event) => {
-  const currentUser = event.context.currentUser
-  const body = await readBody<{
-    title: string
-    moduleId: number
-    severity: string
-    priority?: string | null
-    environmentBuild?: string | null
-    linkedTestCaseId?: number | null
-    releaseId?: number | null
-    stepsToReproduce?: string | null
-    actualResult?: string | null
-    ownerId?: number | null
-  }>(event)
+  const currentUser = requireRole(event, ['Admin', 'QA Lead'])
 
-  const title = body?.title?.trim()
-  if (!title) {
-    throw createError({ statusCode: 400, statusMessage: 'Title is required' })
+  const body = await readBody<{ email?: string; role?: string }>(event)
+  const email = body?.email?.trim().toLowerCase()
+
+  if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+    throw createError({ statusCode: 400, statusMessage: 'A valid email is required' })
+  }
+  if (!body?.role || !validRoles.includes(body.role)) {
+    throw createError({ statusCode: 400, statusMessage: 'Invalid role' })
   }
 
-  const moduleId = Number(body?.moduleId)
-  if (!moduleId) {
-    throw createError({ statusCode: 400, statusMessage: 'Module is required' })
-  }
-  const mod = await moduleRepository.findById(moduleId)
-  if (!mod) {
-    throw createError({ statusCode: 404, statusMessage: 'Module not found' })
+  const existingUser = await userRepository.findByEmail(email)
+  if (existingUser) {
+    throw createError({ statusCode: 409, statusMessage: 'This email already has an account' })
   }
 
-  if (!VALID_SEVERITIES.includes(body.severity)) {
-    throw createError({ statusCode: 400, statusMessage: 'Invalid severity' })
+  const existingInvite = await invitationRepository.findActiveByEmail(email)
+  if (existingInvite) {
+    throw createError({ statusCode: 409, statusMessage: 'An outstanding invite already exists for this email' })
   }
 
-  if (body.priority && !VALID_PRIORITIES.includes(body.priority)) {
-    throw createError({ statusCode: 400, statusMessage: 'Invalid priority' })
+  const token = crypto.randomBytes(32).toString('hex')
+  const expiresAt = new Date(Date.now() + INVITE_EXPIRY_DAYS * 24 * 60 * 60 * 1000)
+
+  // create the Firebase user with no password -- they set one (or use
+  // Google) when they accept the invite
+  try {
+    await useFirebaseAuth().createUser({ email })
+  } catch (error) {
+    console.error('[invitations] firebase createUser failed:', error)
+    throw createError({ statusCode: 500, statusMessage: 'Failed to create the invited account' })
   }
 
-  const created = await bugRepository.create({
-    title,
-    moduleId,
-    severity: body.severity,
-    priority: body.priority ?? null,
-    environmentBuild: body.environmentBuild?.trim() || null,
-    linkedTestCaseId: body.linkedTestCaseId ?? null,
-    releaseId: body.releaseId ?? null,
-    stepsToReproduce: body.stepsToReproduce || null,
-    actualResult: body.actualResult || null,
-    reportedBy: currentUser.id,
-    ownerId: body.ownerId ?? null
+  const invitation = await invitationRepository.create({
+    email,
+    role: body.role,
+    token,
+    invitedBy: currentUser.id,
+    expiresAt
   })
 
-  // audits the bug's starting point so the timeline on the detail page
-  // never opens empty; every later transition builds on this first row
-  await bugStatusHistoryRepository.create({
-    bugId: created.id,
-    oldStatus: null,
-    newStatus: 'Open',
-    changedBy: currentUser.id
-  })
+  const config = useRuntimeConfig()
+  const continueUrl = `${config.public.appUrl}/accept-invite?token=${token}&mode=invite`
 
-  return created
+  try {
+    await $fetch(
+      `https://identitytoolkit.googleapis.com/v1/accounts:sendOobCode?key=${config.public.firebase.apiKey}`,
+      {
+        method: 'POST',
+        body: {
+          requestType: 'PASSWORD_RESET',
+          email,
+          continueUrl
+        }
+      }
+    )
+  } catch (error: any) {
+    // ofetch puts the parsed Firebase error body here, this is what
+    // actually has the error code like INVALID_CONTINUE_URI or API_KEY_INVALID
+    const firebaseErrorBody = error?.data ?? error?.response?._data ?? null
+    console.error('[invitations] sendOobCode failed:', JSON.stringify(firebaseErrorBody ?? error, null, 2))
+
+    // the firebase user and invitation row were already created above, but
+    // no email ever went out, so roll both back rather than leaving a row
+    // that permanently blocks re-inviting this address
+    await invitationRepository.deleteById(invitation.id)
+    try {
+      await useFirebaseAuth().deleteUser((await useFirebaseAuth().getUserByEmail(email)).uid)
+    } catch (cleanupError) {
+      console.error('[invitations] failed to clean up firebase user after sendOobCode failure:', cleanupError)
+    }
+
+    throw createError({
+      statusCode: 500,
+      statusMessage: 'Failed to send the invite email',
+      data: firebaseErrorBody
+    })
+  }
+
+  // never return the raw token -- it's a bearer credential for accepting
+  // the invite
+  return {
+    id: invitation.id,
+    email: invitation.email,
+    role: invitation.role,
+    expires_at: invitation.expires_at
+  }
 })
