@@ -5,7 +5,8 @@ import { userRepository, type UserRecord } from '../repositories/userRepository'
 // look the user up by their stable firebase uid first
 // fall back to email only to catch a user row that predates the uid column,
 // in which case the uid gets backfilled onto that existing row
-// if neither matches, this is a brand new user, create it as pending
+// if neither matches, this person was never invited -- invite-only
+// onboarding means there is no more "create as pending" fallback
 export const onboardingService = {
   async resolveLogin(firebaseUid: string, rawEmail: string): Promise<UserRecord> {
     const email = rawEmail.toLowerCase()
@@ -23,6 +24,6 @@ export const onboardingService = {
       return rows[0] as UserRecord
     }
 
-    return userRepository.createPending(firebaseUid, email)
+    throw createError({ statusCode: 403, statusMessage: 'You have not been invited to this app.' })
   }
 }

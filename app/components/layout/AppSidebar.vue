@@ -70,11 +70,11 @@ const managementLinksStandard: NavLink[] = [
 
 const managementLinksWithUsers: NavLink[] = [
   { label: 'Modules', to: '/management/modules', icon: 'pi pi-sitemap' },
-  { label: 'User Approvals', to: '/admin/users', icon: 'pi pi-users' },
+  { label: 'Team & Invites', to: '/admin/users', icon: 'pi pi-users' },
 ]
 
 // admins and qa leads can see and use every page, including the full
-// project workflow; the only thing gated by role is the User Approvals
+// project workflow; the only thing gated by role is the Team & Invites
 // link, which shows up for both of those (same permission tier, two
 // labels) and never for Tester or Developer
 const managementLinks = computed(() =>

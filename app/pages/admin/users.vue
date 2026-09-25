@@ -1,31 +1,42 @@
 <script setup lang="ts">
-// user management page: approve pending signups into a real role, and
-// manage already-active team members (edit role or deactivate). Admin
-// and QA Lead both get this page -- same permission tier for this
-// pilot, just two different labels -- gated by the manage-users
-// middleware; Tester and Developer are bounced to the dashboard if
-// they hit this route directly.
+// team & invites page: invite new people by email + role, and manage
+// already-active team members (deactivate). Admin and QA Lead both get
+// this page -- same permission tier for this pilot, just two different
+// labels -- gated by the manage-users middleware; Tester and Developer
+// are bounced to the dashboard if they hit this route directly. there is
+// no more "pending signup" state -- invite-only onboarding means a
+// person is either an active team member or an outstanding invitation.
 definePageMeta({ layout: 'default', middleware: ['manage-users'] })
 
-interface AdminUserRow {
+interface ActiveUserRow {
   id: number
   email: string
-  role: 'Pending' | 'Admin' | 'QA Lead' | 'Tester' | 'Developer'
+  role: 'Admin' | 'QA Lead' | 'Tester' | 'Developer'
   active: boolean
   created_at: string
+}
+
+interface OutstandingInviteRow {
+  id: number
+  email: string
+  role: 'Admin' | 'QA Lead' | 'Tester' | 'Developer'
+  invited_by_email: string | null
+  created_at: string
+  expires_at: string
 }
 
 const ASSIGNABLE_ROLES = ['QA Lead', 'Tester', 'Developer', 'Admin']
 
 const toast = useToast()
+const dropdownPt = useDropdownPt()
 
 const { data, refresh, pending: loadingUsers } = await useFetch<{
-  pending: AdminUserRow[]
-  active: AdminUserRow[]
+  active: ActiveUserRow[]
+  invitations: OutstandingInviteRow[]
 }>('/api/admin/users')
 
-const pendingUsers = computed(() => data.value?.pending ?? [])
 const activeUsers = computed(() => data.value?.active ?? [])
+const outstandingInvites = computed(() => data.value?.invitations ?? [])
 
 // -- avatar helpers, schema has no display name column so initials and a
 // readable label are both derived from the email's local part --
@@ -53,79 +64,90 @@ function formatDate(value: string) {
   })
 }
 
-const pendingColumns = [
-  { field: 'email', header: 'User' },
-  { field: 'created_at', header: 'Registered On', sortable: true },
-  { field: 'role', header: 'Status' },
-]
-
 const activeColumns = [
   { field: 'email', header: 'User' },
   { field: 'role', header: 'Role' },
+  { field: 'created_at', header: 'Joined', sortable: true },
 ]
 
-// -- approval / edit modal, shared by both tables --
-const modalOpen = ref(false)
-const modalMode = ref<'approve' | 'edit'>('approve')
-const modalUser = ref<AdminUserRow | null>(null)
-const selectedRole = ref<string>('Tester')
-const saving = ref(false)
+const inviteColumns = [
+  { field: 'email', header: 'Email' },
+  { field: 'role', header: 'Role' },
+  { field: 'invited_by_email', header: 'Invited By' },
+  { field: 'expires_at', header: 'Expires', sortable: true },
+]
 
-function openApprove(user: AdminUserRow) {
-  modalMode.value = 'approve'
-  modalUser.value = user
-  selectedRole.value = user.role === 'Pending' ? 'Tester' : user.role
-  modalOpen.value = true
+// -- invite modal --
+const inviteModalOpen = ref(false)
+const inviteEmail = ref('')
+const inviteRole = ref('Tester')
+const sendingInvite = ref(false)
+
+function openInviteModal() {
+  inviteEmail.value = ''
+  inviteRole.value = 'Tester'
+  inviteModalOpen.value = true
 }
 
-function openEdit(user: AdminUserRow) {
-  modalMode.value = 'edit'
-  modalUser.value = user
-  selectedRole.value = user.role
-  modalOpen.value = true
-}
+async function sendInvite() {
+  const email = inviteEmail.value.trim()
+  if (!email) return
 
-async function confirmActivation() {
-  if (!modalUser.value) return
-  saving.value = true
+  sendingInvite.value = true
   try {
-    await $fetch('/api/admin/approve-user', {
+    await $fetch('/api/invitations', {
       method: 'POST',
-      body: {
-        userId: modalUser.value.id,
-        role: selectedRole.value,
-      },
+      body: { email, role: inviteRole.value },
     })
-    toast.add({
-      severity: 'success',
-      summary: 'User approved successfully',
-      life: 3000,
-    })
-    modalOpen.value = false
+    toast.add({ severity: 'success', summary: 'Invite sent', life: 3000 })
+    inviteModalOpen.value = false
     await refresh()
   } catch (error) {
     toast.add({
       severity: 'error',
-      summary: 'Could not save this user',
+      summary: 'Could not send this invite',
       detail: (error as any)?.data?.statusMessage ?? 'Please try again.',
       life: 4000,
     })
   } finally {
-    saving.value = false
+    sendingInvite.value = false
+  }
+}
+
+// -- revoke invite --
+const confirmDialogRef = ref<{ open: (opts: any) => Promise<boolean> }>()
+
+async function revokeInvite(invite: OutstandingInviteRow) {
+  const confirmed = await confirmDialogRef.value?.open({
+    title: 'Revoke this invite?',
+    message: `${invite.email} will no longer be able to use this invite link. You can invite them again later.`,
+    confirmLabel: 'Revoke invite',
+    danger: true,
+  })
+  if (!confirmed) return
+
+  try {
+    await $fetch(`/api/invitations/${invite.id}`, { method: 'DELETE' })
+    toast.add({ severity: 'success', summary: 'Invite revoked', life: 3000 })
+    await refresh()
+  } catch (error) {
+    toast.add({
+      severity: 'error',
+      summary: 'Could not revoke this invite',
+      detail: (error as any)?.data?.statusMessage ?? 'Please try again.',
+      life: 4000,
+    })
   }
 }
 
 // -- deactivate flow --
-const confirmDialogRef = ref<{ open: (opts: any) => Promise<boolean> }>()
-const dropdownPt = useDropdownPt()
-
 // the session, so a self-deactivation gets its own much louder warning
 // -- an Admin or QA Lead deactivating their own account locks
 // themselves out immediately, and unlike deactivating someone else,
 // there is no one left signed in on this page to undo it afterward
 const { user: sessionUser, fetch: refreshSession } = useUserSession()
 
-async function deactivate(user: AdminUserRow) {
+async function deactivate(user: ActiveUserRow) {
   const isSelf = user.id === sessionUser.value?.id
 
   const confirmed = await confirmDialogRef.value?.open(
@@ -141,7 +163,7 @@ async function deactivate(user: AdminUserRow) {
         }
       : {
           title: 'Deactivate access?',
-          message: `${user.email} will lose access immediately. You can reactivate them later from this page.`,
+          message: `${user.email} will lose access immediately. You can invite them again later from this page.`,
           confirmLabel: 'Deactivate',
           danger: true,
         }
@@ -158,8 +180,7 @@ async function deactivate(user: AdminUserRow) {
     // the DB row is updated, but useUserSession()'s reactive state (what
     // the global auth middleware checks) doesn't know that yet -- refresh
     // it first, then navigate, so the middleware sees active: false and
-    // sends us to /pending-approval on its own instead of us guessing
-    // where it'll redirect
+    // redirects on its own instead of us guessing where it'll go
     await refreshSession()
     await navigateTo('/')
     return
@@ -172,81 +193,35 @@ async function deactivate(user: AdminUserRow) {
 
 <template>
   <div class="space-y-6">
-    <div>
-      <h1 class="text-xl font-semibold text-gray-900 dark:text-white">
-        User Approvals & Role Assignment
-      </h1>
-      <p class="mt-1 text-sm text-gray-500 dark:text-zinc-400">
-        Approve new signups into a role, and manage existing team access.
-      </p>
+    <div class="flex flex-wrap items-start justify-between gap-3">
+      <div>
+        <h1 class="text-xl font-semibold text-gray-900 dark:text-white">
+          Team & Invites
+        </h1>
+        <p class="mt-1 text-sm text-gray-500 dark:text-zinc-400">
+          Invite new teammates by email and role, and manage existing team access.
+        </p>
+      </div>
+      <BaseButton
+        label="Invite User"
+        variant="primary"
+        icon="pi pi-user-plus"
+        @click="openInviteModal"
+      />
     </div>
 
     <!-- summary metrics -->
     <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
       <MetricCard
-        label="Pending Approvals"
-        :value="pendingUsers.length"
-        icon="pi pi-user-plus"
-      />
-      <MetricCard
         label="Active Team Members"
         :value="activeUsers.length"
         icon="pi pi-users"
       />
-    </div>
-
-    <!-- pending users -->
-    <div>
-      <h2 class="mb-3 text-sm font-semibold text-gray-700 dark:text-zinc-300">
-        Pending Approval
-      </h2>
-      <AppDataTable
-        :value="pendingUsers"
-        :columns="pendingColumns"
-        :loading="loadingUsers"
-        search-placeholder="Search pending users..."
-        empty-message="No users waiting for approval."
-      >
-        <template #cell-email="{ data: row }">
-          <div class="flex items-center gap-3">
-            <span
-              class="flex h-8 w-8 shrink-0 items-center justify-center rounded-full
-                     bg-purple-100 text-xs font-semibold text-purple-700
-                     dark:bg-purple-500/20 dark:text-purple-300"
-            >
-              {{ initials(row.email) }}
-            </span>
-            <div class="min-w-0">
-              <p class="truncate text-sm font-medium text-gray-900 dark:text-white">
-                {{ displayName(row.email) }}
-              </p>
-              <p class="truncate text-xs text-gray-500 dark:text-zinc-400">
-                {{ row.email }}
-              </p>
-            </div>
-          </div>
-        </template>
-
-        <template #cell-created_at="{ data: row }">
-          <span class="text-sm text-gray-600 dark:text-zinc-300">
-            {{ formatDate(row.created_at) }}
-          </span>
-        </template>
-
-        <template #cell-role="{}">
-          <StatusBadge status="PENDING" />
-        </template>
-
-        <template #actions="{ data: row }">
-          <BaseButton
-            label="Approve & Assign Role"
-            variant="primary"
-            size="sm"
-            icon="pi pi-check"
-            @click="openApprove(row)"
-          />
-        </template>
-      </AppDataTable>
+      <MetricCard
+        label="Outstanding Invites"
+        :value="outstandingInvites.length"
+        icon="pi pi-envelope"
+      />
     </div>
 
     <!-- active team members -->
@@ -296,39 +271,88 @@ async function deactivate(user: AdminUserRow) {
           </span>
         </template>
 
+        <template #cell-created_at="{ data: row }">
+          <span class="text-sm text-gray-600 dark:text-zinc-300">
+            {{ formatDate(row.created_at) }}
+          </span>
+        </template>
+
         <template #actions="{ data: row }">
-          <div class="flex items-center gap-2">
-            <BaseButton
-              label="Edit"
-              variant="outline"
-              size="sm"
-              icon="pi pi-pencil"
-              @click="openEdit(row)"
-            />
-            <BaseButton
-              label="Deactivate"
-              variant="danger"
-              size="sm"
-              icon="pi pi-ban"
-              @click="deactivate(row)"
-            />
-          </div>
+          <BaseButton
+            label="Deactivate"
+            variant="danger"
+            size="sm"
+            icon="pi pi-ban"
+            @click="deactivate(row)"
+          />
         </template>
       </AppDataTable>
     </div>
 
-    <!-- approval / edit modal -->
-    <BaseModal
-      v-model="modalOpen"
-      :title="modalMode === 'approve' ? 'Approve & Assign Role' : 'Edit Role'"
-      width="28rem"
-    >
-      <div v-if="modalUser" class="space-y-4">
+    <!-- outstanding invites -->
+    <div>
+      <h2 class="mb-3 text-sm font-semibold text-gray-700 dark:text-zinc-300">
+        Outstanding Invites
+      </h2>
+      <AppDataTable
+        :value="outstandingInvites"
+        :columns="inviteColumns"
+        :loading="loadingUsers"
+        search-placeholder="Search outstanding invites..."
+        empty-message="No outstanding invites."
+      >
+        <template #cell-email="{ data: row }">
+          <div class="min-w-0">
+            <p class="truncate text-sm font-medium text-gray-900 dark:text-white">
+              {{ displayName(row.email) }}
+            </p>
+            <p class="truncate text-xs text-gray-500 dark:text-zinc-400">
+              {{ row.email }}
+            </p>
+          </div>
+        </template>
+
+        <template #cell-role="{ data: row }">
+          <span
+            class="rounded-full bg-purple-600/10 px-2.5 py-1 text-xs font-medium
+                   text-purple-600 dark:text-purple-400"
+          >
+            {{ row.role }}
+          </span>
+        </template>
+
+        <template #cell-invited_by_email="{ data: row }">
+          <span class="text-sm text-gray-600 dark:text-zinc-300">
+            {{ row.invited_by_email ?? '--' }}
+          </span>
+        </template>
+
+        <template #cell-expires_at="{ data: row }">
+          <span class="text-sm text-gray-600 dark:text-zinc-300">
+            {{ formatDate(row.expires_at) }}
+          </span>
+        </template>
+
+        <template #actions="{ data: row }">
+          <BaseButton
+            label="Revoke"
+            variant="outline"
+            size="sm"
+            icon="pi pi-times"
+            @click="revokeInvite(row)"
+          />
+        </template>
+      </AppDataTable>
+    </div>
+
+    <!-- invite modal -->
+    <BaseModal v-model="inviteModalOpen" title="Invite User" width="28rem">
+      <div class="space-y-4">
         <div>
-          <p class="text-sm font-medium text-gray-900 dark:text-white">
-            {{ displayName(modalUser.email) }}
-          </p>
-          <p class="text-xs text-gray-500 dark:text-zinc-400">{{ modalUser.email }}</p>
+          <label class="mb-1 block text-xs font-medium text-gray-600 dark:text-zinc-300">
+            Email
+          </label>
+          <InputText v-model="inviteEmail" type="email" placeholder="name@bookme.pk" class="w-full" />
         </div>
 
         <div>
@@ -336,22 +360,21 @@ async function deactivate(user: AdminUserRow) {
             Role
           </label>
           <Select
-            v-model="selectedRole"
+            v-model="inviteRole"
             :options="ASSIGNABLE_ROLES"
             class="w-full"
             :pt="dropdownPt"
           />
         </div>
-
       </div>
 
       <template #footer>
-        <BaseButton variant="secondary" label="Cancel" @click="modalOpen = false" />
+        <BaseButton variant="secondary" label="Cancel" @click="inviteModalOpen = false" />
         <BaseButton
           variant="primary"
-          :label="modalMode === 'approve' ? 'Confirm Activation' : 'Save Changes'"
-          :loading="saving"
-          @click="confirmActivation"
+          label="Send Invite"
+          :loading="sendingInvite"
+          @click="sendInvite"
         />
       </template>
     </BaseModal>

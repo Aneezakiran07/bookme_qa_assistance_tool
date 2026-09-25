@@ -7,9 +7,9 @@ import { defineEventHandler, handleCacheHeaders, splitCookiesString, createEvent
 import { escapeHtml } from 'file://C:/dev/bookmeqa/node_modules/@vue/shared/dist/shared.cjs.js';
 import viteNodeEntry_mjs from 'file:///C:/dev/bookmeqa/node_modules/@nuxt/vite-builder/dist/vite-node-entry.mjs';
 import { viteNodeFetch } from 'file:///C:/dev/bookmeqa/node_modules/@nuxt/vite-builder/dist/vite-node.mjs';
+import { v2 } from 'file://C:/dev/bookmeqa/node_modules/cloudinary/cloudinary.js';
 import { getApps, initializeApp, cert } from 'file://C:/dev/bookmeqa/node_modules/firebase-admin/lib/esm/app/index.js';
 import { getAuth } from 'file://C:/dev/bookmeqa/node_modules/firebase-admin/lib/esm/auth/index.js';
-import { v2 } from 'file://C:/dev/bookmeqa/node_modules/cloudinary/cloudinary.js';
 import { parseURL, withoutBase, joinURL, getQuery, withQuery, withTrailingSlash, joinRelativeURL, decodePath, withLeadingSlash, withoutTrailingSlash, encodePath } from 'file://C:/dev/bookmeqa/node_modules/ufo/dist/index.mjs';
 import { createHead as createHead$1, propsToString, renderSSRHead } from 'file://C:/dev/bookmeqa/node_modules/unhead/dist/server.mjs';
 import { isVNode, isRef, toValue } from 'file://C:/dev/bookmeqa/node_modules/vue/index.mjs';
@@ -13209,19 +13209,16 @@ const userRepository = {
     const rows = await sql`select * from users where lower(email) = lower(${email})`;
     return (_a = rows[0]) != null ? _a : null;
   },
-  async createPending(firebaseUid, email) {
+  // used by both invite-accept paths (password and Google) once the
+  // Firebase side is settled -- creates the app-side users row
+  async createFromInvitation(fields) {
     const sql = useDb();
     const rows = await sql`
-      insert into users (firebase_uid, email, role, active)
-      values (${firebaseUid}, lower(${email}), 'Pending', false)
+      insert into users (firebase_uid, email, role, active, invited_by, invited_at)
+      values (${fields.firebaseUid}, lower(${fields.email}), ${fields.role}, true, ${fields.invitedBy}, ${fields.invitedAt})
       returning *
     `;
     return rows[0];
-  },
-  async listPending() {
-    const sql = useDb();
-    const rows = await sql`select * from users where role = 'Pending' order by created_at asc`;
-    return rows;
   },
   async approve(userId, role) {
     var _a;
@@ -13241,17 +13238,6 @@ const userRepository = {
   async listActive() {
     const sql = useDb();
     const rows = await sql`select * from users where active = true order by email asc`;
-    return rows;
-  },
-  // pending approvals means role is still Pending, or an admin flipped
-  // active back to false on someone who already had a real role
-  async listPendingOrInactive() {
-    const sql = useDb();
-    const rows = await sql`
-      select * from users
-      where role = 'Pending' or active = false
-      order by created_at asc
-    `;
     return rows;
   },
   // fetches every user for the admin page's two tables. users are no
@@ -13318,7 +13304,10 @@ const _PBIzOn = defineEventHandler(async (event) => {
 const publicPaths = [
   "/api/auth/session",
   "/api/_auth/session",
-  "/api/me"
+  "/api/me",
+  "/api/invitations/validate",
+  "/api/invitations/accept",
+  "/api/invitations/accept-google"
 ];
 const _qXNb6Q = defineEventHandler(async (event) => {
   const path = event.path || "";
@@ -13851,13 +13840,13 @@ const _lazy_mWiaNm = () => Promise.resolve().then(function () { return approveUs
 const _lazy_ls7ly2 = () => Promise.resolve().then(function () { return deactivateUser_post$1; });
 const _lazy_i2lI1S = () => Promise.resolve().then(function () { return users_get$1; });
 const _lazy_4OLPnC = () => Promise.resolve().then(function () { return session_post$1; });
-const _lazy_W5QPEy = () => Promise.resolve().then(function () { return _id__delete$b; });
+const _lazy_W5QPEy = () => Promise.resolve().then(function () { return _id__delete$d; });
 const _lazy_wP85gF = () => Promise.resolve().then(function () { return _id__get$3; });
 const _lazy_nhBJU1 = () => Promise.resolve().then(function () { return _id__put$9; });
-const _lazy_UgYUTk = () => Promise.resolve().then(function () { return _id__delete$9; });
-const _lazy_msUIiR = () => Promise.resolve().then(function () { return index_post$5; });
-const _lazy_YNGQdU = () => Promise.resolve().then(function () { return index_get$5; });
-const _lazy_vIZD61 = () => Promise.resolve().then(function () { return index_post$3; });
+const _lazy_UgYUTk = () => Promise.resolve().then(function () { return _id__delete$b; });
+const _lazy_msUIiR = () => Promise.resolve().then(function () { return index_post$7; });
+const _lazy_YNGQdU = () => Promise.resolve().then(function () { return index_get$7; });
+const _lazy_vIZD61 = () => Promise.resolve().then(function () { return index_post$5; });
 const _lazy_FjENPD = () => Promise.resolve().then(function () { return metrics_get$3; });
 const _lazy_GsDT7S = () => Promise.resolve().then(function () { return openForTestCase_get$1; });
 const _lazy_KLl63O = () => Promise.resolve().then(function () { return dailyDigest_get$1; });
@@ -13866,7 +13855,13 @@ const _lazy_uWu40d = () => Promise.resolve().then(function () { return developer
 const _lazy_zP6TwB = () => Promise.resolve().then(function () { return metrics_get$1; });
 const _lazy_qzbHIu = () => Promise.resolve().then(function () { return bugs_get$1; });
 const _lazy_7AoarI = () => Promise.resolve().then(function () { return _releaseId__get$1; });
-const _lazy_xUycYx = () => Promise.resolve().then(function () { return index_post$1; });
+const _lazy_xUycYx = () => Promise.resolve().then(function () { return index_post$3; });
+const _lazy_ida1ox = () => Promise.resolve().then(function () { return _id__delete$9; });
+const _lazy_8woQ8T = () => Promise.resolve().then(function () { return acceptGoogle_post$1; });
+const _lazy_vgHvQG = () => Promise.resolve().then(function () { return accept_post$1; });
+const _lazy_1a4Xnx = () => Promise.resolve().then(function () { return index_get$5; });
+const _lazy_Fz5e2w = () => Promise.resolve().then(function () { return index_post$1; });
+const _lazy_Q9L113 = () => Promise.resolve().then(function () { return validate_get$1; });
 const _lazy_W2z8my = () => Promise.resolve().then(function () { return me_get$1; });
 const _lazy_c35owy = () => Promise.resolve().then(function () { return _id__delete$7; });
 const _lazy_YquURM = () => Promise.resolve().then(function () { return _id__put$7; });
@@ -13915,6 +13910,12 @@ const handlers = [
   { route: '/api/developer/bugs', handler: _lazy_qzbHIu, lazy: true, middleware: false, method: "get" },
   { route: '/api/executions/:releaseId', handler: _lazy_7AoarI, lazy: true, middleware: false, method: "get" },
   { route: '/api/executions', handler: _lazy_xUycYx, lazy: true, middleware: false, method: "post" },
+  { route: '/api/invitations/:id', handler: _lazy_ida1ox, lazy: true, middleware: false, method: "delete" },
+  { route: '/api/invitations/accept-google', handler: _lazy_8woQ8T, lazy: true, middleware: false, method: "post" },
+  { route: '/api/invitations/accept', handler: _lazy_vgHvQG, lazy: true, middleware: false, method: "post" },
+  { route: '/api/invitations', handler: _lazy_1a4Xnx, lazy: true, middleware: false, method: "get" },
+  { route: '/api/invitations', handler: _lazy_Fz5e2w, lazy: true, middleware: false, method: "post" },
+  { route: '/api/invitations/validate', handler: _lazy_Q9L113, lazy: true, middleware: false, method: "get" },
   { route: '/api/me', handler: _lazy_W2z8my, lazy: true, middleware: false, method: "get" },
   { route: '/api/modules/:id', handler: _lazy_c35owy, lazy: true, middleware: false, method: "delete" },
   { route: '/api/modules/:id', handler: _lazy_YquURM, lazy: true, middleware: false, method: "put" },
@@ -14218,14 +14219,14 @@ const styles$1 = /*#__PURE__*/Object.freeze(/*#__PURE__*/Object.defineProperty({
   default: styles
 }, Symbol.toStringTag, { value: 'Module' }));
 
-const validRoles$1 = ["Admin", "QA Lead", "Tester", "Developer"];
+const validRoles$2 = ["Admin", "QA Lead", "Tester", "Developer"];
 const approveUser_post = defineEventHandler(async (event) => {
   requireRole(event, ["Admin", "QA Lead"]);
   const body = await readBody(event);
   if (!(body == null ? void 0 : body.userId)) {
     throw createError({ statusCode: 400, statusMessage: "userId is required" });
   }
-  if (!validRoles$1.includes(body.role)) {
+  if (!validRoles$2.includes(body.role)) {
     throw createError({ statusCode: 400, statusMessage: "Invalid role" });
   }
   const user = await userRepository.approve(body.userId, body.role);
@@ -14255,12 +14256,74 @@ const deactivateUser_post$1 = /*#__PURE__*/Object.freeze(/*#__PURE__*/Object.def
   default: deactivateUser_post
 }, Symbol.toStringTag, { value: 'Module' }));
 
+const invitationRepository = {
+  async create(fields) {
+    const sql = useDb();
+    const rows = await sql`
+      insert into invitations (email, role, token, invited_by, expires_at)
+      values (lower(${fields.email}), ${fields.role}, ${fields.token}, ${fields.invitedBy}, ${fields.expiresAt.toISOString()})
+      returning *
+    `;
+    return rows[0];
+  },
+  async findByToken(token) {
+    var _a;
+    const sql = useDb();
+    const rows = await sql`select * from invitations where token = ${token}`;
+    return (_a = rows[0]) != null ? _a : null;
+  },
+  // outstanding = not yet accepted and not revoked, regardless of whether
+  // it has expired -- callers that care about expiry check expires_at
+  // themselves (see validate.get.ts)
+  async findActiveByEmail(email) {
+    var _a;
+    const sql = useDb();
+    const rows = await sql`
+      select * from invitations
+      where lower(email) = lower(${email})
+        and accepted_at is null
+        and revoked_at is null
+    `;
+    return (_a = rows[0]) != null ? _a : null;
+  },
+  // joined with the inviter's email for display on the admin page
+  async listOutstanding() {
+    const sql = useDb();
+    const rows = await sql`
+      select invitations.*, inviter.email as invited_by_email
+      from invitations
+      left join users inviter on inviter.id = invitations.invited_by
+      where invitations.accepted_at is null and invitations.revoked_at is null
+      order by invitations.created_at desc
+    `;
+    return rows;
+  },
+  async markAccepted(id) {
+    const sql = useDb();
+    const rows = await sql`
+      update invitations set accepted_at = now() where id = ${id}
+      returning *
+    `;
+    return rows[0];
+  },
+  async revoke(id) {
+    var _a;
+    const sql = useDb();
+    const rows = await sql`
+      update invitations set revoked_at = now() where id = ${id}
+      returning *
+    `;
+    return (_a = rows[0]) != null ? _a : null;
+  }
+};
+
 const users_get = defineEventHandler(async (event) => {
   requireRole(event, ["Admin", "QA Lead"]);
-  const users = await userRepository.listAll();
-  const pending = users.filter((u) => u.role === "Pending" || !u.active);
-  const active = users.filter((u) => u.active && u.role !== "Pending");
-  return { pending, active };
+  const [active, invitations] = await Promise.all([
+    userRepository.listActive(),
+    invitationRepository.listOutstanding()
+  ]);
+  return { active, invitations };
 });
 
 const users_get$1 = /*#__PURE__*/Object.freeze(/*#__PURE__*/Object.defineProperty({
@@ -14282,7 +14345,7 @@ const onboardingService = {
       `;
       return rows[0];
     }
-    return userRepository.createPending(firebaseUid, email);
+    throw createError({ statusCode: 403, statusMessage: "You have not been invited to this app." });
   }
 };
 
@@ -14542,7 +14605,7 @@ const bugRepository = {
   }
 };
 
-const _id__delete$a = defineEventHandler(async (event) => {
+const _id__delete$c = defineEventHandler(async (event) => {
   const bugId = Number(getRouterParam(event, "id"));
   if (!bugId || Number.isNaN(bugId)) {
     throw createError({ statusCode: 400, statusMessage: "Invalid bug id" });
@@ -14555,18 +14618,23 @@ const _id__delete$a = defineEventHandler(async (event) => {
   return { archived: true, bug: archived };
 });
 
-const _id__delete$b = /*#__PURE__*/Object.freeze(/*#__PURE__*/Object.defineProperty({
+const _id__delete$d = /*#__PURE__*/Object.freeze(/*#__PURE__*/Object.defineProperty({
   __proto__: null,
-  default: _id__delete$a
+  default: _id__delete$c
 }, Symbol.toStringTag, { value: 'Module' }));
 
+function mapRow(row) {
+  if (!row) return row;
+  const { file_url, ...rest } = row;
+  return { ...rest, url: file_url };
+}
 const bugAttachmentRepository = {
   async listByBug(bugId) {
     const sql = useDb();
     const rows = await sql`
       select * from bug_attachments where bug_id = ${bugId} order by uploaded_at asc
     `;
-    return rows;
+    return rows.map(mapRow);
   },
   async create(bugId, fileUrl, publicId, fileType, uploadedBy, uploadedByRole) {
     const sql = useDb();
@@ -14575,7 +14643,7 @@ const bugAttachmentRepository = {
       values (${bugId}, ${fileUrl}, ${publicId}, ${fileType}, ${uploadedBy}, ${uploadedByRole})
       returning *
     `;
-    return rows[0];
+    return mapRow(rows[0]);
   },
   async delete(attachmentId) {
     const sql = useDb();
@@ -14583,7 +14651,7 @@ const bugAttachmentRepository = {
       delete from bug_attachments where id = ${attachmentId}
       returning *
     `;
-    return rows[0];
+    return mapRow(rows[0]);
   }
 };
 
@@ -14793,7 +14861,7 @@ const _id__put$9 = /*#__PURE__*/Object.freeze(/*#__PURE__*/Object.defineProperty
   default: _id__put$8
 }, Symbol.toStringTag, { value: 'Module' }));
 
-const _id__delete$8 = defineEventHandler(async (event) => {
+const _id__delete$a = defineEventHandler(async (event) => {
   const attachmentId = Number(getRouterParam(event, "id"));
   if (!attachmentId || Number.isNaN(attachmentId)) {
     throw createError({ statusCode: 400, statusMessage: "Invalid attachment id" });
@@ -14811,12 +14879,12 @@ const _id__delete$8 = defineEventHandler(async (event) => {
   return { deleted: true };
 });
 
-const _id__delete$9 = /*#__PURE__*/Object.freeze(/*#__PURE__*/Object.defineProperty({
+const _id__delete$b = /*#__PURE__*/Object.freeze(/*#__PURE__*/Object.defineProperty({
   __proto__: null,
-  default: _id__delete$8
+  default: _id__delete$a
 }, Symbol.toStringTag, { value: 'Module' }));
 
-const index_post$4 = defineEventHandler(async (event) => {
+const index_post$6 = defineEventHandler(async (event) => {
   var _a;
   const currentUser = event.context.currentUser;
   const form = await readMultipartFormData(event);
@@ -14850,12 +14918,12 @@ const index_post$4 = defineEventHandler(async (event) => {
   );
 });
 
-const index_post$5 = /*#__PURE__*/Object.freeze(/*#__PURE__*/Object.defineProperty({
+const index_post$7 = /*#__PURE__*/Object.freeze(/*#__PURE__*/Object.defineProperty({
   __proto__: null,
-  default: index_post$4
+  default: index_post$6
 }, Symbol.toStringTag, { value: 'Module' }));
 
-const index_get$4 = defineEventHandler(async (event) => {
+const index_get$6 = defineEventHandler(async (event) => {
   const query = getQuery$1(event);
   const period = VALID_PERIODS.includes(query.period) ? query.period : "all";
   const { periodStart, periodEnd } = resolvePeriodRange(period);
@@ -14869,12 +14937,15 @@ const index_get$4 = defineEventHandler(async (event) => {
   });
 });
 
-const index_get$5 = /*#__PURE__*/Object.freeze(/*#__PURE__*/Object.defineProperty({
+const index_get$7 = /*#__PURE__*/Object.freeze(/*#__PURE__*/Object.defineProperty({
   __proto__: null,
-  default: index_get$4
+  default: index_get$6
 }, Symbol.toStringTag, { value: 'Module' }));
 
 const moduleRepository = {
+  // only active (non-archived) modules -- an archived module drops out
+  // of every "Filter by Module" dropdown and the App Map table, same as
+  // an archived requirement or test case drops out of their own lists.
   async list() {
     const sql = useDb();
     const rows = await sql`
@@ -14886,11 +14957,12 @@ const moduleRepository = {
       from modules m
       left join users u on u.id = m.created_by
       left join (
-        select module_id, count(*) as cnt from requirements group by module_id
+        select module_id, count(*) as cnt from requirements where archived = false group by module_id
       ) r on r.module_id = m.id
       left join (
-        select module_id, count(*) as cnt from test_cases group by module_id
+        select module_id, count(*) as cnt from test_cases where archived = false group by module_id
       ) t on t.module_id = m.id
+      where m.archived = false
       order by m.name asc
     `;
     return rows;
@@ -14899,10 +14971,12 @@ const moduleRepository = {
   // taken" pre-check on create/update and for the frontend's real-time
   // validation call. excludeId lets an edit ignore the module's own row
   // when checking its own (possibly unchanged) name against itself.
+  // Only checks active modules -- an archived module's old name is free
+  // to reuse, matching the partial unique index in the schema.
   async findByNameLower(name, excludeId) {
     var _a;
     const sql = useDb();
-    const rows = excludeId ? await sql`select * from modules where lower(name) = lower(${name}) and id != ${excludeId}` : await sql`select * from modules where lower(name) = lower(${name})`;
+    const rows = excludeId ? await sql`select * from modules where lower(name) = lower(${name}) and archived = false and id != ${excludeId}` : await sql`select * from modules where lower(name) = lower(${name}) and archived = false`;
     return (_a = rows[0]) != null ? _a : null;
   },
   async findById(id) {
@@ -14916,17 +14990,18 @@ const moduleRepository = {
   // "create the module I just typed" flow elsewhere in the app. the
   // App Map page does its own explicit duplicate check before calling
   // this, so it gets a proper 409 instead of silently getting the
-  // existing row back.
+  // existing row back. the where clause mirrors the partial unique
+  // index so Postgres can actually use it as the conflict target.
   async create(name, createdBy) {
     const sql = useDb();
     const rows = await sql`
       insert into modules (name, created_by)
       values (${name}, ${createdBy})
-      on conflict (lower(name)) do nothing
+      on conflict (lower(name)) where archived = false do nothing
       returning *
     `;
     if (rows[0]) return rows[0];
-    const existing = await sql`select * from modules where lower(name) = lower(${name})`;
+    const existing = await sql`select * from modules where lower(name) = lower(${name}) and archived = false`;
     return existing[0];
   },
   async update(id, name) {
@@ -14938,32 +15013,47 @@ const moduleRepository = {
     `;
     return (_a = rows[0]) != null ? _a : null;
   },
-  // used before a delete to decide whether to block it: a module wired
-  // into any requirement or test case can't be removed without orphaning
-  // those rows (both tables have module_id as `not null references`).
+  // used before a delete to decide whether to block it: a module still
+  // in use by any *active* requirement or test case can't be archived
+  // out from under them without those pages losing their module filter
+  // option while still tagged to it. Archived (soft-deleted)
+  // requirements/test cases are excluded -- they're no longer "linked"
+  // from the user's point of view, and since the module row is never
+  // physically removed (see archive() below), their still pointing at
+  // it in the DB is never a problem.
   async countLinkedItems(id) {
     var _a, _b, _c, _d;
     const sql = useDb();
     const [reqRows, tcRows] = await Promise.all([
-      sql`select count(*)::int as cnt from requirements where module_id = ${id}`,
-      sql`select count(*)::int as cnt from test_cases where module_id = ${id}`
+      sql`select count(*)::int as cnt from requirements where module_id = ${id} and archived = false`,
+      sql`select count(*)::int as cnt from test_cases where module_id = ${id} and archived = false`
     ]);
     return {
       requirements: (_b = (_a = reqRows[0]) == null ? void 0 : _a.cnt) != null ? _b : 0,
       testCases: (_d = (_c = tcRows[0]) == null ? void 0 : _c.cnt) != null ? _d : 0
     };
   },
-  async delete(id) {
+  // soft delete only. requirements.module_id / test_cases.module_id are
+  // `not null references modules(id)` with no cascade, so a module that
+  // anything has EVER pointed at -- even a long-archived, historical row
+  // kept only for its execution history -- can never really be hard
+  // deleted anyway. Flipping archived instead sidesteps that for good:
+  // the row (and everything that still legitimately references it)
+  // stays put, it just disappears from every list and dropdown.
+  async archive(id) {
     var _a;
     const sql = useDb();
-    const rows = await sql`delete from modules where id = ${id} returning *`;
+    const rows = await sql`
+      update modules set archived = true where id = ${id}
+      returning *
+    `;
     return (_a = rows[0]) != null ? _a : null;
   }
 };
 
 const VALID_SEVERITIES = ["Critical", "High", "Medium", "Low"];
 const VALID_PRIORITIES$2 = ["High", "Medium", "Low"];
-const index_post$2 = defineEventHandler(async (event) => {
+const index_post$4 = defineEventHandler(async (event) => {
   var _a, _b, _c, _d, _e, _f;
   const currentUser = event.context.currentUser;
   const body = await readBody(event);
@@ -15007,9 +15097,9 @@ const index_post$2 = defineEventHandler(async (event) => {
   return created;
 });
 
-const index_post$3 = /*#__PURE__*/Object.freeze(/*#__PURE__*/Object.defineProperty({
+const index_post$5 = /*#__PURE__*/Object.freeze(/*#__PURE__*/Object.defineProperty({
   __proto__: null,
-  default: index_post$2
+  default: index_post$4
 }, Symbol.toStringTag, { value: 'Module' }));
 
 const metrics_get$2 = defineEventHandler(async () => {
@@ -15086,7 +15176,10 @@ const dashboardRepository = {
         count(*)::int as total_requirements,
         count(*) filter (
           where exists (
-            select 1 from requirement_test_case_links l where l.requirement_id = r.id
+            select 1
+            from requirement_test_case_links l
+            join test_cases tc on tc.id = l.test_case_id
+            where l.requirement_id = r.id and tc.archived = false
           )
         )::int as covered_requirements
       from requirements r
@@ -15098,7 +15191,8 @@ const dashboardRepository = {
         count(*)::int as total_test_cases,
         count(*) filter (where type = 'Automated')::int as automated_test_cases
       from test_cases
-      where (${moduleId}::int is null or module_id = ${moduleId}::int)
+      where archived = false
+        and (${moduleId}::int is null or module_id = ${moduleId}::int)
     `;
     const bugRows = await sql`
       select
@@ -15880,6 +15974,10 @@ const executionRepository = {
   // test_case_release_links) with its latest execution state for that
   // release. A test case not linked to this release never appears here,
   // even if it has been executed under a different release in the past.
+  // Archived (soft-deleted) test cases are excluded too, so nobody can
+  // log a fresh execution against something that's been taken out of
+  // active use -- past executions logged before it was archived still
+  // count toward its history, this just stops new ones.
   // Null latest_result means "not yet run in this release".
   async getReleaseState(releaseId) {
     const sql = useDb();
@@ -15912,7 +16010,7 @@ const executionRepository = {
         u.email as last_executed_by_email,
         coalesce(c.cnt, 0) as executions_count
       from test_case_release_links trl
-      join test_cases tc on tc.id = trl.test_case_id
+      join test_cases tc on tc.id = trl.test_case_id and tc.archived = false
       join modules m on m.id = tc.module_id
       left join latest l on l.test_case_id = tc.id
       left join counts c on c.test_case_id = tc.id
@@ -15976,9 +16074,10 @@ const testCaseRepository = {
       from test_cases tc
       join modules m on m.id = tc.module_id
       left join (
-        select test_case_id, array_agg(requirement_id order by requirement_id) as req_ids
-        from requirement_test_case_links
-        group by test_case_id
+        select l.test_case_id, array_agg(l.requirement_id order by l.requirement_id) as req_ids
+        from requirement_test_case_links l
+        join requirements r on r.id = l.requirement_id and r.archived = false
+        group by l.test_case_id
       ) l on l.test_case_id = tc.id
       left join (
         select test_case_id, array_agg(release_id order by release_id) as release_ids
@@ -15986,7 +16085,8 @@ const testCaseRepository = {
         group by test_case_id
       ) rl on rl.test_case_id = tc.id
       where
-        (${(_a = filters.moduleId) != null ? _a : null}::int is null or tc.module_id = ${(_b = filters.moduleId) != null ? _b : null}::int)
+        tc.archived = false
+        and (${(_a = filters.moduleId) != null ? _a : null}::int is null or tc.module_id = ${(_b = filters.moduleId) != null ? _b : null}::int)
         and (${(_c = filters.priority) != null ? _c : null}::text is null or tc.priority = ${(_d = filters.priority) != null ? _d : null}::text)
         and (${(_e = filters.type) != null ? _e : null}::text is null or tc.type = ${(_f = filters.type) != null ? _f : null}::text)
         and (
@@ -16009,7 +16109,10 @@ const testCaseRepository = {
   async linkedRequirementIds(id) {
     const sql = useDb();
     const rows = await sql`
-      select requirement_id from requirement_test_case_links where test_case_id = ${id}
+      select l.requirement_id
+      from requirement_test_case_links l
+      join requirements r on r.id = l.requirement_id and r.archived = false
+      where l.test_case_id = ${id}
     `;
     return rows.map((r) => r.requirement_id);
   },
@@ -16104,10 +16207,17 @@ const testCaseRepository = {
       `;
     }
   },
-  async delete(id) {
+  // soft delete only, matches the schema's archived flag. the row, its
+  // links, and its execution history all stay in place -- test_executions
+  // has an `on delete restrict` FK to test_cases specifically so a hard
+  // delete here would 500 once a test case has any runs logged against it.
+  async archive(id) {
     var _a;
     const sql = useDb();
-    const rows = await sql`delete from test_cases where id = ${id} returning *`;
+    const rows = await sql`
+      update test_cases set archived = true where id = ${id}
+      returning *
+    `;
     return (_a = rows[0]) != null ? _a : null;
   },
   // creates a copy of an existing test case (title suffixed "(Copy)") and
@@ -16140,7 +16250,7 @@ const testCaseRepository = {
 };
 
 const VALID_RESULTS = ["Pass", "Fail", "Blocked", "Not Run"];
-const index_post = defineEventHandler(async (event) => {
+const index_post$2 = defineEventHandler(async (event) => {
   var _a;
   const currentUser = event.context.currentUser;
   const body = await readBody(event);
@@ -16184,9 +16294,210 @@ const index_post = defineEventHandler(async (event) => {
   });
 });
 
+const index_post$3 = /*#__PURE__*/Object.freeze(/*#__PURE__*/Object.defineProperty({
+  __proto__: null,
+  default: index_post$2
+}, Symbol.toStringTag, { value: 'Module' }));
+
+const _id__delete$8 = defineEventHandler(async (event) => {
+  requireRole(event, ["Admin", "QA Lead"]);
+  const id = Number(getRouterParam(event, "id"));
+  if (!id || Number.isNaN(id)) {
+    throw createError({ statusCode: 400, statusMessage: "Invalid invitation id" });
+  }
+  const invitation = await invitationRepository.revoke(id);
+  if (!invitation) {
+    throw createError({ statusCode: 404, statusMessage: "Invitation not found" });
+  }
+  return { success: true, invitation };
+});
+
+const _id__delete$9 = /*#__PURE__*/Object.freeze(/*#__PURE__*/Object.defineProperty({
+  __proto__: null,
+  default: _id__delete$8
+}, Symbol.toStringTag, { value: 'Module' }));
+
+function isUsable$1(invitation) {
+  return !!invitation && !invitation.accepted_at && !invitation.revoked_at && new Date(invitation.expires_at).getTime() > Date.now();
+}
+const acceptGoogle_post = defineEventHandler(async (event) => {
+  const body = await readBody(event);
+  if (!(body == null ? void 0 : body.token)) {
+    throw createError({ statusCode: 400, statusMessage: "Missing token" });
+  }
+  if (!(body == null ? void 0 : body.idToken)) {
+    throw createError({ statusCode: 400, statusMessage: "Missing idToken" });
+  }
+  const invitation = await invitationRepository.findByToken(body.token);
+  if (!isUsable$1(invitation)) {
+    throw createError({ statusCode: 404, statusMessage: "Invitation not found or no longer valid" });
+  }
+  const firebaseAuth = useFirebaseAuth();
+  let decoded;
+  try {
+    decoded = await firebaseAuth.verifyIdToken(body.idToken);
+  } catch (error) {
+    console.error("[invitations/accept-google] verifyIdToken failed:", error);
+    throw createError({ statusCode: 401, statusMessage: "Invalid Firebase token" });
+  }
+  if (!decoded.email || decoded.email.toLowerCase() !== invitation.email.toLowerCase()) {
+    throw createError({ statusCode: 403, statusMessage: "This Google account does not match the invited email" });
+  }
+  const user = await userRepository.createFromInvitation({
+    firebaseUid: decoded.uid,
+    email: invitation.email,
+    role: invitation.role,
+    invitedBy: invitation.invited_by,
+    invitedAt: invitation.created_at
+  });
+  await invitationRepository.markAccepted(invitation.id);
+  return user;
+});
+
+const acceptGoogle_post$1 = /*#__PURE__*/Object.freeze(/*#__PURE__*/Object.defineProperty({
+  __proto__: null,
+  default: acceptGoogle_post
+}, Symbol.toStringTag, { value: 'Module' }));
+
+function isUsable(invitation) {
+  return !!invitation && !invitation.accepted_at && !invitation.revoked_at && new Date(invitation.expires_at).getTime() > Date.now();
+}
+const accept_post = defineEventHandler(async (event) => {
+  const body = await readBody(event);
+  if (!(body == null ? void 0 : body.token)) {
+    throw createError({ statusCode: 400, statusMessage: "Missing token" });
+  }
+  if (!(body == null ? void 0 : body.password) || body.password.length < 8) {
+    throw createError({ statusCode: 400, statusMessage: "Password must be at least 8 characters" });
+  }
+  const invitation = await invitationRepository.findByToken(body.token);
+  if (!isUsable(invitation)) {
+    throw createError({ statusCode: 404, statusMessage: "Invitation not found or no longer valid" });
+  }
+  const firebaseAuth = useFirebaseAuth();
+  let firebaseUser;
+  try {
+    firebaseUser = await firebaseAuth.getUserByEmail(invitation.email);
+  } catch (error) {
+    console.error("[invitations/accept] getUserByEmail failed:", error);
+    throw createError({ statusCode: 500, statusMessage: "Could not find the invited Firebase account" });
+  }
+  try {
+    await firebaseAuth.updateUser(firebaseUser.uid, { password: body.password });
+  } catch (error) {
+    console.error("[invitations/accept] updateUser failed:", error);
+    throw createError({ statusCode: 500, statusMessage: "Failed to set password" });
+  }
+  const user = await userRepository.createFromInvitation({
+    firebaseUid: firebaseUser.uid,
+    email: invitation.email,
+    role: invitation.role,
+    invitedBy: invitation.invited_by,
+    invitedAt: invitation.created_at
+  });
+  await invitationRepository.markAccepted(invitation.id);
+  return user;
+});
+
+const accept_post$1 = /*#__PURE__*/Object.freeze(/*#__PURE__*/Object.defineProperty({
+  __proto__: null,
+  default: accept_post
+}, Symbol.toStringTag, { value: 'Module' }));
+
+const index_get$4 = defineEventHandler(async (event) => {
+  requireRole(event, ["Admin", "QA Lead"]);
+  return invitationRepository.listOutstanding();
+});
+
+const index_get$5 = /*#__PURE__*/Object.freeze(/*#__PURE__*/Object.defineProperty({
+  __proto__: null,
+  default: index_get$4
+}, Symbol.toStringTag, { value: 'Module' }));
+
+const validRoles$1 = ["Admin", "QA Lead", "Tester", "Developer"];
+const INVITE_EXPIRY_DAYS = 7;
+const index_post = defineEventHandler(async (event) => {
+  var _a;
+  const currentUser = requireRole(event, ["Admin", "QA Lead"]);
+  const body = await readBody(event);
+  const email = (_a = body == null ? void 0 : body.email) == null ? void 0 : _a.trim().toLowerCase();
+  if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+    throw createError({ statusCode: 400, statusMessage: "A valid email is required" });
+  }
+  if (!(body == null ? void 0 : body.role) || !validRoles$1.includes(body.role)) {
+    throw createError({ statusCode: 400, statusMessage: "Invalid role" });
+  }
+  const existingUser = await userRepository.findByEmail(email);
+  if (existingUser) {
+    throw createError({ statusCode: 409, statusMessage: "This email already has an account" });
+  }
+  const existingInvite = await invitationRepository.findActiveByEmail(email);
+  if (existingInvite) {
+    throw createError({ statusCode: 409, statusMessage: "An outstanding invite already exists for this email" });
+  }
+  const token = crypto$1.randomBytes(32).toString("hex");
+  const expiresAt = new Date(Date.now() + INVITE_EXPIRY_DAYS * 24 * 60 * 60 * 1e3);
+  try {
+    await useFirebaseAuth().createUser({ email });
+  } catch (error) {
+    console.error("[invitations] firebase createUser failed:", error);
+    throw createError({ statusCode: 500, statusMessage: "Failed to create the invited account" });
+  }
+  const invitation = await invitationRepository.create({
+    email,
+    role: body.role,
+    token,
+    invitedBy: currentUser.id,
+    expiresAt
+  });
+  const config = useRuntimeConfig();
+  const continueUrl = `${config.public.appUrl}/accept-invite?token=${token}&mode=invite`;
+  try {
+    await $fetch(
+      `https://identitytoolkit.googleapis.com/v1/accounts:sendOobCode?key=${config.public.firebase.apiKey}`,
+      {
+        method: "POST",
+        body: {
+          requestType: "PASSWORD_RESET",
+          email,
+          continueUrl
+        }
+      }
+    );
+  } catch (error) {
+    console.error("[invitations] sendOobCode failed:", error);
+    throw createError({ statusCode: 500, statusMessage: "Invite created but the invite email failed to send" });
+  }
+  return {
+    id: invitation.id,
+    email: invitation.email,
+    role: invitation.role,
+    expires_at: invitation.expires_at
+  };
+});
+
 const index_post$1 = /*#__PURE__*/Object.freeze(/*#__PURE__*/Object.defineProperty({
   __proto__: null,
   default: index_post
+}, Symbol.toStringTag, { value: 'Module' }));
+
+const validate_get = defineEventHandler(async (event) => {
+  const query = getQuery$1(event);
+  const token = typeof query.token === "string" ? query.token : "";
+  if (!token) {
+    throw createError({ statusCode: 400, statusMessage: "Missing token" });
+  }
+  const invitation = await invitationRepository.findByToken(token);
+  const isUsable = invitation && !invitation.accepted_at && !invitation.revoked_at && new Date(invitation.expires_at).getTime() > Date.now();
+  if (!isUsable) {
+    throw createError({ statusCode: 404, statusMessage: "Invitation not found or no longer valid" });
+  }
+  return { email: invitation.email, role: invitation.role };
+});
+
+const validate_get$1 = /*#__PURE__*/Object.freeze(/*#__PURE__*/Object.defineProperty({
+  __proto__: null,
+  default: validate_get
 }, Symbol.toStringTag, { value: 'Module' }));
 
 const me_get = defineEventHandler(async (event) => {
@@ -16220,8 +16531,8 @@ const _id__delete$6 = defineEventHandler(async (event) => {
       statusMessage: `Can't delete "${current.name}" \u2014 it's still linked to ${parts.join(" and ")}. Move or remove those first.`
     });
   }
-  const deleted = await moduleRepository.delete(id);
-  return { deleted: true, module: deleted };
+  const archived = await moduleRepository.archive(id);
+  return { archived: true, module: archived };
 });
 
 const _id__delete$7 = /*#__PURE__*/Object.freeze(/*#__PURE__*/Object.defineProperty({
@@ -16308,6 +16619,9 @@ function formatBugRows(bugs) {
 }
 const digestPreview_get = defineEventHandler(async (event) => {
   const currentUser = event.context.currentUser;
+  if (currentUser.role !== "Developer") {
+    throw createError({ statusCode: 403, statusMessage: "Digest is only available to Developer accounts" });
+  }
   const query = getQuery$1(event);
   const range = query.range === "week" ? "week" : "day";
   const limit = Math.min(Math.max(Number(query.limit) || 10, 1), 200);
@@ -16318,44 +16632,6 @@ const digestPreview_get = defineEventHandler(async (event) => {
   const weekStart = mondayOfThisWeek(now);
   const periodStart = range === "week" ? weekStart : today;
   const periodEnd = today;
-  if (currentUser.role === "Developer") {
-    if (bugsOnly) {
-      const { bugs: bugs3, totalCount: totalCount3 } = await dashboardRepository.getDeveloperBugsForPeriod(
-        currentUser.id,
-        periodStart,
-        periodEnd,
-        limit,
-        cursor
-      );
-      const last3 = bugs3[bugs3.length - 1];
-      return {
-        bugs: formatBugRows(bugs3),
-        bugsLimit: limit,
-        bugsTotalCount: totalCount3,
-        bugsHasMore: bugs3.length === limit,
-        nextCursor: last3 ? { lastStatusChangeAt: last3.last_status_change_at, id: last3.id } : null
-      };
-    }
-    const { bugs: bugs2, totalCount: totalCount2 } = await dashboardRepository.getDeveloperBugsForPeriod(
-      currentUser.id,
-      periodStart,
-      periodEnd,
-      limit,
-      cursor
-    );
-    const last2 = bugs2[bugs2.length - 1];
-    return {
-      scope: "developer",
-      range,
-      weekStart,
-      weekEnd: today,
-      bugs: formatBugRows(bugs2),
-      bugsLimit: limit,
-      bugsTotalCount: totalCount2,
-      bugsHasMore: bugs2.length === limit,
-      nextCursor: last2 ? { lastStatusChangeAt: last2.last_status_change_at, id: last2.id } : null
-    };
-  }
   if (bugsOnly) {
     const { bugs: bugs2, totalCount: totalCount2 } = await dashboardRepository.getDeveloperBugsForPeriod(
       currentUser.id,
@@ -16381,35 +16657,11 @@ const digestPreview_get = defineEventHandler(async (event) => {
     cursor
   );
   const last = bugs[bugs.length - 1];
-  const metrics = await dashboardRepository.getSnapshotMetrics(null, null);
-  if (range === "day") {
-    const passRateDay = await dashboardRepository.getPassRate(today, today, null, null);
-    return {
-      scope: "lead",
-      range,
-      openBugs: metrics.open_bugs,
-      openCriticalHigh: metrics.open_critical_high,
-      passRate: passRateDay.pass_rate,
-      passedExecutions: passRateDay.passed_executions,
-      totalExecutions: passRateDay.total_executions,
-      bugs: formatBugRows(bugs),
-      bugsLimit: limit,
-      bugsTotalCount: totalCount,
-      bugsHasMore: bugs.length === limit,
-      nextCursor: last ? { lastStatusChangeAt: last.last_status_change_at, id: last.id } : null
-    };
-  }
-  const passRateWeek = await dashboardRepository.getPassRate(weekStart, today, null, null);
   return {
-    scope: "lead",
+    scope: "developer",
     range,
-    openBugs: metrics.open_bugs,
-    openCriticalHigh: metrics.open_critical_high,
     weekStart,
     weekEnd: today,
-    passRate: passRateWeek.pass_rate,
-    passedExecutions: passRateWeek.passed_executions,
-    totalExecutions: passRateWeek.total_executions,
     bugs: formatBugRows(bugs),
     bugsLimit: limit,
     bugsTotalCount: totalCount,
@@ -16640,9 +16892,11 @@ const requirementRepository = {
           join modules m on m.id = r.module_id
           left join users u on u.id = r.created_by
           left join (
-            select requirement_id, count(*) as cnt
-            from requirement_test_case_links
-            group by requirement_id
+            select l.requirement_id, count(*) as cnt
+            from requirement_test_case_links l
+            join test_cases tc on tc.id = l.test_case_id
+            where tc.archived = false
+            group by l.requirement_id
           ) l on l.requirement_id = r.id
           where r.archived = false and r.module_id = ${moduleId}
           order by r.created_at desc
@@ -16656,9 +16910,11 @@ const requirementRepository = {
           join modules m on m.id = r.module_id
           left join users u on u.id = r.created_by
           left join (
-            select requirement_id, count(*) as cnt
-            from requirement_test_case_links
-            group by requirement_id
+            select l.requirement_id, count(*) as cnt
+            from requirement_test_case_links l
+            join test_cases tc on tc.id = l.test_case_id
+            where tc.archived = false
+            group by l.requirement_id
           ) l on l.requirement_id = r.id
           where r.archived = false
           order by r.created_at desc
@@ -16832,8 +17088,8 @@ const _id__delete = defineEventHandler(async (event) => {
   if (!existing) {
     throw createError({ statusCode: 404, statusMessage: "Test case not found" });
   }
-  const deleted = await testCaseRepository.delete(id);
-  return { deleted: true, testCase: deleted };
+  const archived = await testCaseRepository.archive(id);
+  return { archived: true, testCase: archived };
 });
 
 const _id__delete$1 = /*#__PURE__*/Object.freeze(/*#__PURE__*/Object.defineProperty({

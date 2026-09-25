@@ -4,13 +4,15 @@ export interface UserRecord {
   id: number
   firebase_uid: string
   email: string
-  role: 'Pending' | 'Admin' | 'QA Lead' | 'Tester' | 'Developer'
+  role: 'Admin' | 'QA Lead' | 'Tester' | 'Developer'
   active: boolean
   created_at: string
   display_name: string | null
   email_notifications: boolean
   daily_digest_enabled: boolean
   avatar_id: string
+  invited_by: number | null
+  invited_at: string | null
 }
 
 // this file is the only place that talks to the users table directly
@@ -28,20 +30,22 @@ export const userRepository = {
     return (rows[0] as UserRecord) ?? null
   },
 
-  async createPending(firebaseUid: string, email: string): Promise<UserRecord> {
+  // used by both invite-accept paths (password and Google) once the
+  // Firebase side is settled -- creates the app-side users row
+  async createFromInvitation(fields: {
+    firebaseUid: string
+    email: string
+    role: string
+    invitedBy: number | null
+    invitedAt: string
+  }): Promise<UserRecord> {
     const sql = useDb()
     const rows = await sql`
-      insert into users (firebase_uid, email, role, active)
-      values (${firebaseUid}, lower(${email}), 'Pending', false)
+      insert into users (firebase_uid, email, role, active, invited_by, invited_at)
+      values (${fields.firebaseUid}, lower(${fields.email}), ${fields.role}, true, ${fields.invitedBy}, ${fields.invitedAt})
       returning *
     `
     return rows[0] as UserRecord
-  },
-
-  async listPending(): Promise<UserRecord[]> {
-    const sql = useDb()
-    const rows = await sql`select * from users where role = 'Pending' order by created_at asc`
-    return rows as UserRecord[]
   },
 
   async approve(userId: number, role: string): Promise<UserRecord | null> {
@@ -62,18 +66,6 @@ export const userRepository = {
   async listActive(): Promise<UserRecord[]> {
     const sql = useDb()
     const rows = await sql`select * from users where active = true order by email asc`
-    return rows as UserRecord[]
-  },
-
-  // pending approvals means role is still Pending, or an admin flipped
-  // active back to false on someone who already had a real role
-  async listPendingOrInactive(): Promise<UserRecord[]> {
-    const sql = useDb()
-    const rows = await sql`
-      select * from users
-      where role = 'Pending' or active = false
-      order by created_at asc
-    `
     return rows as UserRecord[]
   },
 

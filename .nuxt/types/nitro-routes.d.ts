@@ -57,6 +57,22 @@ declare module "nitropack/types" {
     '/api/executions': {
       'post': Simplify<Serialize<Awaited<ReturnType<typeof import('../../server/api/executions/index.post').default>>>>
     }
+    '/api/invitations/:id': {
+      'delete': Simplify<Serialize<Awaited<ReturnType<typeof import('../../server/api/invitations/[id].delete').default>>>>
+    }
+    '/api/invitations/accept-google': {
+      'post': Simplify<Serialize<Awaited<ReturnType<typeof import('../../server/api/invitations/accept-google.post').default>>>>
+    }
+    '/api/invitations/accept': {
+      'post': Simplify<Serialize<Awaited<ReturnType<typeof import('../../server/api/invitations/accept.post').default>>>>
+    }
+    '/api/invitations': {
+      'get': Simplify<Serialize<Awaited<ReturnType<typeof import('../../server/api/invitations/index.get').default>>>>
+      'post': Simplify<Serialize<Awaited<ReturnType<typeof import('../../server/api/invitations/index.post').default>>>>
+    }
+    '/api/invitations/validate': {
+      'get': Simplify<Serialize<Awaited<ReturnType<typeof import('../../server/api/invitations/validate.get').default>>>>
+    }
     '/api/me': {
       'get': Simplify<Serialize<Awaited<ReturnType<typeof import('../../server/api/me.get').default>>>>
     }
