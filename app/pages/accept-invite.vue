@@ -1,82 +1,69 @@
 <script setup lang="ts">
-import { GoogleAuthProvider, signInWithPopup, signInWithEmailAndPassword } from 'firebase/auth'
+import { GoogleAuthProvider, signInWithPopup } from 'firebase/auth'
 
 definePageMeta({ layout: 'auth' })
 
 const { $firebaseAuth } = useNuxtApp()
-const { fetch: refreshSession } = useUserSession()
 const route = useRoute()
 
 const token = computed(() => (typeof route.query.token === 'string' ? route.query.token : ''))
 
-const state = ref<'loading' | 'invalid' | 'ready'>('loading')
+const state = ref<'loading' | 'invalid' | 'finishing' | 'done' | 'failed'>('loading')
 const invite = ref<{ email: string; role: string } | null>(null)
-
-const password = ref('')
-const confirmPassword = ref('')
 const errorMessage = ref('')
-const savingPassword = ref(false)
 const googleLoading = ref(false)
 
-// the invite carries no session of its own, this page validates the token
-// on load so a stale, revoked, or already-used link shows an error instead
-// of a half-working form
-async function loadInvite() {
+// the invitee already set their password on firebase's own reset page
+// before landing here, firebase sent them here through the continueUrl
+// this app set when the invite was created. this page does not ask for
+// a password again, it only finishes creating the row in this app's own
+// users table so the person can log in normally afterward.
+async function run() {
   if (!token.value) {
     state.value = 'invalid'
     return
   }
+
   try {
     invite.value = await $fetch<{ email: string; role: string }>('/api/invitations/validate', {
-      query: { token: token.value },
+      query: { token: token.value }
     })
-    state.value = 'ready'
   } catch (error) {
     console.error('[accept-invite] validate failed:', error)
     state.value = 'invalid'
-  }
-}
-
-await loadInvite()
-
-async function acceptWithPassword() {
-  errorMessage.value = ''
-
-  if (password.value.length < 8) {
-    errorMessage.value = 'Password must be at least 8 characters.'
-    return
-  }
-  if (password.value !== confirmPassword.value) {
-    errorMessage.value = 'Passwords do not match.'
     return
   }
 
-  savingPassword.value = true
+  state.value = 'finishing'
   try {
-    await $fetch('/api/invitations/accept', {
+    await $fetch('/api/invitations/finalize', {
       method: 'POST',
-      body: { token: token.value, password: password.value },
+      body: { token: token.value }
     })
-
-    // the users row now exists with a password set on the Firebase side,
-    // sign in for real so we get an idToken to establish the app session
-    const result = await signInWithEmailAndPassword($firebaseAuth, invite.value!.email, password.value)
-    const idToken = await result.user.getIdToken()
-
-    await $fetch('/api/auth/session', { method: 'POST', body: { idToken } })
-    await refreshSession()
-    await navigateTo('/')
+    state.value = 'done'
   } catch (error) {
-    console.error('[accept-invite] accept failed:', error)
+    console.error('[accept-invite] finalize failed:', error)
+    // a 404 here almost always means this invite was already finished,
+    // for example the person opened the same email link twice, in which
+    // case the account already exists and this should not look like a
+    // failure to them
+    if ((error as any)?.statusCode === 404 || (error as any)?.response?.status === 404) {
+      state.value = 'done'
+      return
+    }
     errorMessage.value =
       (error as any)?.data?.statusMessage
       ?? (error as any)?.message
-      ?? 'Could not accept this invite, please try again.'
-  } finally {
-    savingPassword.value = false
+      ?? 'Could not finish setting up your account.'
+    state.value = 'failed'
   }
 }
 
+await run()
+
+// kept as an alternative for someone who would rather sign in with
+// google than set a password at all, this does not depend on the
+// password step above
 async function acceptWithGoogle() {
   errorMessage.value = ''
   googleLoading.value = true
@@ -88,11 +75,10 @@ async function acceptWithGoogle() {
 
     await $fetch('/api/invitations/accept-google', {
       method: 'POST',
-      body: { token: token.value, idToken },
+      body: { token: token.value, idToken }
     })
 
-    // the users row now exists, the same idToken is still good to
-    // establish the app session
+    const { fetch: refreshSession } = useUserSession()
     await $fetch('/api/auth/session', { method: 'POST', body: { idToken } })
     await refreshSession()
     await navigateTo('/')
@@ -114,8 +100,8 @@ async function acceptWithGoogle() {
       class="w-full max-w-sm rounded-lg border border-black/10 bg-white p-8 text-center
              dark:border-white/20 dark:bg-black"
     >
-      <template v-if="state === 'loading'">
-        <p class="text-sm text-gray-500 dark:text-white/60">Checking your invite...</p>
+      <template v-if="state === 'loading' || state === 'finishing'">
+        <p class="text-sm text-gray-500 dark:text-white/60">Setting up your account...</p>
       </template>
 
       <template v-else-if="state === 'invalid'">
@@ -130,71 +116,42 @@ async function acceptWithGoogle() {
         </NuxtLink>
       </template>
 
-      <template v-else>
-        <h1 class="mb-1 text-xl font-semibold text-gray-900 dark:text-white">
-          Join Bookme QA Tool
+      <template v-else-if="state === 'done'">
+        <h1 class="mb-2 text-xl font-semibold text-gray-900 dark:text-white">
+          You're all set
         </h1>
         <p class="mb-6 text-sm text-gray-600 dark:text-white/60">
-          {{ invite?.email }} was invited as {{ invite?.role }}.
+          Your account has been created for {{ invite?.email }}. You can now log in with the
+          password you just set.
+        </p>
+        <NuxtLink to="/login" class="text-sm text-purple-600 hover:underline dark:text-purple-400">
+          Go to login
+        </NuxtLink>
+      </template>
+
+      <template v-else-if="state === 'failed'">
+        <h1 class="mb-2 text-xl font-semibold text-gray-900 dark:text-white">
+          Something went wrong
+        </h1>
+        <p class="mb-2 text-sm text-gray-600 dark:text-white/60">
+          {{ errorMessage }}
+        </p>
+        <p class="mb-6 text-sm text-gray-600 dark:text-white/60">
+          If you already set a password, try logging in directly. Otherwise you can also
+          continue with Google below.
         </p>
 
         <Button
           label="Continue with Google"
           class="w-full"
           :loading="googleLoading"
-          :disabled="savingPassword"
           @click="acceptWithGoogle"
         />
 
-        <div class="my-5 flex items-center gap-3">
-          <div class="h-px flex-1 bg-gray-200 dark:bg-white/10" />
-          <span class="text-xs uppercase tracking-wide text-gray-400 dark:text-white/40">or set a password</span>
-          <div class="h-px flex-1 bg-gray-200 dark:bg-white/10" />
-        </div>
-
-        <form class="space-y-3 text-left" @submit.prevent="acceptWithPassword">
-          <div>
-            <label class="mb-1 block text-xs font-medium text-gray-600 dark:text-white/60">
-              Password
-            </label>
-            <Password
-              v-model="password"
-              placeholder="At least 8 characters"
-              class="w-full"
-              input-class="w-full"
-              toggle-mask
-              autocomplete="new-password"
-              required
-            />
-          </div>
-          <div>
-            <label class="mb-1 block text-xs font-medium text-gray-600 dark:text-white/60">
-              Confirm password
-            </label>
-            <Password
-              v-model="confirmPassword"
-              placeholder="Repeat your password"
-              class="w-full"
-              input-class="w-full"
-              :feedback="false"
-              toggle-mask
-              autocomplete="new-password"
-              required
-            />
-          </div>
-
-          <Button
-            type="submit"
-            label="Set password and continue"
-            class="w-full"
-            severity="secondary"
-            :loading="savingPassword"
-            :disabled="googleLoading"
-          />
-        </form>
-
-        <p v-if="errorMessage" class="mt-3 text-sm text-red-500">
-          {{ errorMessage }}
+        <p class="mt-4">
+          <NuxtLink to="/login" class="text-sm text-purple-600 hover:underline dark:text-purple-400">
+            Back to login
+          </NuxtLink>
         </p>
       </template>
     </div>

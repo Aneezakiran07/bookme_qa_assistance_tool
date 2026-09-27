@@ -39,6 +39,20 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 500, statusMessage: 'Could not find the invited Firebase account' })
   }
 
+  // the admin sdk only returns a passwordHash once a password has
+  // actually been set on the account. the invited user was created with
+  // no password at all, so this being empty means nobody has completed
+  // the password reset step yet. this stops someone from calling this
+  // route straight from the invite email before ever touching firebase's
+  // own reset page, which would otherwise activate the account with no
+  // password on it at all.
+  if (!firebaseUser.passwordHash) {
+    throw createError({
+      statusCode: 400,
+      statusMessage: 'Please set your password using the link in your invite email first'
+    })
+  }
+
   const user = await userRepository.createFromInvitation({
     firebaseUid: firebaseUser.uid,
     email: invitation.email,
