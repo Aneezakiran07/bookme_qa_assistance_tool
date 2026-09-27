@@ -42,3 +42,10 @@ Thumbs.db
 *.swp
 *.swo
 .eslintcache
+
+.nuxt
+.output
+node_modules
+.env
+.env.*
+!.env.example

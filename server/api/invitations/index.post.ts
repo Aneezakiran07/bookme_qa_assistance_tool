@@ -7,11 +7,12 @@ import { invitationRepository } from '~~/server/repositories/invitationRepositor
 const validRoles = ['Admin', 'QA Lead', 'Tester', 'Developer']
 const INVITE_EXPIRY_DAYS = 7
 
-// Admin/QA Lead invites someone by email + role. No password is set here --
-// the invitee gets a Firebase "reset password" email (continueUrl carries
-// mode=invite so the frontend can tell an invite apart from a genuine
-// password reset) and either sets a password or continues with Google from
-// the accept-invite page.
+// admin or qa lead invites someone by email and role. no password is set
+// here. firebase sends the invitee a password reset style email. the
+// link in that email is pointed at this app's own auth action page
+// instead of a firebase owned page, once the custom action url is set
+// in the firebase console. continueUrl still carries the invite token
+// so the auth action page knows which invitation to finish setting up.
 export default defineEventHandler(async (event) => {
   const currentUser = requireRole(event, ['Admin', 'QA Lead'])
 

@@ -7,7 +7,8 @@ const publicPaths = [
   '/api/me',
   '/api/invitations/validate',
   '/api/invitations/accept',
-  '/api/invitations/accept-google'
+  '/api/invitations/accept-google',
+  '/api/invitations/finalize'
 ]
 
 export default defineEventHandler(async (event) => {
