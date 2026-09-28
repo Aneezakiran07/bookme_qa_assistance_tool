@@ -26,11 +26,35 @@ export const onboardingService = {
 
     const byEmail = await userRepository.findByEmail(email)
     if (byEmail) {
+      // linking a firebase account to an existing row proves nothing unless
+      // firebase confirmed the person owns this email address
+      if (!emailVerified) {
+        throw createError({
+          statusCode: 403,
+          statusMessage: 'Please verify your email address before signing in.'
+        })
+      }
+
+      // a row that already belongs to a different firebase account is never
+      // taken over, an admin has to sort that out
+      if (byEmail.firebase_uid) {
+        throw createError({
+          statusCode: 403,
+          statusMessage: 'This email is linked to a different sign in. Please contact an admin.'
+        })
+      }
+
+      // the extra condition in the where clause means two logins at the same
+      // moment cannot both claim the row
       const sql = useDb()
       const rows = await sql`
-        update users set firebase_uid = ${firebaseUid} where id = ${byEmail.id}
+        update users set firebase_uid = ${firebaseUid}
+        where id = ${byEmail.id} and firebase_uid is null
         returning *
       `
+      if (!rows[0]) {
+        throw createError({ statusCode: 409, statusMessage: 'Please try signing in again.' })
+      }
       return rows[0] as UserRecord
     }
 

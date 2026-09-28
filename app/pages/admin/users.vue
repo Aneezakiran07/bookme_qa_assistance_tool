@@ -1,6 +1,6 @@
 <script setup lang="ts">
 // team & invites page: invite new people by email + role, and manage
-// already-active team members (deactivate). Admin and QA Lead both get
+// already-active team members (change role, deactivate). Admin and QA Lead both get
 // this page -- same permission tier for this pilot, just two different
 // labels -- gated by the manage-users middleware; Tester and Developer
 // are bounced to the dashboard if they hit this route directly. there is
@@ -147,6 +147,52 @@ async function revokeInvite(invite: OutstandingInviteRow) {
 // there is no one left signed in on this page to undo it afterward
 const { user: sessionUser, fetch: refreshSession } = useUserSession()
 
+// -- change role --
+// the dropdown in the table stays bound to the saved role, so if the request
+// fails or the person cancels, it simply keeps showing the old role
+const changingRoleId = ref<number | null>(null)
+
+async function changeRole(user: ActiveUserRow, role: string) {
+  if (role === user.role) return
+  const isSelf = user.id === sessionUser.value?.id
+
+  const confirmed = await confirmDialogRef.value?.open({
+    title: isSelf ? 'Change your own role?' : 'Change this role?',
+    message: isSelf
+      ? `Your role will change from ${user.role} to ${role}. If the new role cannot manage the team, you will lose access to this page right away.`
+      : `${user.email} will change from ${user.role} to ${role} and their access updates right away.`,
+    confirmLabel: 'Change role',
+    danger: isSelf,
+  })
+  if (!confirmed) return
+
+  changingRoleId.value = user.id
+  try {
+    await $fetch('/api/admin/change-role', {
+      method: 'POST',
+      body: { userId: user.id, role },
+    })
+    toast.add({ severity: 'success', summary: `Role changed to ${role}`, life: 3000 })
+    await refresh()
+    // the signed in person's own role lives in the session, so pull the
+    // fresh copy and let the route middleware decide where they can go
+    if (isSelf) {
+      await refreshSession()
+      await navigateTo('/')
+    }
+  } catch (error) {
+    toast.add({
+      severity: 'error',
+      summary: 'Could not change this role',
+      detail: (error as any)?.data?.statusMessage ?? 'Please try again.',
+      life: 4000,
+    })
+    await refresh()
+  } finally {
+    changingRoleId.value = null
+  }
+}
+
 async function deactivate(user: ActiveUserRow) {
   const isSelf = user.id === sessionUser.value?.id
 
@@ -170,10 +216,22 @@ async function deactivate(user: ActiveUserRow) {
   )
   if (!confirmed) return
 
-  await $fetch('/api/admin/deactivate-user', {
-    method: 'POST',
-    body: { userId: user.id },
-  })
+  try {
+    await $fetch('/api/admin/deactivate-user', {
+      method: 'POST',
+      body: { userId: user.id },
+    })
+  } catch (error) {
+    // without this a refused request, such as the last admin guard, would
+    // fail silently and the person would not know why nothing happened
+    toast.add({
+      severity: 'error',
+      summary: 'Could not deactivate this user',
+      detail: (error as any)?.data?.statusMessage ?? 'Please try again.',
+      life: 4000,
+    })
+    return
+  }
 
   if (isSelf) {
     toast.add({ severity: 'success', summary: 'Your access has been deactivated', life: 3000 })
@@ -263,12 +321,15 @@ async function deactivate(user: ActiveUserRow) {
         </template>
 
         <template #cell-role="{ data: row }">
-          <span
-            class="rounded-full bg-purple-600/10 px-2.5 py-1 text-xs font-medium
-                   text-purple-600 dark:text-purple-400"
-          >
-            {{ row.role }}
-          </span>
+          <Select
+            :model-value="row.role"
+            :options="ASSIGNABLE_ROLES"
+            class="w-40"
+            size="small"
+            :pt="dropdownPt"
+            :disabled="changingRoleId === row.id"
+            @update:model-value="(role: string) => changeRole(row, role)"
+          />
         </template>
 
         <template #cell-created_at="{ data: row }">

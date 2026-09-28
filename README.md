@@ -75,7 +75,7 @@ URL, it is used to build the link in the invite email.
 
 - Invite only onboarding: an Admin or QA Lead invites by email and role, no self signup
 - Login with Google or email and password, plus a forgot password flow
-- `/admin/users` screen with active team members, outstanding invites, revoke and deactivate
+- `/admin/users` screen with active team members, outstanding invites, revoke, role change and deactivate
 - Inline module creation (`POST /api/modules`), open to any active user, not admin-gated
 - Server-side middleware (`server/middleware/requireApprovedUser.ts`) blocking every API
   route except the auth, session-check and invite routes until a user is signed in and active

@@ -1,13 +1,15 @@
 // this runs before every server api call and blocks anyone who is not
 // signed in and active, except for the small set of public routes
-// listed below (login, session check, and the invite routes)
+// listed below (login, session check, the invite routes, and cron)
 const publicPaths = [
   '/api/auth/session',
   '/api/_auth/session',
   '/api/me',
   '/api/invitations/validate',
   '/api/invitations/accept-google',
-  '/api/invitations/finalize'
+  '/api/invitations/finalize',
+  // cron calls carry no session, each cron route checks the cron secret itself
+  '/api/cron/'
 ]
 
 export default defineEventHandler(async (event) => {

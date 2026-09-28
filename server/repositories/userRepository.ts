@@ -57,6 +57,27 @@ export const userRepository = {
     return (rows[0] as UserRecord) ?? null
   },
 
+  async setRole(userId: number, role: string): Promise<UserRecord | null> {
+    const sql = useDb()
+    const rows = await sql`
+      update users set role = ${role} where id = ${userId}
+      returning *
+    `
+    return (rows[0] as UserRecord) ?? null
+  },
+
+  // counts active people who can manage the team page, used to make sure
+  // a role change or deactivation never leaves the app with nobody able
+  // to invite or manage users
+  async countActiveManagers(): Promise<number> {
+    const sql = useDb()
+    const rows = await sql`
+      select count(*)::int as total from users
+      where active = true and role in ('Admin', 'QA Lead')
+    `
+    return (rows[0] as { total: number }).total
+  },
+
   async findById(userId: number): Promise<UserRecord | null> {
     const sql = useDb()
     const rows = await sql`select * from users where id = ${userId}`
