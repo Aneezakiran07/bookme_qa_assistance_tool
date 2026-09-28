@@ -32,12 +32,14 @@ npm install
    conserve free-tier storage/bandwidth. Video length is capped in the uploader UI
    (30-60 seconds) rather than transcoded server-side.
 
-## Step 4: Firebase Auth (Google sign-in)
+## Step 4: Firebase Auth (Google and email/password sign-in)
 
 1. Go to https://console.firebase.google.com, create a project (any region/plan, the
    Spark free plan is enough).
-2. In Authentication > Sign-in method, enable the Google provider. Do not restrict it to
-   any Workspace domain, any Google account should be able to sign in.
+2. In Authentication > Sign-in method, enable the Google provider and the Email/Password
+   provider. Do not restrict Google to any Workspace domain. Also add your deployed domain
+   under Authentication > Settings > Authorized domains. Access is still limited to invited
+   emails by the app itself.
 3. In Project Settings > General, scroll to "Your apps", add a Web app, and copy its
    config values into the public env vars:
    - `NUXT_PUBLIC_FIREBASE_API_KEY`
@@ -53,21 +55,30 @@ npm install
 5. Generate a random 32+ character string for `NUXT_SESSION_PASSWORD` (this encrypts the
    app's own session cookie, separate from Firebase), e.g. `openssl rand -hex 32`.
 
-How sign-in works end to end: the browser signs the user in with Firebase (Google popup),
-gets a Firebase ID token, and posts it to `POST /api/auth/session`. That route verifies the
-token with `firebase-admin`, runs the same onboarding rule as before (new email becomes
-`role=Pending`, `active=false`), and sets the app's own session cookie.
+How sign-in works end to end: the browser signs the user in with Firebase (Google popup or
+email and password), gets a Firebase ID token, and posts it to `POST /api/auth/session`.
+That route verifies the token with `firebase-admin` and looks the person up in the `users`
+table. There is no self signup. If the email has no `users` row and no live invitation, the
+login is refused with a 403. A person with a live invitation and a verified email gets their
+`users` row created on that first login. A deactivated user is refused too. On success the
+route sets the app's own session cookie.
+
+Invites: an Admin or QA Lead invites someone from `/admin/users` (email and role). The server
+creates a Firebase user with no password, stores an `invitations` row (7 day token), and asks
+Firebase to send a password reset style email. The invitee sets a password on Firebase's
+hosted page, then logs in at `/login` with that password or with Google. The optional
+Continue button on Firebase's page opens `/accept-invite`, which finishes the same account
+setup. Revoking an invite makes login refuse that email. Set `APP_URL` to the deployed site
+URL, it is used to build the link in the invite email.
 
 ## What's built so far
 
-- Firebase Google sign-in with no domain restriction
-- First-login onboarding: new emails are created as `role=Pending`, `active=false`
-- `/pending-approval` screen shown until an admin approves the user
-- `/admin/pending-users` screen where an Admin assigns a role and one or more modules,
-  then activates the account
+- Invite only onboarding: an Admin or QA Lead invites by email and role, no self signup
+- Login with Google or email and password, plus a forgot password flow
+- `/admin/users` screen with active team members, outstanding invites, revoke and deactivate
 - Inline module creation (`POST /api/modules`), open to any active user, not admin-gated
 - Server-side middleware (`server/middleware/requireApprovedUser.ts`) blocking every API
-  route except the auth and session-check routes until a user is active
+  route except the auth, session-check and invite routes until a user is signed in and active
 - Cloudinary attachment upload endpoint for bug screenshots/videos (resize + WebP for
   images, client-side duration cap for video)
 

@@ -8,8 +8,8 @@ export default defineEventHandler(async (event) => {
 
   const freshUser = await userRepository.findById(session.user.id)
 
-  // User was deleted from the DB but their cookie still exists → clear it
-  if (!freshUser) {
+  // user was deleted or deactivated but their cookie still exists, so clear it
+  if (!freshUser || !freshUser.active) {
     await clearUserSession(event)
     return
   }

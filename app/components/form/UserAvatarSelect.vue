@@ -32,8 +32,7 @@ const ROLE_SHORT: Record<string, string> = {
   Admin: 'Admin',
   'QA Lead': 'QA Lead',
   Tester: 'QA',
-  Developer: 'Dev',
-  Pending: 'Pending'
+  Developer: 'Dev'
 }
 </script>
 

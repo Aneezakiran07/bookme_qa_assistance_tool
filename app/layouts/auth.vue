@@ -1,5 +1,5 @@
 <script setup lang="ts">
-// auth layout: login, pending-approval, etc.
+// auth layout for the login, invite and password pages
 </script>
 
 <template>

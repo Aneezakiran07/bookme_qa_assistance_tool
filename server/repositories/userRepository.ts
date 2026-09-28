@@ -30,8 +30,8 @@ export const userRepository = {
     return (rows[0] as UserRecord) ?? null
   },
 
-  // used by both invite-accept paths (password and Google) once the
-  // Firebase side is settled -- creates the app-side users row
+  // creates the app side users row from an invitation, used by login when
+  // it finds a live invite, by the finalize route, and by accept google
   async createFromInvitation(fields: {
     firebaseUid: string
     email: string

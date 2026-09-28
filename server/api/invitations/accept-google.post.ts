@@ -11,11 +11,10 @@ function isUsable(invitation: InvitationRecord | null): invitation is Invitation
   )
 }
 
-// public -- invitee continues with Google to accept the invite. The
-// Firebase user for the invite's email was created password-less in
-// index.post.ts; signing in with Google against that same email may
-// reuse that uid, or Firebase may issue a different one (e.g. if Google
-// sign-in provisions a separate identity) -- both are handled below.
+// public. an invitee who would rather use google than a password calls
+// this with the invite token and a google id token. the google email must
+// be verified and match the invited email. whichever firebase uid google
+// signed in with is the one stored on the new users row
 export default defineEventHandler(async (event) => {
   const body = await readBody<{ token?: string; idToken?: string }>(event)
 

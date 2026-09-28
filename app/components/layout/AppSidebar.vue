@@ -37,7 +37,7 @@ const { data: profileData } = await useFetch<ProfileData>('/api/profile', {
 
 const currentUser = computed(() => user.value as {
   email?: string
-  role?: 'Pending' | 'Admin' | 'QA Lead' | 'Tester' | 'Developer'
+  role?: 'Admin' | 'QA Lead' | 'Tester' | 'Developer'
 } | null)
 
 const isAdmin = computed(() => currentUser.value?.role === 'Admin')

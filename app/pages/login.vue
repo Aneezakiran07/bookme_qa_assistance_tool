@@ -40,6 +40,32 @@ async function finishSignIn(idToken: string) {
   await navigateTo(redirectTarget.value)
 }
 
+// firebase client errors come back as long technical strings, so the
+// common ones become something a person can act on. errors from this
+// app's own api already carry a readable statusMessage
+function readableError(error: unknown, fallback: string): string {
+  const apiMessage = (error as any)?.data?.statusMessage
+  if (apiMessage) return apiMessage
+
+  const code = (error as any)?.code as string | undefined
+  if (
+    code === 'auth/invalid-credential' ||
+    code === 'auth/wrong-password' ||
+    code === 'auth/user-not-found' ||
+    code === 'auth/invalid-email'
+  ) {
+    return 'Incorrect email or password.'
+  }
+  if (code === 'auth/too-many-requests') {
+    return 'Too many attempts, please wait a few minutes and try again.'
+  }
+  // closing the google popup is not an error worth showing
+  if (code === 'auth/popup-closed-by-user' || code === 'auth/cancelled-popup-request') {
+    return ''
+  }
+  return fallback
+}
+
 async function signIn() {
   errorMessage.value = ''
   loading.value = true
@@ -51,10 +77,7 @@ async function signIn() {
     await finishSignIn(idToken)
   } catch (error) {
     console.error('[login]', error)
-    errorMessage.value =
-      (error as any)?.data?.statusMessage
-      ?? (error as any)?.message
-      ?? 'Sign in failed, please try again.'
+    errorMessage.value = readableError(error, 'Sign in failed, please try again.')
   } finally {
     loading.value = false
   }
@@ -69,10 +92,7 @@ async function signInWithPassword() {
     await finishSignIn(idToken)
   } catch (error) {
     console.error('[login]', error)
-    errorMessage.value =
-      (error as any)?.data?.statusMessage
-      ?? (error as any)?.message
-      ?? 'Sign in failed, please check your email and password.'
+    errorMessage.value = readableError(error, 'Sign in failed, please check your email and password.')
   } finally {
     passwordLoading.value = false
   }
@@ -97,7 +117,7 @@ async function signInWithPassword() {
         Please log in to continue.
       </p>
       <p v-else class="mb-6 text-sm text-gray-600 dark:text-white/60">
-        Sign in with any Google account to continue.
+        Sign in with the account you were invited with.
       </p>
 
       <Button

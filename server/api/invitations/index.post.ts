@@ -37,8 +37,9 @@ export default defineEventHandler(async (event) => {
   const token = crypto.randomBytes(32).toString('hex')
   const expiresAt = new Date(Date.now() + INVITE_EXPIRY_DAYS * 24 * 60 * 60 * 1000)
 
-  // create the Firebase user with no password -- they set one (or use
-  // Google) when they accept the invite
+  // create the firebase user with no password, the invitee sets one from
+  // the emailed link or signs in with google
+  let createdFirebaseUser = true
   try {
     await useFirebaseAuth().createUser({ email })
   } catch (error) {
@@ -49,6 +50,7 @@ export default defineEventHandler(async (event) => {
       console.error('[invitations] firebase createUser failed:', error)
       throw createError({ statusCode: 500, statusMessage: 'Failed to create the invited account' })
     }
+    createdFirebaseUser = false
   }
 
   const invitation = await invitationRepository.create({
@@ -74,16 +76,28 @@ export default defineEventHandler(async (event) => {
         }
       }
     )
-  } catch (error) {
-    console.error('[invitations] sendOobCode failed:', error)
-    // remove the invite row so the email is not left blocked by an
-    // invite that never reached anyone
+  } catch (error: any) {
+    // ofetch puts the parsed firebase error body here, it holds the real
+    // reason such as INVALID_CONTINUE_URI or API_KEY_INVALID
+    const firebaseErrorBody = error?.data ?? error?.response?._data ?? null
+    console.error('[invitations] sendOobCode failed:', JSON.stringify(firebaseErrorBody ?? String(error), null, 2))
+
+    // no email went out, so remove the invite row, and remove the firebase
+    // user too when this request was the one that created it
     await invitationRepository.deleteById(invitation.id)
-    throw createError({ statusCode: 500, statusMessage: 'Invite created but the invite email failed to send' })
+    if (createdFirebaseUser) {
+      try {
+        const leftover = await useFirebaseAuth().getUserByEmail(email)
+        await useFirebaseAuth().deleteUser(leftover.uid)
+      } catch (cleanupError) {
+        console.error('[invitations] failed to clean up firebase user after sendOobCode failure:', cleanupError)
+      }
+    }
+
+    throw createError({ statusCode: 500, statusMessage: 'Failed to send the invite email' })
   }
 
-  // never return the raw token -- it's a bearer credential for accepting
-  // the invite
+  // never return the raw token, it is a bearer credential for the invite
   return {
     id: invitation.id,
     email: invitation.email,

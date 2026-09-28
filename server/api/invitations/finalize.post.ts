@@ -11,12 +11,11 @@ function isUsable(invitation: InvitationRecord | null): invitation is Invitation
   )
 }
 
-// public. the invitee already set their password on the auth action page
-// using firebase's own client side reset flow, so this route never
-// touches a password. it only creates the matching row in this app's own
-// users table and marks the invitation as accepted, which is the step
-// that was missing when people landed on a firebase owned page instead
-// of this app
+// public. called from the accept invite page after the invitee has set
+// their password on firebase's own reset page. this route never touches
+// a password, it only creates the matching row in this app's users table
+// and marks the invitation as accepted. login does the same job when it
+// finds a live invitation, so this is a backup and either one can run first
 export default defineEventHandler(async (event) => {
   const body = await readBody<{ token?: string }>(event)
 

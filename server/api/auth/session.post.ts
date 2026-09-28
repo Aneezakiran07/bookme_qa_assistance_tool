@@ -20,7 +20,7 @@ export default defineEventHandler(async (event) => {
   }
 
   if (!decoded.email) {
-    throw createError({ statusCode: 400, statusMessage: 'Google account has no email' })
+    throw createError({ statusCode: 400, statusMessage: 'This account has no email address' })
   }
 
   let appUser
@@ -37,6 +37,14 @@ export default defineEventHandler(async (event) => {
       throw error
     }
     throw createError({ statusCode: 500, statusMessage: 'Failed to resolve user account' })
+  }
+
+  // a deactivated account never gets a session cookie
+  if (!appUser.active) {
+    throw createError({
+      statusCode: 403,
+      statusMessage: 'Your account has been deactivated. Please contact an admin.'
+    })
   }
 
   try {
