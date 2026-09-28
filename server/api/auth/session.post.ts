@@ -25,11 +25,17 @@ export default defineEventHandler(async (event) => {
 
   let appUser
   try {
-    appUser = await onboardingService.resolveLogin(decoded.uid, decoded.email)
+    appUser = await onboardingService.resolveLogin(decoded.uid, decoded.email, decoded.email_verified === true)
   } catch (error) {
     // logging the real database or firebase error here instead of letting
     // it bubble up as a bare 500 is what lets us see the actual cause
     console.error('[auth/session] onboardingService.resolveLogin failed:', error)
+    // expected refusals such as not invited keep their own status and
+    // message so the login page can show the real reason
+    const status = (error as any)?.statusCode
+    if (typeof status === 'number' && status >= 400 && status < 500) {
+      throw error
+    }
     throw createError({ statusCode: 500, statusMessage: 'Failed to resolve user account' })
   }
 
