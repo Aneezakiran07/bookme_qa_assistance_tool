@@ -29,6 +29,7 @@ interface BugDetail {
   last_status_change_at: string
   steps_to_reproduce: string | null
   actual_result: string | null
+  expected_result: string | null
   dev_notes: string | null
 }
 
@@ -182,6 +183,39 @@ async function saveActualResult() {
     })
   } finally {
     savingActualResult.value = false
+  }
+}
+
+// expected result belongs to the bug itself, it starts as a copy of the
+// linked test case's expected result when there is one, and QA roles can
+// edit it afterward. developers see it read only, same as actual result
+const editingExpectedResult = ref(false)
+const expectedResultDraft = ref('')
+const savingExpectedResult = ref(false)
+
+function startEditExpectedResult() {
+  expectedResultDraft.value = bug.value?.expected_result ?? ''
+  editingExpectedResult.value = true
+}
+
+async function saveExpectedResult() {
+  savingExpectedResult.value = true
+  try {
+    await $fetch(`/api/bugs/${bugId}`, {
+      method: 'PUT',
+      body: { expectedResult: expectedResultDraft.value || null }
+    })
+    editingExpectedResult.value = false
+    await refresh()
+  } catch (error) {
+    toast.add({
+      severity: 'error',
+      summary: 'Could not save expected result',
+      detail: (error as any)?.data?.statusMessage ?? 'Please try again.',
+      life: 5000
+    })
+  } finally {
+    savingExpectedResult.value = false
   }
 }
 
@@ -460,6 +494,43 @@ const timelineEntries = computed(() => {
           </div>
         </div>
 
+        <!-- expected result, owned by the bug itself and editable by QA roles -->
+        <div class="rounded-lg border border-black/10 bg-white p-5 dark:border-white/10 dark:bg-black">
+          <div class="flex items-center justify-between">
+            <p class="text-xs font-semibold uppercase tracking-wide text-gray-400 dark:text-zinc-500">
+              Expected Result
+            </p>
+            <BaseButton
+              v-if="isQa && !editingExpectedResult"
+              label="Edit"
+              variant="outline"
+              size="sm"
+              icon="pi pi-pencil"
+              @click="startEditExpectedResult"
+            />
+          </div>
+
+          <RichTextEditor v-if="editingExpectedResult" v-model="expectedResultDraft" class="mt-2" :rows="6" />
+          <div
+            v-else
+            class="mt-2 whitespace-pre-wrap rounded-md border border-black/10 bg-gray-50 p-3 text-sm
+                   text-gray-800 dark:border-white/10 dark:bg-white/5 dark:text-zinc-200"
+          >
+            {{ bug.expected_result || 'No expected result recorded.' }}
+          </div>
+
+          <div v-if="editingExpectedResult" class="mt-3 flex justify-end gap-2">
+            <BaseButton variant="secondary" label="Cancel" size="sm" @click="editingExpectedResult = false" />
+            <BaseButton
+              variant="primary"
+              label="Save"
+              size="sm"
+              :loading="savingExpectedResult"
+              @click="saveExpectedResult"
+            />
+          </div>
+        </div>
+
         <!-- actual result: QA-owned, what actually happened when the bug
              occurred (as opposed to the linked test case's expected
              result below). developers see it read-only, since they need
@@ -520,17 +591,6 @@ const timelineEntries = computed(() => {
                      text-gray-800 dark:border-white/10 dark:bg-white/5 dark:text-zinc-200"
             >
               {{ bug.linked_test_case_steps || 'No steps recorded.' }}
-            </div>
-          </div>
-          <div class="mt-3">
-            <p class="text-xs font-semibold uppercase tracking-wide text-gray-400 dark:text-zinc-500">
-              Expected Result
-            </p>
-            <div
-              class="mt-1 whitespace-pre-wrap rounded-md border border-black/10 bg-gray-50 p-3 text-sm
-                     text-gray-800 dark:border-white/10 dark:bg-white/5 dark:text-zinc-200"
-            >
-              {{ bug.linked_test_case_expected_result || 'No expected result recorded.' }}
             </div>
           </div>
         </div>

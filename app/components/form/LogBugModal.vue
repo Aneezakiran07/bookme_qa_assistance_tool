@@ -11,6 +11,7 @@ const props = defineProps<{
   initialTestCaseId?: number | null
   initialSteps?: string | null
   initialActualResult?: string | null
+  initialExpectedResult?: string | null
 }>()
 
 const emit = defineEmits<{
@@ -37,6 +38,7 @@ const form = reactive({
   environmentBuild: '',
   stepsToReproduce: '',
   actualResult: '',
+  expectedResult: '',
   ownerId: null as number | null
 })
 
@@ -176,6 +178,7 @@ watch(
     form.environmentBuild = ''
     form.stepsToReproduce = props.initialSteps ?? ''
     form.actualResult = props.initialActualResult ?? ''
+    form.expectedResult = props.initialExpectedResult ?? ''
     form.ownerId = null
     createdBug.value = null
     clearStagedFiles()
@@ -241,6 +244,7 @@ async function save() {
         releaseId: props.initialReleaseId ?? null,
         stepsToReproduce: form.stepsToReproduce || null,
         actualResult: form.actualResult || null,
+        expectedResult: form.expectedResult || null,
         ownerId: form.ownerId
       }
     })
@@ -383,6 +387,20 @@ async function save() {
           placeholder="1. Open the page...&#10;2. Click...&#10;3. Observe..."
           :rows="6"
         />
+      </div>
+
+      <div>
+        <label class="mb-1 block text-xs font-medium text-gray-600 dark:text-zinc-300">
+          Expected result
+        </label>
+        <RichTextEditor
+          v-model="form.expectedResult"
+          placeholder="What should have happened..."
+          :rows="4"
+        />
+        <p v-if="initialExpectedResult" class="mt-1 text-xs text-gray-400 dark:text-zinc-500">
+          Copied from the linked test case, edit it if this bug needs different wording.
+        </p>
       </div>
 
       <div>

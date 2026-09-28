@@ -39,6 +39,7 @@ export default defineEventHandler(async (event) => {
     releaseId?: number | null
     stepsToReproduce?: string | null
     actualResult?: string | null
+    expectedResult?: string | null
     devNotes?: string | null
   }>(event)
 
@@ -82,6 +83,15 @@ export default defineEventHandler(async (event) => {
       throw createError({ statusCode: 403, statusMessage: 'Only QA can edit the actual result' })
     }
     fields.actual_result = body.actualResult || null
+  }
+
+  // the expected result belongs to the bug itself and follows the same
+  // rule as the actual result, only QA roles can change it
+  if (body.expectedResult !== undefined) {
+    if (!isQaRole) {
+      throw createError({ statusCode: 403, statusMessage: 'Only QA can edit the expected result' })
+    }
+    fields.expected_result = body.expectedResult || null
   }
 
   if (body.devNotes !== undefined) {

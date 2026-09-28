@@ -44,6 +44,7 @@ export default defineEventHandler(async (event) => {
     releaseId?: number | null
     stepsToReproduce?: string | null
     actualResult?: string | null
+    expectedResult?: string | null
     ownerId?: number | null
   }>(event)
 
@@ -94,6 +95,7 @@ export default defineEventHandler(async (event) => {
     releaseId,
     stepsToReproduce: body.stepsToReproduce || null,
     actualResult: body.actualResult || null,
+    expectedResult: body.expectedResult || null,
     reportedBy: currentUser.id,
     ownerId
   })

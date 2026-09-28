@@ -13,6 +13,7 @@ export interface BugRecord {
   release_id: number | null
   steps_to_reproduce: string | null
   actual_result: string | null
+  expected_result: string | null
   dev_notes: string | null
   reported_by: number | null
   reported_at: string
@@ -99,7 +100,8 @@ export const bugRepository = {
         owner.email as owner_email,
         reporter.email as reported_by_email,
         r.version as release_version,
-        tc.title as linked_test_case_title
+        tc.title as linked_test_case_title,
+        tc.steps as linked_test_case_steps
       from bugs b
       join modules m on m.id = b.module_id
       left join users owner on owner.id = b.owner_id
@@ -239,6 +241,7 @@ export const bugRepository = {
     release_id: number | null
     steps_to_reproduce: string | null
     actual_result: string | null
+    expected_result: string | null
     dev_notes: string | null
     last_status_change_at: string
   }>): Promise<BugRecord | null> {
@@ -279,6 +282,7 @@ export const bugRepository = {
     releaseId: number | null
     stepsToReproduce: string | null
     actualResult: string | null
+    expectedResult?: string | null
     reportedBy: number
     ownerId?: number | null
   }): Promise<BugRecord> {
@@ -287,7 +291,7 @@ export const bugRepository = {
       insert into bugs (
         title, module_id, severity, priority, status,
         environment_build, linked_test_case_id, release_id,
-        steps_to_reproduce, actual_result, reported_by, owner_id
+        steps_to_reproduce, actual_result, expected_result, reported_by, owner_id
       )
       values (
         ${input.title},
@@ -300,6 +304,7 @@ export const bugRepository = {
         ${input.releaseId},
         ${input.stepsToReproduce},
         ${input.actualResult},
+        ${input.expectedResult ?? null},
         ${input.reportedBy},
         ${input.ownerId ?? null}
       )

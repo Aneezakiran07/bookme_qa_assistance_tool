@@ -437,6 +437,7 @@ function statusKey(latest: string | null): string {
       :initial-test-case-id="selectedTestCase.id"
       :initial-steps="selectedTestCase.steps"
       :initial-actual-result="failedActualResult"
+      :initial-expected-result="selectedTestCase.expected_result"
     />
   </div>
 </template>
