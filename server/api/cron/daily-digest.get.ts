@@ -1,8 +1,5 @@
-// end of day digest, one email per active user, sent near end of day
-// (scheduled a few minutes after daily-snapshot in vercel.json so it
-// feels like the same "end of day" event, though it doesn't actually
-// depend on that job -- it reads live data through the same repository
-// methods the dashboards already use).
+// end of day digest, one email per active user, sent once a day by Vercel Cron
+// it reads live data through the same repository methods the dashboards already use
 //
 // Developers get their own open/blocker/pending/resolved numbers plus a
 // short list of what's still open. QA Leads, Admins, and Testers get a
@@ -14,8 +11,8 @@
 // skipped so people don't get an empty "nothing happened" email every
 // night.
 //
-// same CRON_SECRET gate as daily-snapshot, pulled into requireCronSecret
-// so both routes share one validation path instead of duplicating it.
+// the CRON_SECRET check lives in requireCronSecret so every cron route
+// shares one validation path instead of duplicating it
 
 import { userRepository } from '~~/server/repositories/userRepository'
 import { dashboardRepository } from '~~/server/repositories/dashboardRepository'

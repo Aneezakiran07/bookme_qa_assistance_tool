@@ -63,33 +63,9 @@ export const dashboardRepository = {
   // open right now, not change because someone picked "30 Days" instead
   // of "7 Days" (that range only drives the trend widgets below).
   //
-  // dashboard_daily_metrics is tried first since that's the fast path the
-  // schema was built for once a nightly job populates it. If no snapshot
-  // row exists yet for this exact module/release scope -- the expected
-  // state today, since this pilot doesn't ship that nightly job -- this
-  // falls back to live aggregates straight off requirements/test_cases/bugs.
+  // these numbers are always computed live so the dashboard never shows
+  // stale counts, and the source field is kept so the response shape stays the same
   async getSnapshotMetrics(moduleId: number | null, releaseId: number | null): Promise<SnapshotMetrics & { source: 'snapshot' | 'live' }> {
-    const sql = useDb()
-    const snapshotRows = await sql`
-      select * from dashboard_daily_metrics
-      where module_id is not distinct from ${moduleId}
-        and release_id is not distinct from ${releaseId}
-      order by metric_date desc
-      limit 1
-    `
-    if (snapshotRows.length > 0) {
-      const row = snapshotRows[0] as any
-      return {
-        total_requirements: row.total_requirements,
-        covered_requirements: row.covered_requirements,
-        total_test_cases: row.total_test_cases,
-        automated_test_cases: row.automated_test_cases,
-        open_bugs: row.open_bugs,
-        open_critical_high: row.open_critical_high,
-        source: 'snapshot'
-      }
-    }
-
     const live = await this.computeLiveSnapshot(moduleId, releaseId)
     return { ...live, source: 'live' }
   },
@@ -145,38 +121,8 @@ export const dashboardRepository = {
     }
   },
 
-  // daily delta half of the nightly snapshot job: how many executions
-  // landed on exactly this one calendar day for this scope, modeled on
-  // the live branch of getPassRate but pinned to a single day instead of
-  // a between range, since dashboard_daily_metrics stores one day's
-  // count per row rather than a running total
-  async getDailyExecutionCounts(
-    date: string,
-    moduleId: number | null,
-    releaseId: number | null
-  ): Promise<{ total_executions: number; passed_executions: number }> {
-    const sql = useDb()
-    const rows = await sql`
-      select
-        count(*)::int as total,
-        count(*) filter (where te.result = 'Pass')::int as passed
-      from test_executions te
-      join test_cases tc on tc.id = te.test_case_id
-      where te.execution_date::date = ${date}::date
-        and (${moduleId}::int is null or tc.module_id = ${moduleId}::int)
-        and (${releaseId}::int is null or te.release_id = ${releaseId}::int)
-    `
-    return {
-      total_executions: (rows[0] as any).total,
-      passed_executions: (rows[0] as any).passed
-    }
-  },
-
-  // pass rate over the selected date range: SUM(passed)/SUM(total) across
-  // the daily deltas, exactly as the schema's own worked example shows.
-  // falls back to a live sum off test_executions when the snapshot table
-  // has nothing for this range/scope -- most commonly "today", which
-  // never has a row until a nightly job writes it.
+  // pass rate over the selected date range, always counted live from
+  // test_executions so it includes every execution up to right now
   async getPassRate(
     startDate: string,
     endDate: string,
@@ -184,23 +130,6 @@ export const dashboardRepository = {
     releaseId: number | null
   ): Promise<PassRateResult> {
     const sql = useDb()
-    const snapshotRows = await sql`
-      select
-        coalesce(sum(total_executions), 0)::int as total,
-        coalesce(sum(passed_executions), 0)::int as passed
-      from dashboard_daily_metrics
-      where metric_date between ${startDate}::date and ${endDate}::date
-        and module_id is not distinct from ${moduleId}
-        and release_id is not distinct from ${releaseId}
-    `
-    const snapshotTotal = (snapshotRows[0] as any).total as number
-
-    if (snapshotTotal > 0) {
-      const total = snapshotTotal
-      const passed = (snapshotRows[0] as any).passed as number
-      return { total_executions: total, passed_executions: passed, pass_rate: roundPct(passed, total), source: 'snapshot' }
-    }
-
     const liveRows = await sql`
       select
         count(*)::int as total,
@@ -216,9 +145,7 @@ export const dashboardRepository = {
     return { total_executions: total, passed_executions: passed, pass_rate: roundPct(passed, total), source: 'live' }
   },
 
-  // daily Pass/Fail/Blocked trend, always computed live: dashboard_daily_metrics
-  // only stores a total and a passed count per day, not the Fail/Blocked
-  // split this chart needs.
+  // daily Pass/Fail/Blocked trend, always computed live from test_executions
   async getExecutionTrend(
     startDate: string,
     endDate: string,

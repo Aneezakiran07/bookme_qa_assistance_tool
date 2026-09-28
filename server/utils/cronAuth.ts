@@ -1,7 +1,7 @@
 import type { H3Event } from 'h3'
 
-// shared by every cron route (daily-snapshot, daily-digest, and any
-// future one) so the CRON_SECRET check only lives in one place. Vercel
+// shared by every cron route, the daily digest today and any
+// future one, so the CRON_SECRET check only lives in one place. Vercel
 // Cron always calls these with GET and no way to set a custom header on
 // some plans, so the secret is accepted either as a Bearer header or a
 // ?secret= query param.

@@ -88,6 +88,6 @@ URL, it is used to build the link in the invite email.
   a linked test case" rule)
 - Test Execution (append-only) + Bugs CRUD and status lifecycle (attachments endpoint is
   ready, the rest of the Bugs module isn't)
-- Releases + Dashboard (using `dashboard_daily_metrics`)
+- Releases + Dashboard (showing live numbers)
 - The end-of-day digest job (Vercel Cron hitting a `CRON_SECRET`-protected route)
 
