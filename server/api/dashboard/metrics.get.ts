@@ -28,6 +28,43 @@ function resolveRange(rangeKey: string): { start: string; end: string } {
   return { start: toDateOnly(start), end }
 }
 
+// the dashboard numbers are counted live but the result is kept for a short
+// time so many people opening the dashboard at once share one set of queries
+// the key holds every input that changes the result, including the date range
+// so a new day never reuses yesterday's numbers, and swr is off so nothing
+// older than the max age is ever served
+const DASHBOARD_CACHE_SECONDS = 30
+
+const getDashboardData = defineCachedFunction(
+  async (
+    _rangeKey: string,
+    start: string,
+    end: string,
+    moduleId: number | null,
+    releaseId: number | null
+  ) => {
+    const [snapshot, passRate, trend, bugBreakdown, requirementsBreakdown, criticalBugs, recentExecutions] =
+      await Promise.all([
+        dashboardRepository.getSnapshotMetrics(moduleId, releaseId),
+        dashboardRepository.getPassRate(start, end, moduleId, releaseId),
+        dashboardRepository.getExecutionTrend(start, end, moduleId, releaseId),
+        dashboardRepository.getBugBreakdown(moduleId, releaseId),
+        dashboardRepository.getRequirementsStatusBreakdown(moduleId),
+        dashboardRepository.getCriticalBugsWatchlist(moduleId, releaseId),
+        dashboardRepository.getRecentExecutions(moduleId, releaseId)
+      ])
+
+    return { snapshot, passRate, trend, bugBreakdown, requirementsBreakdown, criticalBugs, recentExecutions }
+  },
+  {
+    name: 'dashboard-metrics',
+    maxAge: DASHBOARD_CACHE_SECONDS,
+    swr: false,
+    getKey: (rangeKey, start, end, moduleId, releaseId) =>
+      `${rangeKey}:${start}:${end}:${moduleId ?? 'all'}:${releaseId ?? 'all'}`
+  }
+)
+
 export default defineEventHandler(async (event) => {
   const query = getQuery(event)
 
@@ -37,25 +74,10 @@ export default defineEventHandler(async (event) => {
 
   const { start, end } = resolveRange(rangeKey)
 
-  const [snapshot, passRate, trend, bugBreakdown, requirementsBreakdown, criticalBugs, recentExecutions] =
-    await Promise.all([
-      dashboardRepository.getSnapshotMetrics(moduleId, releaseId),
-      dashboardRepository.getPassRate(start, end, moduleId, releaseId),
-      dashboardRepository.getExecutionTrend(start, end, moduleId, releaseId),
-      dashboardRepository.getBugBreakdown(moduleId, releaseId),
-      dashboardRepository.getRequirementsStatusBreakdown(moduleId),
-      dashboardRepository.getCriticalBugsWatchlist(moduleId, releaseId),
-      dashboardRepository.getRecentExecutions(moduleId, releaseId)
-    ])
+  const data = await getDashboardData(rangeKey, start, end, moduleId, releaseId)
 
   return {
     range: { key: rangeKey, start, end },
-    snapshot,
-    passRate,
-    trend,
-    bugBreakdown,
-    requirementsBreakdown,
-    criticalBugs,
-    recentExecutions
+    ...data
   }
 })
