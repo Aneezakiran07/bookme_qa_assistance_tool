@@ -2,17 +2,17 @@ import { useDb } from '../db/client'
 import { userRepository, type UserRecord } from '../repositories/userRepository'
 import { invitationRepository } from '../repositories/invitationRepository'
 
-// this service owns the one rule that matters on login.
-// look the user up by their stable firebase uid first.
+// this service owns the one rule that matters on login
+// look the user up by their stable firebase uid first
 // fall back to email to catch a user row that has no uid yet, in which
-// case the uid gets backfilled onto that existing row.
-// if there is still no row, check for a live invitation for that email.
+// case the uid gets backfilled onto that existing row
+// if there is still no row, check for a live invitation for that email
 // a verified firebase login proves the person owns the email, so the
 // invitation can be finished right here. this means the invitee does not
 // have to click the continue button on the firebase page for their
-// account to work.
+// account to work
 // if there is no row and no live invitation, the person was never
-// invited and login is refused.
+// invited and login is refused
 export const onboardingService = {
   async resolveLogin(
     firebaseUid: string,

@@ -17,7 +17,7 @@ const googleLoading = ref(false)
 // before landing here, firebase sent them here through the continueUrl
 // this app set when the invite was created. this page does not ask for
 // a password again, it only finishes creating the row in this app's own
-// users table so the person can log in normally afterward.
+// users table so the person can log in normally afterward
 async function run() {
   if (!token.value) {
     state.value = 'invalid'

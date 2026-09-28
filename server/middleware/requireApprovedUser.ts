@@ -6,7 +6,6 @@ const publicPaths = [
   '/api/_auth/session',
   '/api/me',
   '/api/invitations/validate',
-  '/api/invitations/accept',
   '/api/invitations/accept-google',
   '/api/invitations/finalize'
 ]

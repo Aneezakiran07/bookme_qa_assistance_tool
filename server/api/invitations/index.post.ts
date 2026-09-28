@@ -7,12 +7,10 @@ import { invitationRepository } from '~~/server/repositories/invitationRepositor
 const validRoles = ['Admin', 'QA Lead', 'Tester', 'Developer']
 const INVITE_EXPIRY_DAYS = 7
 
-// admin or qa lead invites someone by email and role. no password is set
-// here. firebase sends the invitee a password reset style email. the
-// link in that email is pointed at this app's own auth action page
-// instead of a firebase owned page, once the custom action url is set
-// in the firebase console. continueUrl still carries the invite token
-// so the auth action page knows which invitation to finish setting up.
+// admin or qa lead invites someone by email and role
+// no password is set here, firebase sends the invitee a password reset
+// style email and the invitee sets their own password from that link
+// the login step finishes creating their account in this app
 export default defineEventHandler(async (event) => {
   const currentUser = requireRole(event, ['Admin', 'QA Lead'])
 
@@ -44,8 +42,13 @@ export default defineEventHandler(async (event) => {
   try {
     await useFirebaseAuth().createUser({ email })
   } catch (error) {
-    console.error('[invitations] firebase createUser failed:', error)
-    throw createError({ statusCode: 500, statusMessage: 'Failed to create the invited account' })
+    // a firebase user can be left over from an earlier invite that was
+    // revoked or failed, and it is safe to reuse because this email has
+    // no account in this app and no live invite, both checked above
+    if ((error as any)?.code !== 'auth/email-already-exists') {
+      console.error('[invitations] firebase createUser failed:', error)
+      throw createError({ statusCode: 500, statusMessage: 'Failed to create the invited account' })
+    }
   }
 
   const invitation = await invitationRepository.create({
@@ -73,6 +76,9 @@ export default defineEventHandler(async (event) => {
     )
   } catch (error) {
     console.error('[invitations] sendOobCode failed:', error)
+    // remove the invite row so the email is not left blocked by an
+    // invite that never reached anyone
+    await invitationRepository.deleteById(invitation.id)
     throw createError({ statusCode: 500, statusMessage: 'Invite created but the invite email failed to send' })
   }
 

@@ -16,7 +16,7 @@ function isUsable(invitation: InvitationRecord | null): invitation is Invitation
 // touches a password. it only creates the matching row in this app's own
 // users table and marks the invitation as accepted, which is the step
 // that was missing when people landed on a firebase owned page instead
-// of this app.
+// of this app
 export default defineEventHandler(async (event) => {
   const body = await readBody<{ token?: string }>(event)
 
@@ -45,7 +45,7 @@ export default defineEventHandler(async (event) => {
   // the password reset step yet. this stops someone from calling this
   // route straight from the invite email before ever touching firebase's
   // own reset page, which would otherwise activate the account with no
-  // password on it at all.
+  // password on it at all
   if (!firebaseUser.passwordHash) {
     throw createError({
       statusCode: 400,

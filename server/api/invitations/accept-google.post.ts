@@ -41,6 +41,10 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 401, statusMessage: 'Invalid Firebase token' })
   }
 
+  if (decoded.email_verified !== true) {
+    throw createError({ statusCode: 403, statusMessage: 'This Google account email is not verified' })
+  }
+
   if (!decoded.email || decoded.email.toLowerCase() !== invitation.email.toLowerCase()) {
     throw createError({ statusCode: 403, statusMessage: 'This Google account does not match the invited email' })
   }
