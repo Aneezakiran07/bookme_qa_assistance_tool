@@ -164,13 +164,13 @@ async function signInWithPassword() {
         </div>
 
         <Button
-          type="submit"
-          label="Sign in"
-          class="w-full"
-          severity="secondary"
-          :loading="passwordLoading"
-          :disabled="loading"
-        />
+        type="submit"
+        label="Sign in"
+        class="w-full"
+        severity="primary"
+        :loading="passwordLoading"
+        :disabled="loading"
+      />
       </form>
 
       <NuxtLink
