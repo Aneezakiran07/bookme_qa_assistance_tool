@@ -18,5 +18,7 @@ jobs:
           cache: npm
 
       - run: npm ci
-      - # TODO: remove '|| true' once Nuxt stops emitting libReplacement in the generated tsconfig
+
+      # TODO: remove '|| true' once Nuxt stops emitting libReplacement
+      # in its generated .nuxt/tsconfig.json
       - run: npx nuxi typecheck || true
