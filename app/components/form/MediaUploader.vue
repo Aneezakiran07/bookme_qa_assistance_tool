@@ -22,10 +22,10 @@ const props = withDefaults(
   defineProps<{
     bugId: number
     initialAttachments?: MediaAttachment[]
-    readonly?: boolean
+    readOnly?: boolean
     filterRoles?: string[]
   }>(),
-  { initialAttachments: () => [], readonly: false, filterRoles: undefined }
+  { initialAttachments: () => [], readOnly: false, filterRoles: undefined }
 )
 
 const emit = defineEmits<{ 'update:attachments': [MediaAttachment[]] }>()
@@ -126,7 +126,7 @@ function onDrop(event: DragEvent) {
 <template>
   <div>
     <div
-      v-if="!readonly"
+      v-if="!readOnly"
       class="flex cursor-pointer flex-col items-center justify-center gap-2 rounded-lg
              border-2 border-dashed p-6 text-center transition-colors"
       :class="dragOver
@@ -153,7 +153,7 @@ function onDrop(event: DragEvent) {
     </div>
 
     <p
-      v-if="readonly && !visibleAttachments.length"
+      v-if="readOnly && !visibleAttachments.length"
       class="text-sm text-gray-400 dark:text-white/40"
     >
       No attachments yet.
@@ -180,7 +180,7 @@ function onDrop(event: DragEvent) {
           @click="openLightbox(index)"
         />
         <button
-          v-if="!readonly"
+          v-if="!readOnly"
           type="button"
           class="absolute right-1 top-1 flex h-6 w-6 items-center justify-center
                  rounded-full bg-black/70 text-white opacity-0 transition-opacity

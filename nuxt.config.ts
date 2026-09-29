@@ -62,6 +62,14 @@ export default defineNuxtConfig({
     },
   },
 
+  hooks: {
+    // nuxt writes libReplacement into the generated tsconfig but typescript 5.6 does not know that option
+    // so it is removed here before the file is written, and this can go once typescript is upgraded past 5.6
+    'prepare:types': ({ tsConfig }) => {
+      delete tsConfig.compilerOptions?.libReplacement
+    },
+  },
+
   modules: [
     '@nuxtjs/tailwindcss',
     'nuxt-auth-utils',

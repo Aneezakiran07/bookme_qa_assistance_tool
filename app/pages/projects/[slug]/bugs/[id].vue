@@ -608,7 +608,7 @@ const timelineEntries = computed(() => {
             :bug-id="bug.id"
             :initial-attachments="attachmentsForUploader"
             :filter-roles="QA_ROLES"
-            :readonly="isReadOnly"
+            :read-only="isReadOnly"
             @update:attachments="onAttachmentsChanged"
           />
         </div>
@@ -621,7 +621,7 @@ const timelineEntries = computed(() => {
             :bug-id="bug.id"
             :initial-attachments="attachmentsForUploader"
             :filter-roles="['Developer']"
-            readonly
+            read-only
           />
         </div>
 
@@ -633,7 +633,7 @@ const timelineEntries = computed(() => {
             :bug-id="bug.id"
             :initial-attachments="attachmentsForUploader"
             :filter-roles="QA_ROLES"
-            readonly
+            read-only
           />
         </div>
 
@@ -645,7 +645,7 @@ const timelineEntries = computed(() => {
             :bug-id="bug.id"
             :initial-attachments="attachmentsForUploader"
             :filter-roles="['Developer']"
-            :readonly="isReadOnly"
+            :read-only="isReadOnly"
             @update:attachments="onAttachmentsChanged"
           />
         </div>
