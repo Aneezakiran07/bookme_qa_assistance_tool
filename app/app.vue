@@ -2,9 +2,9 @@
   <!-- built-in Nuxt component: shows a slim progress bar at the very top
        of the viewport automatically on every route change and while any
        page-level async data (useFetch/useAsyncData) is pending, no manual
-       wiring to individual pages needed. color matches the app's purple
+       wiring to individual pages needed. color matches the app's brand blue
        theme instead of Nuxt's default green -->
-  <NuxtLoadingIndicator color="#8b5cf6" :height="3" />
+  <NuxtLoadingIndicator color="#5B8FE0" :height="3" />
 
   <NuxtLayout>
     <NuxtPage />

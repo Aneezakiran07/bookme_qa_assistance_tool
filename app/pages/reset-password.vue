@@ -87,7 +87,7 @@ async function submit() {
         <p class="mb-6 text-sm text-gray-600 dark:text-white/60">
           This reset link is missing or invalid.
         </p>
-        <NuxtLink to="/forgot-password" class="text-sm text-purple-600 hover:underline dark:text-purple-400">
+        <NuxtLink to="/forgot-password" class="text-sm text-[#245CB1] hover:underline dark:text-[#5B8FE0]">
           Request a new link
         </NuxtLink>
       </template>

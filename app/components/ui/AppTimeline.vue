@@ -38,7 +38,7 @@ function formatTimestamp(value: string) {
       <span
         class="flex h-7 w-7 items-center justify-center rounded-full border border-black/10 bg-white
                text-xs dark:border-white/10 dark:bg-black"
-        :class="item.iconClass ?? 'text-purple-600 dark:text-purple-400'"
+        :class="item.iconClass ?? 'text-[#245CB1] dark:text-[#5B8FE0]'"
       >
         <i :class="item.icon" />
       </span>

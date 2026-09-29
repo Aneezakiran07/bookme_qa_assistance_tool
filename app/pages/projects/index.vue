@@ -109,7 +109,7 @@ async function setArchived(project: ProjectSummary, archived: boolean, successTe
     >
       <div
         class="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full
-               bg-purple-100 text-purple-600 dark:bg-purple-500/10 dark:text-purple-400"
+               bg-[#245CB1]/10 text-[#245CB1] dark:bg-[#5B8FE0]/10 dark:text-[#5B8FE0]"
       >
         <i class="pi pi-folder-open text-xl" />
       </div>
@@ -142,10 +142,10 @@ async function setArchived(project: ProjectSummary, archived: boolean, successTe
       >
         <NuxtLink :to="`/projects/${project.slug}`" class="group block min-w-0 flex-1">
           <div class="flex items-center gap-2">
-            <i class="pi pi-folder text-purple-600 dark:text-purple-400" />
+            <i class="pi pi-folder text-[#245CB1] dark:text-[#5B8FE0]" />
             <h2
-              class="truncate text-base font-semibold text-gray-900 group-hover:text-purple-600
-                     dark:text-white dark:group-hover:text-purple-400"
+              class="truncate text-base font-semibold text-gray-900 group-hover:text-[#245CB1]
+                     dark:text-white dark:group-hover:text-[#5B8FE0]"
             >
               {{ project.name }}
             </h2>

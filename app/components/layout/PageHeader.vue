@@ -77,9 +77,10 @@ async function handleSaved(saved: ProjectSummary) {
           option-label="label"
           option-value="slug"
           placeholder="Select a project"
-          class="w-56 max-w-[40vw] !border-transparent !bg-transparent !shadow-none
-                 hover:!bg-gray-100 dark:hover:!bg-zinc-900"
+          class="w-56 max-w-[40vw] !border !border-black/15 !bg-transparent !shadow-none dark:!border-white/15
+                 hover:!border-[#245CB1] hover:!bg-gray-100 dark:hover:!border-[#5B8FE0] dark:hover:!bg-zinc-900"
           :pt="dropdownPt"
+          panel-class="!bg-white dark:!bg-zinc-900 !text-gray-900 dark:!text-white !border !border-black/10 dark:!border-white/10"
           aria-label="Project"
           @update:model-value="onPick"
         >

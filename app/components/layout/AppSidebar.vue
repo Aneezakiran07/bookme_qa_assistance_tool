@@ -86,8 +86,8 @@ const globalLinks = computed<NavLink[]>(() => [
 
 const roleBadgeClass = computed(() => {
   return isAdmin.value
-    ? 'bg-purple-600/15 text-purple-600 dark:text-purple-400'
-    : 'bg-purple-600/10 text-purple-600 dark:text-purple-400'
+    ? 'bg-[#245CB1]/15 dark:bg-[#5B8FE0]/15 text-[#245CB1] dark:text-[#5B8FE0]'
+    : 'bg-[#245CB1]/10 dark:bg-[#5B8FE0]/10 text-[#245CB1] dark:text-[#5B8FE0]'
 })
 
 async function handleLogout() {
@@ -109,7 +109,7 @@ async function handleLogout() {
       :class="collapsed ? 'justify-center' : 'justify-between'"
     >
       <div v-if="!collapsed" class="flex items-center gap-2 overflow-hidden">
-        <div class="flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-purple-600 text-sm font-bold text-white">
+        <div class="flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-[#245CB1] dark:bg-[#5B8FE0] text-sm font-bold text-white">
           Q
         </div>
         <span class="truncate text-base font-semibold text-gray-900 dark:text-white">
@@ -118,7 +118,7 @@ async function handleLogout() {
       </div>
       <div
         v-else
-        class="flex h-8 w-8 items-center justify-center rounded-md bg-purple-600 text-sm font-bold text-white"
+        class="flex h-8 w-8 items-center justify-center rounded-md bg-[#245CB1] dark:bg-[#5B8FE0] text-sm font-bold text-white"
       >
         Q
       </div>
@@ -162,8 +162,8 @@ async function handleLogout() {
             class="flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium text-gray-600
                    transition-colors hover:bg-gray-100 dark:text-zinc-400 dark:hover:bg-zinc-900"
             :class="collapsed ? 'justify-center' : ''"
-            active-class="!bg-purple-600/10 !text-purple-600 dark:!text-purple-400"
-            exact-active-class="!bg-purple-600/10 !text-purple-600 dark:!text-purple-400"
+            active-class="!bg-[#245CB1]/10 dark:!bg-[#5B8FE0]/10 !text-[#245CB1] dark:!text-[#5B8FE0]"
+            exact-active-class="!bg-[#245CB1]/10 dark:!bg-[#5B8FE0]/10 !text-[#245CB1] dark:!text-[#5B8FE0]"
           >
             <i :class="link.icon" class="shrink-0 text-base" />
             <span v-if="!collapsed" class="truncate">{{ link.label }}</span>
@@ -183,8 +183,8 @@ async function handleLogout() {
             class="flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium text-gray-600
                    transition-colors hover:bg-gray-100 dark:text-zinc-400 dark:hover:bg-zinc-900"
             :class="collapsed ? 'justify-center' : ''"
-            active-class="!bg-purple-600/10 !text-purple-600 dark:!text-purple-400"
-            exact-active-class="!bg-purple-600/10 !text-purple-600 dark:!text-purple-400"
+            active-class="!bg-[#245CB1]/10 dark:!bg-[#5B8FE0]/10 !text-[#245CB1] dark:!text-[#5B8FE0]"
+            exact-active-class="!bg-[#245CB1]/10 dark:!bg-[#5B8FE0]/10 !text-[#245CB1] dark:!text-[#5B8FE0]"
           >
             <i :class="link.icon" class="shrink-0 text-base" />
             <span v-if="!collapsed" class="truncate">{{ link.label }}</span>

@@ -176,7 +176,7 @@ async function signInWithPassword() {
 
       <NuxtLink
         to="/forgot-password"
-        class="mt-4 inline-block text-sm text-purple-600 hover:underline dark:text-purple-400"
+        class="mt-4 inline-block text-sm text-[#245CB1] hover:underline dark:text-[#5B8FE0]"
       >
         Forgot password?
       </NuxtLink>

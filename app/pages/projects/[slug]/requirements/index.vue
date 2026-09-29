@@ -201,13 +201,14 @@ async function archiveRequirement(row: RequirementRow) {
           placeholder="All Modules"
           class="w-48"
           :pt="dropdownPt"
+          panel-class="!bg-white dark:!bg-zinc-900 !text-gray-900 dark:!text-white !border !border-black/10 dark:!border-white/10"
         />
       </template>
 
       <template #cell-req_id="{ data: row }">
         <span
-          class="inline-flex items-center rounded-full border border-purple-200 bg-purple-100 px-2 py-0.5
-                 text-xs font-semibold text-purple-700 dark:border-purple-500/30 dark:bg-purple-500/15 dark:text-purple-300"
+          class="inline-flex items-center rounded-full border border-[#245CB1]/30 bg-[#245CB1]/10 px-2 py-0.5
+                 text-xs font-semibold text-[#245CB1] dark:border-[#5B8FE0]/30 dark:bg-[#5B8FE0]/15 dark:text-[#7FAEEB]"
         >
           {{ reqCode(row.id) }}
         </span>
@@ -268,7 +269,7 @@ async function archiveRequirement(row: RequirementRow) {
           />
           <BaseButton
             label="Archive"
-            variant="danger"
+            variant="dangerOutline"
             size="sm"
             icon="pi pi-inbox"
             @click="archiveRequirement(row)"
@@ -319,6 +320,7 @@ async function archiveRequirement(row: RequirementRow) {
               :options="STATUS_OPTIONS"
               class="w-full"
               :pt="dropdownPt"
+              panel-class="!bg-white dark:!bg-zinc-900 !text-gray-900 dark:!text-white !border !border-black/10 dark:!border-white/10"
             />
           </div>
 

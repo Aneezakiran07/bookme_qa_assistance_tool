@@ -54,6 +54,8 @@
 
   .dark .p-select-overlay,
   .dark .p-multiselect-overlay,
+  .dark .p-select-list-container,
+  .dark .p-multiselect-list-container,
   .dark .p-select-list,
   .dark .p-multiselect-list,
   .dark .p-select-header,
@@ -65,6 +67,12 @@
     border-color: rgb(255 255 255 / 0.1) !important;
   }
 
+  /* the closed select box gets a hover outline in the brand blue so it reads as interactive */
+  .dark .p-select:not(.p-disabled):hover,
+  .dark .p-multiselect:not(.p-disabled):hover {
+    border-color: #5B8FE0 !important;
+  }
+
   .dark .p-select-option:hover,
   .dark .p-multiselect-option:hover {
     background-color: rgb(255 255 255 / 0.08) !important;
@@ -72,13 +80,13 @@
 
   .dark .p-select-option[aria-selected='true'],
   .dark .p-multiselect-option[aria-selected='true'] {
-    background-color: rgb(147 51 234 / 0.15) !important;
-    color: #c084fc !important;
+    background-color: rgb(91 143 224 / 0.15) !important;
+    color: #5B8FE0 !important;
   }
 
   .dark .p-multiselect-chip {
-    background-color: rgb(147 51 234 / 0.15) !important;
-    color: #c084fc !important;
+    background-color: rgb(91 143 224 / 0.15) !important;
+    color: #5B8FE0 !important;
   }
 
   .dark .p-toast-message {

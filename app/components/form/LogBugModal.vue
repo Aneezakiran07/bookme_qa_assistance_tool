@@ -292,13 +292,13 @@ async function save() {
     <div class="space-y-4">
       <div
         v-if="existingBug"
-        class="rounded-md border border-purple-300 bg-purple-50 p-3 text-sm dark:border-purple-500/30 dark:bg-purple-500/10"
+        class="rounded-md border border-[#245CB1]/40 bg-[#245CB1]/5 p-3 text-sm dark:border-[#5B8FE0]/30 dark:bg-[#5B8FE0]/10"
       >
-        <p class="font-medium text-purple-800 dark:text-purple-300">
+        <p class="font-medium text-[#1d4a8f] dark:text-[#7FAEEB]">
           This test case already has an open bug: #{{ existingBug.id }} — {{ existingBug.title }}
           ({{ existingBug.status }})
         </p>
-        <p class="mt-1 text-purple-700 dark:text-purple-400">
+        <p class="mt-1 text-[#245CB1] dark:text-[#5B8FE0]">
           Logging another bug here would create a duplicate ticket for the same defect.
         </p>
         <div class="mt-2 flex flex-wrap gap-2">
@@ -358,6 +358,7 @@ async function save() {
             :options="SEVERITIES"
             class="w-full"
             :pt="dropdownPt"
+            panel-class="!bg-white dark:!bg-zinc-900 !text-gray-900 dark:!text-white !border !border-black/10 dark:!border-white/10"
           />
         </div>
         <div>
@@ -369,6 +370,7 @@ async function save() {
             :options="PRIORITIES"
             class="w-full"
             :pt="dropdownPt"
+            panel-class="!bg-white dark:!bg-zinc-900 !text-gray-900 dark:!text-white !border !border-black/10 dark:!border-white/10"
           />
         </div>
       </div>
@@ -438,7 +440,7 @@ async function save() {
           class="flex cursor-pointer flex-col items-center justify-center gap-2 rounded-lg
                  border-2 border-dashed p-6 text-center transition-colors"
           :class="stagedDragOver
-            ? 'border-purple-500 bg-purple-50 dark:bg-purple-950/20'
+            ? 'border-[#245CB1] dark:border-[#5B8FE0] bg-[#245CB1]/5 dark:bg-[#5B8FE0]/20'
             : 'border-black/15 dark:border-white/15'"
           @click="pickStagedFiles"
           @dragover.prevent="stagedDragOver = true"
@@ -482,7 +484,7 @@ async function save() {
               class="absolute right-1 top-1 flex h-6 w-6 items-center justify-center
                      rounded-full bg-black/70 text-white opacity-0 transition-opacity
                      group-hover:opacity-100 group-focus-within:opacity-100
-                     focus:opacity-100 focus:outline-none focus:ring-2 focus:ring-purple-400
+                     focus:opacity-100 focus:outline-none focus:ring-2 focus:ring-[#245CB1] dark:focus:ring-[#5B8FE0]
                      focus:ring-offset-1"
               aria-label="Remove attachment"
               @click.stop="removeStagedFile(staged.localId)"

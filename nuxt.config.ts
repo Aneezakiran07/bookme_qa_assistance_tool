@@ -1,25 +1,52 @@
 import { definePreset } from '@primeuix/themes'
 import Aura from '@primeuix/themes/aura'
 
-// Modern, cool-toned purple (Linear/Vercel-adjacent, violet/indigo family)
-// replacing Aura's default blue as the primary accent. Only the `primary`
-// semantic ramp is overridden — every PrimeVue component that reads
-// `--p-primary-*` (buttons, focus rings, links, active states) picks this
-// up automatically, in both light and dark mode.
-const PurplePreset = definePreset(Aura, {
+// brand blue preset with an eleven stop primary ramp kept in one hue family
+// the color scheme block below uses the darker anchor stop in light mode and the brighter anchor stop in dark mode so blue stays readable on black
+const BrandPreset = definePreset(Aura, {
   semantic: {
     primary: {
-      50: '#f5f3ff',
-      100: '#ede9fe',
-      200: '#ddd6fe',
-      300: '#c4b5fd',
-      400: '#a78bfa',
-      500: '#8b5cf6',
-      600: '#7c3aed',
-      700: '#6d28d9',
-      800: '#5b21b6',
-      900: '#4c1d95',
-      950: '#2e1065',
+      50: '#eff5fc',
+      100: '#d9e6f7',
+      200: '#b8cfee',
+      300: '#8fb0e3',
+      400: '#5B8FE0',
+      500: '#3a72cd',
+      600: '#245CB1',
+      700: '#1d4a8f',
+      800: '#173a70',
+      900: '#122c54',
+      950: '#0a1a34',
+    },
+    colorScheme: {
+      light: {
+        primary: {
+          color: '{primary.600}',
+          contrastColor: '#ffffff',
+          hoverColor: '{primary.700}',
+          activeColor: '{primary.800}',
+        },
+        highlight: {
+          background: '{primary.50}',
+          focusBackground: '{primary.100}',
+          color: '{primary.700}',
+          focusColor: '{primary.800}',
+        },
+      },
+      dark: {
+        primary: {
+          color: '{primary.400}',
+          contrastColor: '#ffffff',
+          hoverColor: '{primary.300}',
+          activeColor: '{primary.200}',
+        },
+        highlight: {
+          background: 'color-mix(in srgb, {primary.400}, transparent 84%)',
+          focusBackground: 'color-mix(in srgb, {primary.400}, transparent 76%)',
+          color: 'rgba(255,255,255,.87)',
+          focusColor: 'rgba(255,255,255,.87)',
+        },
+      },
     },
   },
 })
@@ -65,7 +92,7 @@ export default defineNuxtConfig({
     },
     options: {
       theme: {
-        preset: PurplePreset,
+        preset: BrandPreset,
         options: {
           darkModeSelector: '.dark',   // keep — matches what color-mode emits
           cssLayer: {

@@ -90,6 +90,7 @@ async function createModule() {
     :invalid="invalid"
     class="w-full"
     :pt="dropdownPt"
+    panel-class="!bg-white dark:!bg-zinc-900 !text-gray-900 dark:!text-white !border !border-black/10 dark:!border-white/10"
     @update:model-value="(v: number) => { $emit('update:modelValue', v); filterText = '' }"
     @filter="(e: { value: string }) => (filterText = e.value)"
     @hide="filterText = ''"

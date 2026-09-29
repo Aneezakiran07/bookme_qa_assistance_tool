@@ -232,8 +232,8 @@ async function selectAvatar(avatarId: string) {
             type="button"
             title="Edit avatar"
             class="absolute -bottom-1 -right-1 flex h-6 w-6 items-center justify-center rounded-full
-                   border-2 border-white bg-purple-600 text-white shadow-sm transition-colors
-                   hover:bg-purple-700 dark:border-black"
+                   border-2 border-white bg-[#245CB1] dark:bg-[#5B8FE0] text-white shadow-sm transition-colors
+                   hover:bg-[#1d4a8f] dark:hover:bg-[#3a72cd] dark:border-black"
             @click="showAvatarModal = true"
           >
             <i class="pi pi-pencil text-[10px]" />
@@ -244,15 +244,15 @@ async function selectAvatar(avatarId: string) {
             {{ displayName.trim() || data?.email }}
           </h2>
           <span
-            class="mt-1 inline-block rounded bg-purple-600/10 px-1.5 py-0.5 text-[11px]
-                   font-medium text-purple-600 dark:text-purple-400"
+            class="mt-1 inline-block rounded bg-[#245CB1]/10 dark:bg-[#5B8FE0]/10 px-1.5 py-0.5 text-[11px]
+                   font-medium text-[#245CB1] dark:text-[#5B8FE0]"
           >
             {{ data?.role }}
           </span>
           <button
             type="button"
-            class="mt-1 block text-xs font-medium text-purple-600 hover:text-purple-700
-                   dark:text-purple-400 dark:hover:text-purple-300"
+            class="mt-1 block text-xs font-medium text-[#245CB1] hover:text-[#1d4a8f]
+                   dark:text-[#5B8FE0] dark:hover:text-[#7FAEEB]"
             @click="showAvatarModal = true"
           >
             Edit Avatar
@@ -315,7 +315,7 @@ async function selectAvatar(avatarId: string) {
             type="button"
             class="rounded px-2.5 py-1 text-xs font-medium transition-colors"
             :class="activeRange === 'day'
-              ? 'bg-purple-600 text-white'
+              ? 'bg-[#245CB1] dark:bg-[#5B8FE0] text-white'
               : 'text-gray-500 hover:text-gray-900 dark:text-zinc-400 dark:hover:text-white'"
             @click="activeRange = 'day'"
           >
@@ -325,7 +325,7 @@ async function selectAvatar(avatarId: string) {
             type="button"
             class="rounded px-2.5 py-1 text-xs font-medium transition-colors"
             :class="activeRange === 'week'
-              ? 'bg-purple-600 text-white'
+              ? 'bg-[#245CB1] dark:bg-[#5B8FE0] text-white'
               : 'text-gray-500 hover:text-gray-900 dark:text-zinc-400 dark:hover:text-white'"
             @click="activeRange = 'week'"
           >
@@ -358,7 +358,7 @@ async function selectAvatar(avatarId: string) {
             >
               <NuxtLink
                 :to="`/projects/${bug.projectSlug}/bugs/${bug.id}`"
-                class="flex items-center justify-between gap-3 rounded-md border border-gray-200 px-3 py-2 transition-colors hover:border-purple-300 hover:bg-purple-50 dark:border-zinc-800 dark:hover:border-purple-500/40 dark:hover:bg-zinc-900"
+                class="flex items-center justify-between gap-3 rounded-md border border-gray-200 px-3 py-2 transition-colors hover:border-[#245CB1]/40 hover:bg-[#245CB1]/5 dark:hover:bg-[#5B8FE0]/10 dark:border-zinc-800 dark:hover:border-[#5B8FE0]/40 dark:hover:bg-zinc-900"
               >
                 <div class="min-w-0">
                   <p class="truncate text-sm text-gray-900 dark:text-white">

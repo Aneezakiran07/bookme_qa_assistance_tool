@@ -10,17 +10,20 @@
 export function useDropdownPt() {
   return {
     root: {
-      class: '!bg-white !border-gray-200 !text-gray-900 dark:!bg-black dark:!border-zinc-700 dark:!text-white',
+      class: '!bg-white !border !border-black/15 !text-gray-900 hover:!border-[#245CB1] dark:!bg-black dark:!border-white/15 dark:!text-white dark:hover:!border-[#5B8FE0]',
     },
     overlay: {
       class: '!bg-white !border !border-gray-200 !text-gray-900 dark:!bg-zinc-900 dark:!border-zinc-700 dark:!text-white',
+    },
+    listContainer: {
+      class: '!bg-white dark:!bg-zinc-900',
     },
     list: {
       class: '!bg-white dark:!bg-zinc-900',
     },
     option: {
       class:
-        '!text-gray-900 dark:!text-white hover:!bg-gray-100 dark:hover:!bg-white/10 aria-selected:!bg-purple-600/10 aria-selected:!text-purple-600 dark:aria-selected:!text-purple-400',
+        '!text-gray-900 dark:!text-white hover:!bg-gray-100 dark:hover:!bg-white/10 aria-selected:!bg-[#245CB1]/10 aria-selected:!text-[#245CB1] dark:aria-selected:!bg-[#5B8FE0]/15 dark:aria-selected:!text-[#5B8FE0]',
     },
     optionGroup: {
       class: '!bg-white !text-gray-500 dark:!bg-zinc-900 dark:!text-zinc-400',
@@ -87,13 +90,13 @@ export function useToastPt() {
     success: '!border-l-emerald-500 dark:!border-l-emerald-500',
     error: '!border-l-red-500 dark:!border-l-red-500',
     warn: '!border-l-amber-500 dark:!border-l-amber-500',
-    info: '!border-l-purple-500 dark:!border-l-purple-500'
+    info: '!border-l-[#245CB1] dark:!border-l-[#5B8FE0]'
   }
   const SEVERITY_ICON: Record<string, string> = {
     success: '!text-emerald-500 dark:!text-emerald-400',
     error: '!text-red-500 dark:!text-red-400',
     warn: '!text-amber-500 dark:!text-amber-400',
-    info: '!text-purple-500 dark:!text-purple-400'
+    info: '!text-[#245CB1] dark:!text-[#5B8FE0]'
   }
 
   return {

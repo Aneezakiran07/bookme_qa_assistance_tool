@@ -166,7 +166,7 @@ async function submitResult(result: 'Pass' | 'Fail' | 'Blocked') {
 const PRIORITY_CLASSES: Record<string, string> = {
   High: 'bg-red-100 text-red-700 border-red-200 dark:bg-red-500/15 dark:text-red-400 dark:border-red-500/30',
   Medium:
-    'bg-purple-100 text-purple-700 border-purple-200 dark:bg-purple-500/15 dark:text-purple-400 dark:border-purple-500/30',
+    'bg-[#245CB1]/10 text-[#245CB1] border-[#245CB1]/30 dark:bg-[#5B8FE0]/15 dark:text-[#5B8FE0] dark:border-[#5B8FE0]/30',
   Low: 'bg-green-100 text-green-700 border-green-200 dark:bg-green-500/15 dark:text-green-400 dark:border-green-500/30'
 }
 
@@ -228,7 +228,7 @@ function statusKey(latest: string | null): string {
         </div>
         <div class="rounded-lg border border-black/10 bg-white p-3 dark:border-white/10 dark:bg-black">
           <p class="text-xs text-gray-500 dark:text-zinc-400">Blocked</p>
-          <p class="mt-1 text-lg font-semibold text-purple-600 dark:text-purple-400">
+          <p class="mt-1 text-lg font-semibold text-[#245CB1] dark:text-[#5B8FE0]">
             {{ stats.blocked }}
           </p>
         </div>
@@ -259,6 +259,7 @@ function statusKey(latest: string | null): string {
             placeholder="All Modules"
             class="w-full"
             :pt="dropdownPt"
+            panel-class="!bg-white dark:!bg-zinc-900 !text-gray-900 dark:!text-white !border !border-black/10 dark:!border-white/10"
           />
         </div>
 
@@ -276,7 +277,7 @@ function statusKey(latest: string | null): string {
                 type="button"
                 class="w-full px-3 py-2.5 text-left transition-colors"
                 :class="selectedTestCaseId === tc.id
-                  ? 'bg-purple-50 dark:bg-purple-500/10'
+                  ? 'bg-[#245CB1]/5 dark:bg-[#5B8FE0]/10'
                   : 'hover:bg-gray-50 dark:hover:bg-white/5'"
                 @click="selectedTestCaseId = tc.id"
               >
@@ -383,7 +384,7 @@ function statusKey(latest: string | null): string {
                 placeholder="Environment, observed behavior, or anything worth capturing with this run..."
                 class="w-full resize-y rounded-md border border-black/10 bg-transparent p-3 text-sm
                        text-gray-900 outline-none placeholder:text-gray-400
-                       focus:border-purple-500 focus:ring-1 focus:ring-purple-500
+                       focus:border-[#245CB1] dark:focus:border-[#5B8FE0] focus:ring-1 focus:ring-[#245CB1] dark:focus:ring-[#5B8FE0]
                        dark:border-white/10 dark:text-white dark:placeholder:text-white/40"
               />
             </div>
@@ -415,9 +416,9 @@ function statusKey(latest: string | null): string {
               </button>
               <button
                 type="button"
-                class="rounded-md border-2 border-purple-500 bg-purple-50 px-4 py-3 text-sm font-semibold
-                       text-purple-700 transition-colors hover:bg-purple-100 disabled:opacity-50
-                       dark:border-purple-500 dark:bg-purple-500/10 dark:text-purple-400 dark:hover:bg-purple-500/20"
+                class="rounded-md border-2 border-[#245CB1] bg-[#245CB1]/5 px-4 py-3 text-sm font-semibold
+                       text-[#245CB1] transition-colors hover:bg-[#245CB1]/10 disabled:opacity-50
+                       dark:border-[#5B8FE0] dark:bg-[#5B8FE0]/10 dark:text-[#5B8FE0] dark:hover:bg-[#5B8FE0]/15"
                 :disabled="submitting"
                 @click="submitResult('Blocked')"
               >

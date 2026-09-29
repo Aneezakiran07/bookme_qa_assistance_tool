@@ -198,8 +198,8 @@ async function deleteModule(row: ModuleRow) {
         <div v-if="row.created_by_email" class="flex items-center gap-2">
           <span
             class="flex h-7 w-7 shrink-0 items-center justify-center rounded-full
-                   bg-purple-100 text-xs font-semibold text-purple-700
-                   dark:bg-purple-500/20 dark:text-purple-300"
+                   bg-[#245CB1]/10 text-xs font-semibold text-[#245CB1]
+                   dark:bg-[#5B8FE0]/15 dark:text-[#7FAEEB]"
           >
             {{ initials(row.created_by_email) }}
           </span>
@@ -244,7 +244,7 @@ async function deleteModule(row: ModuleRow) {
           />
           <BaseButton
             label="Delete"
-            variant="danger"
+            variant="dangerOutline"
             size="sm"
             icon="pi pi-trash"
             @click="deleteModule(row)"

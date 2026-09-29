@@ -47,14 +47,15 @@ const ROLE_SHORT: Record<string, string> = {
     filter
     class="w-full"
     :pt="dropdownPt"
+    panel-class="!bg-white dark:!bg-zinc-900 !text-gray-900 dark:!text-white !border !border-black/10 dark:!border-white/10"
     @update:model-value="(v: number) => $emit('update:modelValue', v)"
   >
     <template #value="{ value }">
       <div v-if="value && users" class="flex items-center gap-2">
         <template v-for="u in users.filter((u) => u.id === value)" :key="u.id">
           <span
-            class="flex h-6 w-6 items-center justify-center rounded-full bg-purple-100
-                   text-xs font-semibold text-purple-700 dark:bg-purple-500/20 dark:text-purple-300"
+            class="flex h-6 w-6 items-center justify-center rounded-full bg-[#245CB1]/10
+                   text-xs font-semibold text-[#245CB1] dark:bg-[#5B8FE0]/15 dark:text-[#7FAEEB]"
           >
             {{ initials(u.email) }}
           </span>
@@ -66,8 +67,8 @@ const ROLE_SHORT: Record<string, string> = {
     <template #option="{ option }">
       <div class="flex w-full items-center gap-2">
         <span
-          class="flex h-6 w-6 items-center justify-center rounded-full bg-purple-100
-                 text-xs font-semibold text-purple-700 dark:bg-purple-500/20 dark:text-purple-300"
+          class="flex h-6 w-6 items-center justify-center rounded-full bg-[#245CB1]/10
+                 text-xs font-semibold text-[#245CB1] dark:bg-[#5B8FE0]/15 dark:text-[#7FAEEB]"
         >
           {{ initials(option.email) }}
         </span>

@@ -168,9 +168,9 @@ async function handleDelete(row: ReleaseRow) {
       <template #cell-version="{ data: row }">
         <NuxtLink
           :to="projectPath(`/releases/${row.id}`)"
-          class="inline-flex items-center rounded-full border border-purple-200 bg-purple-100 px-2.5 py-0.5
-                 text-xs font-semibold text-purple-700 hover:bg-purple-200
-                 dark:border-purple-500/30 dark:bg-purple-500/15 dark:text-purple-300 dark:hover:bg-purple-500/25"
+          class="inline-flex items-center rounded-full border border-[#245CB1]/30 bg-[#245CB1]/10 px-2.5 py-0.5
+                 text-xs font-semibold text-[#245CB1] hover:bg-[#245CB1]/20
+                 dark:border-[#5B8FE0]/30 dark:bg-[#5B8FE0]/15 dark:text-[#7FAEEB] dark:hover:bg-[#5B8FE0]/25"
         >
           {{ row.version }}
         </NuxtLink>
@@ -202,7 +202,7 @@ async function handleDelete(row: ReleaseRow) {
           class="text-sm font-medium"
           :class="{
             'text-green-600 dark:text-green-400': row.pass_rate >= 80,
-            'text-purple-600 dark:text-purple-400': row.pass_rate >= 50 && row.pass_rate < 80,
+            'text-[#245CB1] dark:text-[#5B8FE0]': row.pass_rate >= 50 && row.pass_rate < 80,
             'text-red-600 dark:text-red-400': row.pass_rate < 50
           }"
         >
@@ -239,7 +239,7 @@ async function handleDelete(row: ReleaseRow) {
           />
           <BaseButton
             v-if="!isReadOnly"
-            variant="danger"
+            variant="dangerOutline"
             size="sm"
             icon="pi pi-trash"
             :loading="deletingId === row.id"
@@ -275,7 +275,7 @@ async function handleDelete(row: ReleaseRow) {
             type="date"
             class="w-full rounded-md border border-black/10 bg-transparent px-3 py-2 text-sm
                    text-gray-900 outline-none transition-colors
-                   focus:border-purple-500 focus:ring-1 focus:ring-purple-500
+                   focus:border-[#245CB1] dark:focus:border-[#5B8FE0] focus:ring-1 focus:ring-[#245CB1] dark:focus:ring-[#5B8FE0]
                    dark:border-white/10 dark:text-white dark:[color-scheme:dark]"
           />
         </div>

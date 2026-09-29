@@ -298,8 +298,8 @@ async function deactivate(user: ActiveUserRow) {
           <div class="flex items-center gap-3">
             <span
               class="flex h-8 w-8 shrink-0 items-center justify-center rounded-full
-                     bg-purple-100 text-xs font-semibold text-purple-700
-                     dark:bg-purple-500/20 dark:text-purple-300"
+                     bg-[#245CB1]/10 text-xs font-semibold text-[#245CB1]
+                     dark:bg-[#5B8FE0]/15 dark:text-[#7FAEEB]"
             >
               {{ initials(row.email) }}
             </span>
@@ -308,7 +308,7 @@ async function deactivate(user: ActiveUserRow) {
                 {{ displayName(row.email) }}
                 <span
                   v-if="row.id === sessionUser?.id"
-                  class="shrink-0 rounded-full bg-purple-100 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-purple-700 dark:bg-purple-500/15 dark:text-purple-400"
+                  class="shrink-0 rounded-full bg-[#245CB1]/10 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-[#245CB1] dark:bg-[#5B8FE0]/15 dark:text-[#5B8FE0]"
                 >
                   You
                 </span>
@@ -327,6 +327,7 @@ async function deactivate(user: ActiveUserRow) {
             class="w-40"
             size="small"
             :pt="dropdownPt"
+            panel-class="!bg-white dark:!bg-zinc-900 !text-gray-900 dark:!text-white !border !border-black/10 dark:!border-white/10"
             :disabled="changingRoleId === row.id"
             @update:model-value="(role: string) => changeRole(row, role)"
           />
@@ -341,7 +342,7 @@ async function deactivate(user: ActiveUserRow) {
         <template #actions="{ data: row }">
           <BaseButton
             label="Deactivate"
-            variant="danger"
+            variant="dangerOutline"
             size="sm"
             icon="pi pi-ban"
             @click="deactivate(row)"
@@ -375,8 +376,8 @@ async function deactivate(user: ActiveUserRow) {
 
         <template #cell-role="{ data: row }">
           <span
-            class="rounded-full bg-purple-600/10 px-2.5 py-1 text-xs font-medium
-                   text-purple-600 dark:text-purple-400"
+            class="rounded-full bg-[#245CB1]/10 dark:bg-[#5B8FE0]/10 px-2.5 py-1 text-xs font-medium
+                   text-[#245CB1] dark:text-[#5B8FE0]"
           >
             {{ row.role }}
           </span>
@@ -397,7 +398,7 @@ async function deactivate(user: ActiveUserRow) {
         <template #actions="{ data: row }">
           <BaseButton
             label="Revoke"
-            variant="outline"
+            variant="dangerOutline"
             size="sm"
             icon="pi pi-times"
             @click="revokeInvite(row)"
@@ -425,6 +426,7 @@ async function deactivate(user: ActiveUserRow) {
             :options="ASSIGNABLE_ROLES"
             class="w-full"
             :pt="dropdownPt"
+            panel-class="!bg-white dark:!bg-zinc-900 !text-gray-900 dark:!text-white !border !border-black/10 dark:!border-white/10"
           />
         </div>
       </div>

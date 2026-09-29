@@ -79,7 +79,7 @@ const previewHtml = computed(() =>
       <button
         type="button"
         class="toolbar-btn ml-auto"
-        :class="{ '!text-purple-600 dark:!text-purple-400': showPreview }"
+        :class="{ '!text-[#245CB1] dark:!text-[#5B8FE0]': showPreview }"
         title="Toggle preview"
         @click="showPreview = !showPreview"
       >
@@ -95,7 +95,7 @@ const previewHtml = computed(() =>
       :rows="rows"
       class="w-full resize-y border-0 bg-transparent p-3 text-sm text-gray-900
              placeholder:text-gray-400 dark:text-white dark:placeholder:text-white/40
-             focus:outline-none focus:ring-2 focus:ring-inset focus:ring-purple-400"
+             focus:outline-none focus:ring-2 focus:ring-inset focus:ring-[#245CB1] dark:focus:ring-[#5B8FE0]"
       @input="$emit('update:modelValue', ($event.target as HTMLTextAreaElement).value)"
     />
     <div
@@ -110,6 +110,6 @@ const previewHtml = computed(() =>
 .toolbar-btn {
   @apply flex h-7 w-7 items-center justify-center rounded text-gray-500
     hover:bg-gray-100 dark:text-white/60 dark:hover:bg-white/10
-    focus:outline-none focus-visible:ring-2 focus-visible:ring-purple-400;
+    focus:outline-none focus-visible:ring-2 focus-visible:ring-[#245CB1] dark:focus-visible:ring-[#5B8FE0];
 }
 </style>

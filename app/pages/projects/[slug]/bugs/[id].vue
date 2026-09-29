@@ -100,13 +100,13 @@ const statusHistory = computed(() => data.value?.statusHistory ?? [])
 const SEVERITY_CLASSES: Record<string, string> = {
   Critical: 'bg-red-100 text-red-700 border-red-200 dark:bg-red-500/15 dark:text-red-400 dark:border-red-500/30',
   High: 'bg-[#f3e6d8] text-[#7a5233] border-[#e2c9ab] dark:bg-[#a9784f]/15 dark:text-[#cfa77d] dark:border-[#a9784f]/30',
-  Medium: 'bg-purple-100 text-purple-700 border-purple-200 dark:bg-purple-500/15 dark:text-purple-400 dark:border-purple-500/30',
+  Medium: 'bg-[#245CB1]/10 text-[#245CB1] border-[#245CB1]/30 dark:bg-[#5B8FE0]/15 dark:text-[#5B8FE0] dark:border-[#5B8FE0]/30',
   Low: 'bg-blue-100 text-blue-700 border-blue-200 dark:bg-blue-500/15 dark:text-blue-400 dark:border-blue-500/30'
 }
 
 const PRIORITY_CLASSES: Record<string, string> = {
   High: 'bg-red-100 text-red-700 border-red-200 dark:bg-red-500/15 dark:text-red-400 dark:border-red-500/30',
-  Medium: 'bg-purple-100 text-purple-700 border-purple-200 dark:bg-purple-500/15 dark:text-purple-400 dark:border-purple-500/30',
+  Medium: 'bg-[#245CB1]/10 text-[#245CB1] border-[#245CB1]/30 dark:bg-[#5B8FE0]/15 dark:text-[#5B8FE0] dark:border-[#5B8FE0]/30',
   Low: 'bg-green-100 text-green-700 border-green-200 dark:bg-green-500/15 dark:text-green-400 dark:border-green-500/30'
 }
 
@@ -337,7 +337,7 @@ const timelineEntries = computed(() => {
   const statusEntries = statusHistory.value.map((h) => ({
     id: `status-${h.id}`,
     icon: 'pi pi-sync',
-    iconClass: 'text-purple-600 dark:text-purple-400',
+    iconClass: 'text-[#245CB1] dark:text-[#5B8FE0]',
     title: h.old_status ? `${h.old_status} \u2192 ${h.new_status}` : `Reported as ${h.new_status}`,
     detail: h.changed_by_email ? `by ${h.changed_by_email}` : undefined,
     timestamp: h.changed_at
@@ -393,6 +393,7 @@ const timelineEntries = computed(() => {
               :disabled="isReadOnly || changingStatus"
               class="w-44"
               :pt="dropdownPt"
+              panel-class="!bg-white dark:!bg-zinc-900 !text-gray-900 dark:!text-white !border !border-black/10 dark:!border-white/10"
               @update:model-value="moveToStatus"
             >
               <template #value="{ value }">
@@ -436,9 +437,9 @@ const timelineEntries = computed(() => {
           <div class="mt-3 flex flex-wrap items-center gap-2">
             <span
               v-if="bug.release_version"
-              class="inline-flex items-center rounded-full border border-purple-200 bg-purple-100 px-2.5 py-0.5
-                     text-xs font-semibold text-purple-700
-                     dark:border-purple-500/30 dark:bg-purple-500/15 dark:text-purple-300"
+              class="inline-flex items-center rounded-full border border-[#245CB1]/30 bg-[#245CB1]/10 px-2.5 py-0.5
+                     text-xs font-semibold text-[#245CB1]
+                     dark:border-[#5B8FE0]/30 dark:bg-[#5B8FE0]/15 dark:text-[#7FAEEB]"
             >
               Release {{ bug.release_version }}
             </span>
@@ -663,7 +664,7 @@ const timelineEntries = computed(() => {
             <button
               v-if="(isDeveloper || user?.role === 'Admin') && !isReadOnly && !editingDevNotes"
               type="button"
-              class="text-xs font-medium text-purple-600 hover:underline dark:text-purple-400"
+              class="text-xs font-medium text-[#245CB1] hover:underline dark:text-[#5B8FE0]"
               @click="startEditDevNotes"
             >
               Edit
@@ -679,7 +680,7 @@ const timelineEntries = computed(() => {
               placeholder="Implementation notes, environment quirks, or why this status decision was made..."
               class="w-full resize-y rounded-md border border-black/10 bg-transparent p-3 text-sm
                      text-gray-900 outline-none placeholder:text-gray-400
-                     focus:border-purple-500 focus:ring-1 focus:ring-purple-500
+                     focus:border-[#245CB1] dark:focus:border-[#5B8FE0] focus:ring-1 focus:ring-[#245CB1] dark:focus:ring-[#5B8FE0]
                      dark:border-white/10 dark:text-white dark:placeholder:text-white/40"
             />
             <div class="flex justify-end gap-2">
@@ -693,7 +694,7 @@ const timelineEntries = computed(() => {
               <button
                 type="button"
                 :disabled="savingDevNotes"
-                class="rounded-md bg-purple-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-purple-700 disabled:opacity-50"
+                class="rounded-md bg-[#245CB1] dark:bg-[#5B8FE0] px-3 py-1.5 text-xs font-medium text-white hover:bg-[#1d4a8f] dark:hover:bg-[#3a72cd] disabled:opacity-50"
                 @click="saveDevNotes"
               >
                 Save
@@ -729,7 +730,7 @@ const timelineEntries = computed(() => {
         <div v-if="!isReadOnly" class="rounded-lg border border-black/10 bg-white p-5 dark:border-white/10 dark:bg-black">
           <BaseButton
             label="Archive Bug"
-            variant="danger"
+            variant="dangerOutline"
             icon="pi pi-trash"
             block
             @click="archiveBug"

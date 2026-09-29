@@ -66,7 +66,7 @@ onUnmounted(() => window.removeEventListener('keydown', onKeydown))
         aria-label="Close preview"
         class="absolute right-4 top-4 flex h-10 w-10 items-center justify-center rounded-full
                bg-white/10 text-white transition-colors hover:bg-white/20
-               focus:outline-none focus:ring-2 focus:ring-purple-400"
+               focus:outline-none focus:ring-2 focus:ring-[#245CB1] dark:focus:ring-[#5B8FE0]"
         @click="close"
       >
         <i class="pi pi-times text-lg" />
@@ -78,7 +78,7 @@ onUnmounted(() => window.removeEventListener('keydown', onKeydown))
         aria-label="Previous attachment"
         class="absolute left-2 top-1/2 flex h-11 w-11 -translate-y-1/2 items-center justify-center
                rounded-full bg-white/10 text-white transition-colors hover:bg-white/20
-               focus:outline-none focus:ring-2 focus:ring-purple-400 sm:left-4"
+               focus:outline-none focus:ring-2 focus:ring-[#245CB1] dark:focus:ring-[#5B8FE0] sm:left-4"
         @click.stop="goPrev"
       >
         <i class="pi pi-chevron-left text-lg" />
@@ -90,7 +90,7 @@ onUnmounted(() => window.removeEventListener('keydown', onKeydown))
         aria-label="Next attachment"
         class="absolute right-2 top-1/2 flex h-11 w-11 -translate-y-1/2 items-center justify-center
                rounded-full bg-white/10 text-white transition-colors hover:bg-white/20
-               focus:outline-none focus:ring-2 focus:ring-purple-400 sm:right-4"
+               focus:outline-none focus:ring-2 focus:ring-[#245CB1] dark:focus:ring-[#5B8FE0] sm:right-4"
         @click.stop="goNext"
       >
         <i class="pi pi-chevron-right text-lg" />

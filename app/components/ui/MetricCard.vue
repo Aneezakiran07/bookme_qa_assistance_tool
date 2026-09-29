@@ -28,7 +28,7 @@ const trendDirection = computed(() => {
   >
     <div class="flex items-start justify-between">
       <p class="text-sm font-medium text-gray-500 dark:text-white/60">{{ label }}</p>
-      <i v-if="icon" :class="icon" class="text-lg text-purple-600 dark:text-purple-400" />
+      <i v-if="icon" :class="icon" class="text-lg text-[#245CB1] dark:text-[#5B8FE0]" />
     </div>
 
     <p class="mt-2 text-3xl font-semibold text-gray-900 dark:text-white">

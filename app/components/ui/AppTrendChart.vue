@@ -65,7 +65,7 @@ const selectedPoint = computed(() =>
     <div class="mb-3 flex items-center gap-4 text-xs text-gray-500 dark:text-zinc-400">
       <span class="flex items-center gap-1.5"><span class="h-2 w-2 rounded-full bg-emerald-500" /> Pass</span>
       <span class="flex items-center gap-1.5"><span class="h-2 w-2 rounded-full bg-red-500" /> Fail</span>
-      <span class="flex items-center gap-1.5"><span class="h-2 w-2 rounded-full bg-purple-500" /> Blocked</span>
+      <span class="flex items-center gap-1.5"><span class="h-2 w-2 rounded-full bg-[#245CB1] dark:bg-[#5B8FE0]" /> Blocked</span>
     </div>
 
     <div v-if="!hasData" class="flex h-40 items-center justify-center text-sm text-gray-400 dark:text-zinc-500">
@@ -82,7 +82,7 @@ const selectedPoint = computed(() =>
                      transition-[outline-color] focus:outline-none dark:bg-white/5"
               :class="
                 selectedIndex === index
-                  ? 'outline outline-2 outline-offset-1 outline-purple-500'
+                  ? 'outline outline-2 outline-offset-1 outline-[#245CB1] dark:outline-[#5B8FE0]'
                   : 'outline outline-2 outline-offset-1 outline-transparent'
               "
               :title="`${formatDay(point.day)}: ${point.pass} pass, ${point.fail} fail, ${point.blocked} blocked`"
@@ -91,7 +91,7 @@ const selectedPoint = computed(() =>
             >
               <div class="w-full bg-emerald-500" :style="{ height: segmentHeight(point.pass) }" />
               <div class="w-full bg-red-500" :style="{ height: segmentHeight(point.fail) }" />
-              <div class="w-full bg-purple-500" :style="{ height: segmentHeight(point.blocked) }" />
+              <div class="w-full bg-[#245CB1] dark:bg-[#5B8FE0]" :style="{ height: segmentHeight(point.blocked) }" />
             </button>
             <span class="whitespace-nowrap text-[10px] text-gray-400 dark:text-zinc-500">
               {{ formatDay(point.day) }}
@@ -108,7 +108,7 @@ const selectedPoint = computed(() =>
         <span class="font-medium text-gray-900 dark:text-white">{{ formatDay(selectedPoint.day) }}</span>
         <span class="flex items-center gap-1.5"><span class="h-2 w-2 rounded-full bg-emerald-500" /> {{ selectedPoint.pass }} pass</span>
         <span class="flex items-center gap-1.5"><span class="h-2 w-2 rounded-full bg-red-500" /> {{ selectedPoint.fail }} fail</span>
-        <span class="flex items-center gap-1.5"><span class="h-2 w-2 rounded-full bg-purple-500" /> {{ selectedPoint.blocked }} blocked</span>
+        <span class="flex items-center gap-1.5"><span class="h-2 w-2 rounded-full bg-[#245CB1] dark:bg-[#5B8FE0]" /> {{ selectedPoint.blocked }} blocked</span>
         <button
           type="button"
           class="ml-auto text-gray-400 hover:text-gray-600 dark:text-zinc-500 dark:hover:text-zinc-300"

@@ -118,7 +118,7 @@ async function acceptWithGoogle() {
         <p class="mb-6 text-sm text-gray-600 dark:text-white/60">
           This invite link is invalid, expired, or has already been used. If you already set your password, just log in.
         </p>
-        <NuxtLink to="/login" class="text-sm text-purple-600 hover:underline dark:text-purple-400">
+        <NuxtLink to="/login" class="text-sm text-[#245CB1] hover:underline dark:text-[#5B8FE0]">
           Back to login
         </NuxtLink>
       </template>
@@ -131,7 +131,7 @@ async function acceptWithGoogle() {
           Your account has been created for {{ invite?.email }}. You can now log in with the
           password you just set.
         </p>
-        <NuxtLink to="/login" class="text-sm text-purple-600 hover:underline dark:text-purple-400">
+        <NuxtLink to="/login" class="text-sm text-[#245CB1] hover:underline dark:text-[#5B8FE0]">
           Go to login
         </NuxtLink>
       </template>
@@ -156,7 +156,7 @@ async function acceptWithGoogle() {
         />
 
         <p class="mt-4">
-          <NuxtLink to="/login" class="text-sm text-purple-600 hover:underline dark:text-purple-400">
+          <NuxtLink to="/login" class="text-sm text-[#245CB1] hover:underline dark:text-[#5B8FE0]">
             Back to login
           </NuxtLink>
         </p>

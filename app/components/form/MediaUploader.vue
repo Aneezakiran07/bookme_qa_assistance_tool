@@ -130,7 +130,7 @@ function onDrop(event: DragEvent) {
       class="flex cursor-pointer flex-col items-center justify-center gap-2 rounded-lg
              border-2 border-dashed p-6 text-center transition-colors"
       :class="dragOver
-        ? 'border-purple-500 bg-purple-50 dark:bg-purple-950/20'
+        ? 'border-[#245CB1] dark:border-[#5B8FE0] bg-[#245CB1]/5 dark:bg-[#5B8FE0]/20'
         : 'border-black/15 dark:border-white/15'"
       @click="pickFiles"
       @dragover.prevent="dragOver = true"
@@ -185,7 +185,7 @@ function onDrop(event: DragEvent) {
           class="absolute right-1 top-1 flex h-6 w-6 items-center justify-center
                  rounded-full bg-black/70 text-white opacity-0 transition-opacity
                  group-hover:opacity-100 group-focus-within:opacity-100
-                 focus:opacity-100 focus:outline-none focus:ring-2 focus:ring-purple-400
+                 focus:opacity-100 focus:outline-none focus:ring-2 focus:ring-[#245CB1] dark:focus:ring-[#5B8FE0]
                  focus:ring-offset-1"
           aria-label="Remove attachment"
           @click.stop="removeAttachment(attachment.id)"

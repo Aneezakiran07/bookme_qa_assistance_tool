@@ -128,7 +128,7 @@ function reqCode(id: number) {
 const PRIORITY_CLASSES: Record<string, string> = {
   High: 'bg-red-100 text-red-700 border-red-200 dark:bg-red-500/15 dark:text-red-400 dark:border-red-500/30',
   Medium:
-    'bg-purple-100 text-purple-700 border-purple-200 dark:bg-purple-500/15 dark:text-purple-400 dark:border-purple-500/30',
+    'bg-[#245CB1]/10 text-[#245CB1] border-[#245CB1]/30 dark:bg-[#5B8FE0]/15 dark:text-[#5B8FE0] dark:border-[#5B8FE0]/30',
   Low: 'bg-green-100 text-green-700 border-green-200 dark:bg-green-500/15 dark:text-green-400 dark:border-green-500/30'
 }
 
@@ -352,6 +352,7 @@ async function deleteTestCase(row: TestCaseRow) {
           placeholder="All Modules"
           class="w-44"
           :pt="dropdownPt"
+          panel-class="!bg-white dark:!bg-zinc-900 !text-gray-900 dark:!text-white !border !border-black/10 dark:!border-white/10"
         />
         <Select
           v-model="selectedPriority"
@@ -361,6 +362,7 @@ async function deleteTestCase(row: TestCaseRow) {
           placeholder="All Priorities"
           class="w-40"
           :pt="dropdownPt"
+          panel-class="!bg-white dark:!bg-zinc-900 !text-gray-900 dark:!text-white !border !border-black/10 dark:!border-white/10"
         />
         <Select
           v-model="selectedType"
@@ -370,6 +372,7 @@ async function deleteTestCase(row: TestCaseRow) {
           placeholder="All Types"
           class="w-36"
           :pt="dropdownPt"
+          panel-class="!bg-white dark:!bg-zinc-900 !text-gray-900 dark:!text-white !border !border-black/10 dark:!border-white/10"
         />
         <Select
           v-model="selectedReleaseId"
@@ -379,13 +382,14 @@ async function deleteTestCase(row: TestCaseRow) {
           placeholder="All Versions"
           class="w-44"
           :pt="dropdownPt"
+          panel-class="!bg-white dark:!bg-zinc-900 !text-gray-900 dark:!text-white !border !border-black/10 dark:!border-white/10"
         />
       </template>
 
       <template #cell-tc_id="{ data: row }">
         <span
-          class="inline-flex items-center rounded-full border border-purple-200 bg-purple-100 px-2 py-0.5
-                 text-xs font-semibold text-purple-700 dark:border-purple-500/30 dark:bg-purple-500/15 dark:text-purple-300"
+          class="inline-flex items-center rounded-full border border-[#245CB1]/30 bg-[#245CB1]/10 px-2 py-0.5
+                 text-xs font-semibold text-[#245CB1] dark:border-[#5B8FE0]/30 dark:bg-[#5B8FE0]/15 dark:text-[#7FAEEB]"
         >
           {{ tcCode(row.id) }}
         </span>
@@ -450,8 +454,8 @@ async function deleteTestCase(row: TestCaseRow) {
         <button
           v-if="row.linked_release_ids.length > 0"
           type="button"
-          class="inline-flex items-center rounded-full bg-purple-100 px-2 py-0.5 text-xs font-semibold text-purple-700
-                 transition-colors hover:bg-purple-200 dark:bg-purple-500/15 dark:text-purple-300 dark:hover:bg-purple-500/25"
+          class="inline-flex items-center rounded-full bg-[#245CB1]/10 px-2 py-0.5 text-xs font-semibold text-[#245CB1]
+                 transition-colors hover:bg-[#245CB1]/20 dark:bg-[#5B8FE0]/15 dark:text-[#7FAEEB] dark:hover:bg-[#5B8FE0]/25"
           @click="toggleLinkedReleasesPopover($event, row)"
         >
           {{ row.linked_release_ids.length }} version{{ row.linked_release_ids.length === 1 ? '' : 's' }}
@@ -470,7 +474,7 @@ async function deleteTestCase(row: TestCaseRow) {
             :loading="duplicatingId === row.id"
             @click="duplicateTestCase(row)"
           />
-          <BaseButton variant="danger" size="sm" icon="pi pi-trash" label="Delete" @click="deleteTestCase(row)" />
+          <BaseButton variant="dangerOutline" size="sm" icon="pi pi-trash" label="Delete" @click="deleteTestCase(row)" />
         </div>
       </template>
     </AppDataTable>
@@ -489,8 +493,8 @@ async function deleteTestCase(row: TestCaseRow) {
         <ul v-if="activePopoverIds.length" class="space-y-1">
           <li v-for="reqId in activePopoverIds" :key="reqId" class="flex items-center gap-2 text-xs">
             <span
-              class="inline-flex items-center rounded-full border border-purple-200 bg-purple-100 px-1.5 py-0.5
-                     font-semibold text-purple-700 dark:border-purple-500/30 dark:bg-purple-500/15 dark:text-purple-300"
+              class="inline-flex items-center rounded-full border border-[#245CB1]/30 bg-[#245CB1]/10 px-1.5 py-0.5
+                     font-semibold text-[#245CB1] dark:border-[#5B8FE0]/30 dark:bg-[#5B8FE0]/15 dark:text-[#7FAEEB]"
             >
               {{ reqCode(reqId) }}
             </span>
@@ -515,8 +519,8 @@ async function deleteTestCase(row: TestCaseRow) {
         <ul v-if="activeReleasePopoverIds.length" class="space-y-1">
           <li v-for="releaseId in activeReleasePopoverIds" :key="releaseId" class="flex items-center gap-2 text-xs">
             <span
-              class="inline-flex items-center rounded-full border border-purple-200 bg-purple-100 px-1.5 py-0.5
-                     font-semibold text-purple-700 dark:border-purple-500/30 dark:bg-purple-500/15 dark:text-purple-300"
+              class="inline-flex items-center rounded-full border border-[#245CB1]/30 bg-[#245CB1]/10 px-1.5 py-0.5
+                     font-semibold text-[#245CB1] dark:border-[#5B8FE0]/30 dark:bg-[#5B8FE0]/15 dark:text-[#7FAEEB]"
             >
               {{ releaseVersion(releaseId) }}
             </span>
@@ -573,6 +577,7 @@ async function deleteTestCase(row: TestCaseRow) {
             :disabled="!form.moduleId"
             class="w-full"
             :pt="dropdownPt"
+            panel-class="!bg-white dark:!bg-zinc-900 !text-gray-900 dark:!text-white !border !border-black/10 dark:!border-white/10"
           />
           <p v-if="form.moduleId && !modalRequirementOptions.length" class="mt-1 text-xs text-gray-400 dark:text-zinc-500">
             No active requirements exist for this module yet.
@@ -593,6 +598,7 @@ async function deleteTestCase(row: TestCaseRow) {
             placeholder="Select releases..."
             class="w-full"
             :pt="dropdownPt"
+            panel-class="!bg-white dark:!bg-zinc-900 !text-gray-900 dark:!text-white !border !border-black/10 dark:!border-white/10"
           />
           <p v-if="!releaseOptions.length" class="mt-1 text-xs text-gray-400 dark:text-zinc-500">
             No releases exist yet. Create one from Test Executions &amp; Releases first.
@@ -612,6 +618,7 @@ async function deleteTestCase(row: TestCaseRow) {
               :options="PRIORITY_OPTIONS"
               class="w-full"
               :pt="dropdownPt"
+              panel-class="!bg-white dark:!bg-zinc-900 !text-gray-900 dark:!text-white !border !border-black/10 dark:!border-white/10"
             />
           </div>
 
@@ -624,6 +631,7 @@ async function deleteTestCase(row: TestCaseRow) {
               :options="TYPE_OPTIONS"
               class="w-full"
               :pt="dropdownPt"
+              panel-class="!bg-white dark:!bg-zinc-900 !text-gray-900 dark:!text-white !border !border-black/10 dark:!border-white/10"
             />
           </div>
         </div>

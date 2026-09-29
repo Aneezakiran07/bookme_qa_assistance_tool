@@ -129,7 +129,7 @@ const automationCoveragePct = computed(() =>
 const TREND_DONUT_CLASSES: Record<string, { stroke: string; dot: string }> = {
   Pass: { stroke: 'stroke-emerald-500', dot: 'bg-emerald-500' },
   Fail: { stroke: 'stroke-red-500', dot: 'bg-red-500' },
-  Blocked: { stroke: 'stroke-purple-500', dot: 'bg-purple-500' }
+  Blocked: { stroke: 'stroke-[#245CB1] dark:stroke-[#5B8FE0]', dot: 'bg-[#245CB1] dark:bg-[#5B8FE0]' }
 }
 const trendSegments = computed(() => {
   const totals = trend.value.reduce(
@@ -151,7 +151,7 @@ const trendSegments = computed(() => {
 const SEVERITY_DONUT_CLASSES: Record<string, { stroke: string; dot: string }> = {
   Critical: { stroke: 'stroke-red-500', dot: 'bg-red-500' },
   High: { stroke: 'stroke-[#a9784f]', dot: 'bg-[#a9784f]' },
-  Medium: { stroke: 'stroke-purple-500', dot: 'bg-purple-500' },
+  Medium: { stroke: 'stroke-[#245CB1] dark:stroke-[#5B8FE0]', dot: 'bg-[#245CB1] dark:bg-[#5B8FE0]' },
   Low: { stroke: 'stroke-blue-500', dot: 'bg-blue-500' }
 }
 const severitySegments = computed(() => {
@@ -166,7 +166,7 @@ const severitySegments = computed(() => {
 
 const STATUS_BAR_CLASSES: Record<string, { bar: string; dot: string }> = {
   Open: { bar: 'bg-blue-500', dot: 'bg-blue-500' },
-  'In Progress': { bar: 'bg-purple-500', dot: 'bg-purple-500' },
+  'In Progress': { bar: 'bg-[#245CB1] dark:bg-[#5B8FE0]', dot: 'bg-[#245CB1] dark:bg-[#5B8FE0]' },
   Retest: { bar: 'bg-indigo-500', dot: 'bg-indigo-500' }
 }
 const statusSegments = computed(() => {
@@ -182,7 +182,7 @@ const statusSegments = computed(() => {
 const REQ_STATUS_CLASSES: Record<string, { bar: string; dot: string }> = {
   Draft: { bar: 'bg-gray-400', dot: 'bg-gray-400' },
   Approved: { bar: 'bg-sky-500', dot: 'bg-sky-500' },
-  'In Testing': { bar: 'bg-purple-500', dot: 'bg-purple-500' },
+  'In Testing': { bar: 'bg-[#245CB1] dark:bg-[#5B8FE0]', dot: 'bg-[#245CB1] dark:bg-[#5B8FE0]' },
   Done: { bar: 'bg-emerald-500', dot: 'bg-emerald-500' }
 }
 const requirementsSegments = computed(() => {
@@ -249,7 +249,7 @@ function executionStatusKey(result: string): string {
           :key="option.value"
           :label="option.label"
           size="sm"
-          :variant="selectedRange === option.value ? 'primary' : 'outline'"
+          :variant="selectedRange === option.value ? 'soft' : 'secondary'"
           @click="selectedRange = option.value"
         />
       </div>
@@ -264,6 +264,7 @@ function executionStatusKey(result: string): string {
         placeholder="All Modules"
         class="w-44"
         :pt="dropdownPt"
+        panel-class="!bg-white dark:!bg-zinc-900 !text-gray-900 dark:!text-white !border !border-black/10 dark:!border-white/10"
       />
 
       <Select
@@ -274,6 +275,7 @@ function executionStatusKey(result: string): string {
         placeholder="All Releases"
         class="w-44"
         :pt="dropdownPt"
+        panel-class="!bg-white dark:!bg-zinc-900 !text-gray-900 dark:!text-white !border !border-black/10 dark:!border-white/10"
       />
     </div>
 
@@ -290,7 +292,7 @@ function executionStatusKey(result: string): string {
       <div class="rounded-lg border border-black/10 bg-white p-5 dark:border-white/10 dark:bg-black">
         <div class="flex items-start justify-between">
           <p class="text-sm font-medium text-gray-500 dark:text-white/60">Execution Pass Rate</p>
-          <i class="pi pi-chart-line text-lg text-purple-600 dark:text-purple-400" />
+          <i class="pi pi-chart-line text-lg text-[#245CB1] dark:text-[#5B8FE0]" />
         </div>
         <p class="mt-2 text-3xl font-semibold text-gray-900 dark:text-white">{{ passRate.pass_rate }}%</p>
         <AppProgressBar
@@ -329,7 +331,7 @@ function executionStatusKey(result: string): string {
           </p>
           <i
             class="pi pi-exclamation-triangle text-lg"
-            :class="snapshot.open_critical_high > 0 ? 'text-red-600 dark:text-red-400' : 'text-purple-600 dark:text-purple-400'"
+            :class="snapshot.open_critical_high > 0 ? 'text-red-600 dark:text-red-400' : 'text-[#245CB1] dark:text-[#5B8FE0]'"
           />
         </div>
         <p
@@ -423,8 +425,8 @@ function executionStatusKey(result: string): string {
         >
           <div class="flex min-w-0 items-center gap-2.5">
             <span
-              class="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-purple-100 text-xs font-semibold
-                     text-purple-700 dark:bg-purple-500/20 dark:text-purple-300"
+              class="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[#245CB1]/10 text-xs font-semibold
+                     text-[#245CB1] dark:bg-[#5B8FE0]/15 dark:text-[#7FAEEB]"
             >
               {{ initials(run.executed_by_email) }}
             </span>

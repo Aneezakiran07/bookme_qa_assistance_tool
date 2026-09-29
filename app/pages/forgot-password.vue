@@ -41,7 +41,7 @@ async function submit() {
         </p>
         <NuxtLink
           to="/login"
-          class="mt-4 inline-block text-sm text-purple-600 hover:underline dark:text-purple-400"
+          class="mt-4 inline-block text-sm text-[#245CB1] hover:underline dark:text-[#5B8FE0]"
         >
           Back to login
         </NuxtLink>
@@ -74,7 +74,7 @@ async function submit() {
         </form>
         <NuxtLink
           to="/login"
-          class="mt-4 inline-block text-sm text-purple-600 hover:underline dark:text-purple-400"
+          class="mt-4 inline-block text-sm text-[#245CB1] hover:underline dark:text-[#5B8FE0]"
         >
           Back to login
         </NuxtLink>

@@ -34,8 +34,8 @@ const visible = computed({
         class="group flex flex-col items-center gap-1.5 rounded-lg border-2 p-2 transition-colors
                disabled:cursor-not-allowed disabled:opacity-50"
         :class="option.id === selectedId
-          ? 'border-purple-600 bg-purple-600/10'
-          : 'border-transparent hover:border-purple-300 hover:bg-gray-50 dark:hover:border-purple-500/40 dark:hover:bg-white/5'"
+          ? 'border-[#245CB1] dark:border-[#5B8FE0] bg-[#245CB1]/10 dark:bg-[#5B8FE0]/10'
+          : 'border-transparent hover:border-[#245CB1]/40 hover:bg-gray-50 dark:hover:border-[#5B8FE0]/40 dark:hover:bg-white/5'"
         @click="$emit('select', option.id)"
       >
         <div
