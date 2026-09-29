@@ -48,11 +48,11 @@ const variantClass = computed(() => {
     case 'primary':
       return '!bg-[#245CB1] !border-[#245CB1] !text-white hover:!bg-[#1d4a8f] hover:!border-[#1d4a8f] dark:!bg-[#5B8FE0] dark:!border-[#5B8FE0] dark:hover:!bg-[#3a72cd] dark:hover:!border-[#3a72cd]'
     case 'secondary':
-      return '!bg-transparent !text-gray-800 !border-black/15 hover:!bg-black/5 dark:!text-white dark:!border-white/25 dark:hover:!bg-white/10 focus:!ring-gray-400 dark:focus:!ring-white/40'
+      return '!bg-transparent !text-heading !border-black/15 hover:!bg-black/5 dark:!border-white/25 dark:hover:!bg-white/10 focus:!ring-gray-400 dark:focus:!ring-white/40'
     case 'outline':
       return '!bg-transparent !border-[#245CB1]/50 !text-heading hover:!bg-[#245CB1]/10 hover:!border-[#245CB1] dark:!border-[#5B8FE0]/50 dark:hover:!bg-[#5B8FE0]/15 dark:hover:!border-[#5B8FE0]'
     case 'soft':
-      return '!bg-[#245CB1]/10 !border-[#245CB1]/30 !text-gray-900 hover:!bg-[#245CB1]/20 dark:!bg-[#5B8FE0]/15 dark:!border-[#5B8FE0]/40 dark:!text-white dark:hover:!bg-[#5B8FE0]/25'
+      return '!bg-[#245CB1]/10 !border-[#245CB1]/30 !text-heading hover:!bg-[#245CB1]/20 dark:!bg-[#5B8FE0]/15 dark:!border-[#5B8FE0]/40 dark:hover:!bg-[#5B8FE0]/25'
     case 'danger':
       return '!bg-red-600 !border-red-600 !text-white hover:!bg-red-700 hover:!border-red-700 focus:!ring-red-500 dark:focus:!ring-red-400'
     case 'dangerOutline':
