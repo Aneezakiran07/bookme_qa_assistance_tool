@@ -37,8 +37,11 @@ interface DeveloperDashboardResponse {
 
 const toast = useToast()
 const dropdownPt = useDropdownPt()
+const { projectPath, projectKey, isReadOnly } = useCurrentProject()
 
-const { data, refresh, pending: loading } = await useFetch<DeveloperDashboardResponse>('/api/dashboard/developer')
+const { data, refresh, pending: loading } = await useFetch<DeveloperDashboardResponse>('/api/dashboard/developer', {
+  key: projectKey('developer-dashboard')
+})
 
 const summary = computed(
   () => data.value?.summary ?? { my_open_bugs: 0, critical_high_open: 0, pending_retest: 0, resolved_today: 0 }
@@ -193,7 +196,7 @@ async function updateStatus(bug: DeveloperBugRow, status: string) {
             <Select
               :model-value="row.status"
               :options="ALL_BUG_STATUSES"
-              :disabled="savingBugId === row.id"
+              :disabled="isReadOnly || savingBugId === row.id"
               class="w-36"
               :pt="dropdownPt"
               @update:model-value="(status: string) => updateStatus(row, status)"
@@ -209,7 +212,7 @@ async function updateStatus(bug: DeveloperBugRow, status: string) {
               variant="outline"
               size="sm"
               icon="pi pi-arrow-right"
-              @click="navigateTo(`/bugs/${row.id}`)"
+              @click="navigateTo(projectPath(`/bugs/${row.id}`))"
             />
           </template>
         </AppDataTable>

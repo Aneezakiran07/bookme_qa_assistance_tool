@@ -23,8 +23,19 @@ const props = withDefaults(
 const emit = defineEmits<{ 'update:modelValue': [number | null] }>()
 
 const dropdownPt = useDropdownPt()
+const toast = useToast()
+const { project, projectKey } = useCurrentProject()
 
-const { data: modules, refresh } = await useFetch<ModuleOption[]>('/api/modules')
+const { data: modules, refresh } = await useFetch<ModuleOption[]>('/api/modules', { key: projectKey('modules') })
+
+// a module belongs to one project, so a selection made in the previous project is cleared
+watch(
+  () => project.value?.id,
+  () => {
+    filterText.value = ''
+    emit('update:modelValue', null)
+  }
+)
 
 const filterText = ref('')
 const creating = ref(false)
@@ -55,6 +66,13 @@ async function createModule() {
     await refresh()
     emit('update:modelValue', created.id)
     filterText.value = ''
+  } catch (error) {
+    toast.add({
+      severity: 'error',
+      summary: 'Could not create this module',
+      detail: (error as any)?.data?.statusMessage ?? 'Please try again.',
+      life: 5000
+    })
   } finally {
     creating.value = false
   }

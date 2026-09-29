@@ -21,6 +21,7 @@ const emit = defineEmits<{
 
 const toast = useToast()
 const dropdownPt = useDropdownPt()
+const { project, projectPath } = useCurrentProject()
 
 const visible = computed({
   get: () => props.modelValue,
@@ -186,6 +187,18 @@ watch(
   }
 )
 
+// a module id from one project means nothing in another, so switching project clears it
+// along with any duplicate warning, and closes the modal so nothing stale is submitted
+watch(
+  () => project.value?.id,
+  () => {
+    form.moduleId = null
+    existingBug.value = null
+    logAnywayConfirmed.value = false
+    visible.value = false
+  }
+)
+
 // a Retest bug that fails again is the classic duplicate case: the fix
 // didn't hold, so the right move is reopening that ticket, not filing a
 // second one. Other statuses (Open, In Progress, Fixed, Reopened) already
@@ -292,7 +305,7 @@ async function save() {
           <BaseButton
             variant="secondary"
             :label="`View bug #${existingBug.id}`"
-            @click="navigateTo(`/bugs/${existingBug.id}`)"
+            @click="navigateTo(projectPath(`/bugs/${existingBug.id}`))"
           />
           <BaseButton
             v-if="canReopenExisting"

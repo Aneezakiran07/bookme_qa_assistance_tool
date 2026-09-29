@@ -6,7 +6,7 @@
 // are bounced to the dashboard if they hit this route directly. there is
 // no more "pending signup" state -- invite-only onboarding means a
 // person is either an active team member or an outstanding invitation.
-definePageMeta({ layout: 'default', middleware: ['manage-users'] })
+definePageMeta({ layout: 'default', title: 'Team & Invites', middleware: ['manage-users'] })
 
 interface ActiveUserRow {
   id: number

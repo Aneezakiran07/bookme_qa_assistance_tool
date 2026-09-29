@@ -62,6 +62,7 @@ interface DashboardResponse {
 }
 
 const dropdownPt = useDropdownPt()
+const { projectPath, projectKey } = useCurrentProject()
 
 // -- global filter bar --
 const RANGE_OPTIONS = [
@@ -72,10 +73,10 @@ const RANGE_OPTIONS = [
 ]
 const selectedRange = ref('7d')
 
-const { data: moduleOptionsData } = await useFetch<ModuleOption[]>('/api/modules')
+const { data: moduleOptionsData } = await useFetch<ModuleOption[]>('/api/modules', { key: projectKey('modules') })
 const moduleOptions = computed(() => [{ id: null, name: 'All Modules' }, ...(moduleOptionsData.value ?? [])])
 
-const { data: releaseOptionsData } = await useFetch<ReleaseOption[]>('/api/releases')
+const { data: releaseOptionsData } = await useFetch<ReleaseOption[]>('/api/releases', { key: projectKey('releases') })
 const releaseOptions = computed(() => [
   { id: null, version: 'All Releases' },
   ...(releaseOptionsData.value ?? [])
@@ -85,6 +86,7 @@ const selectedModuleId = ref<number | null>(null)
 const selectedReleaseId = ref<number | null>(null)
 
 const { data, pending: loading } = await useFetch<DashboardResponse>('/api/dashboard/metrics', {
+  key: projectKey('dashboard-metrics'),
   query: computed(() => ({
     range: selectedRange.value,
     ...(selectedModuleId.value ? { moduleId: selectedModuleId.value } : {}),
@@ -390,7 +392,7 @@ function executionStatusKey(result: string): string {
         <NuxtLink
           v-for="bug in criticalBugs"
           :key="bug.id"
-          :to="`/bugs/${bug.id}`"
+          :to="projectPath(`/bugs/${bug.id}`)"
           class="flex items-center justify-between gap-3 border-b border-black/5 p-3 last:border-b-0 hover:bg-gray-50 dark:border-white/5 dark:hover:bg-white/5"
         >
           <div class="min-w-0">

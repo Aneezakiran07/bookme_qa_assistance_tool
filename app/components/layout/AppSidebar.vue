@@ -45,45 +45,44 @@ const isQaLead = computed(() => currentUser.value?.role === 'QA Lead')
 const canManageUsers = computed(() => isAdmin.value || isQaLead.value)
 const isDeveloper = computed(() => currentUser.value?.role === 'Developer')
 
-const projectLinks = computed<NavLink[]>(() => {
+const { isProjectRoute, projectPath } = useCurrentProject()
+
+const workflowLinks = computed<NavLink[]>(() => {
   // developers only get the dashboard and their own focused bug queue,
   // the full requirements, test case, execution, and bugs workflow is
   // reserved for qa lead, tester, and admin roles
   if (isDeveloper.value) {
     return [
-      { label: 'Dashboard', to: '/', icon: 'pi pi-home' },
-      { label: 'Bugs Directory', to: '/developer/bugs', icon: 'pi pi-inbox' },
+      { label: 'Dashboard', to: projectPath('/'), icon: 'pi pi-home' },
+      { label: 'Bugs Directory', to: projectPath('/developer/bugs'), icon: 'pi pi-inbox' },
     ]
   }
   return [
-    { label: 'Dashboard', to: '/', icon: 'pi pi-home' },
-    { label: 'Requirements', to: '/requirements', icon: 'pi pi-file-check' },
-    { label: 'Test Cases', to: '/test-cases', icon: 'pi pi-list-check' },
-    { label: 'Test Executions', to: '/executions', icon: 'pi pi-play-circle' },
-    { label: 'Bugs', to: '/bugs', icon: 'pi pi-exclamation-triangle' },
+    { label: 'Dashboard', to: projectPath('/'), icon: 'pi pi-home' },
+    { label: 'Requirements', to: projectPath('/requirements'), icon: 'pi pi-file-check' },
+    { label: 'Test Cases', to: projectPath('/test-cases'), icon: 'pi pi-list-check' },
+    { label: 'Test Executions', to: projectPath('/executions'), icon: 'pi pi-play-circle' },
+    { label: 'Bugs', to: projectPath('/bugs'), icon: 'pi pi-exclamation-triangle' },
   ]
 })
 
-const managementLinksStandard: NavLink[] = [
-  { label: 'Modules', to: '/management/modules', icon: 'pi pi-sitemap' },
-]
+const managementLinks = computed<NavLink[]>(() => [
+  { label: 'Modules', to: projectPath('/management/modules'), icon: 'pi pi-sitemap' },
+])
 
-const managementLinksWithUsers: NavLink[] = [
-  { label: 'Modules', to: '/management/modules', icon: 'pi pi-sitemap' },
-  { label: 'Team & Invites', to: '/admin/users', icon: 'pi pi-users' },
-]
-
-// admins and qa leads can see and use every page, including the full
-// project workflow; the only thing gated by role is the Team & Invites
-// link, which shows up for both of those (same permission tier, two
-// labels) and never for Tester or Developer
-const managementLinks = computed(() =>
-  canManageUsers.value ? managementLinksWithUsers : managementLinksStandard
+// these links belong to the project in the url, so they only show on project pages
+// on global pages such as the profile there is no project to point at, so the sidebar
+// shows the global links alone instead of guessing a project
+const projectSectionLinks = computed<NavLink[]>(() =>
+  isProjectRoute.value ? [...workflowLinks.value, ...managementLinks.value] : []
 )
 
-// single flat nav list, no PROJECT / MANAGEMENT section split -- every
-// role just sees its own set of links one after another
-const navLinks = computed<NavLink[]>(() => [...projectLinks.value, ...managementLinks.value])
+// global links never change with the project, admins and qa leads also get the team and invites link
+// which is the same permission tier with two labels, and never Tester or Developer
+const globalLinks = computed<NavLink[]>(() => [
+  { label: 'All Projects', to: '/projects', icon: 'pi pi-folder-open' },
+  ...(canManageUsers.value ? [{ label: 'Team & Invites', to: '/admin/users', icon: 'pi pi-users' }] : []),
+])
 
 const roleBadgeClass = computed(() => {
   return isAdmin.value
@@ -155,8 +154,29 @@ async function handleLogout() {
 
     <!-- nav -->
     <nav class="flex-1 space-y-1 overflow-y-auto overflow-x-hidden px-3 py-5">
-      <ul class="space-y-1">
-        <li v-for="link in navLinks" :key="link.to">
+      <ul v-if="projectSectionLinks.length" class="space-y-1">
+        <li v-for="link in projectSectionLinks" :key="link.to">
+          <NuxtLink
+            :to="link.to"
+            :title="collapsed ? link.label : undefined"
+            class="flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium text-gray-600
+                   transition-colors hover:bg-gray-100 dark:text-zinc-400 dark:hover:bg-zinc-900"
+            :class="collapsed ? 'justify-center' : ''"
+            active-class="!bg-purple-600/10 !text-purple-600 dark:!text-purple-400"
+            exact-active-class="!bg-purple-600/10 !text-purple-600 dark:!text-purple-400"
+          >
+            <i :class="link.icon" class="shrink-0 text-base" />
+            <span v-if="!collapsed" class="truncate">{{ link.label }}</span>
+          </NuxtLink>
+        </li>
+      </ul>
+
+      <!-- global links, separated from the project links by a divider -->
+      <ul
+        class="space-y-1"
+        :class="projectSectionLinks.length ? 'mt-4 border-t border-gray-200 pt-4 dark:border-zinc-800' : ''"
+      >
+        <li v-for="link in globalLinks" :key="link.to">
           <NuxtLink
             :to="link.to"
             :title="collapsed ? link.label : undefined"

@@ -103,9 +103,18 @@ function openLightbox(index: number) {
 }
 
 async function removeAttachment(id: number) {
-  await $fetch(`/api/bugs/attachments/${id}`, { method: 'DELETE' })
-  attachments.value = attachments.value.filter((a) => a.id !== id)
-  emit('update:attachments', attachments.value)
+  try {
+    await $fetch(`/api/bugs/attachments/${id}`, { method: 'DELETE' })
+    attachments.value = attachments.value.filter((a) => a.id !== id)
+    emit('update:attachments', attachments.value)
+  } catch (error) {
+    toast.add({
+      severity: 'error',
+      summary: 'Could not remove this file',
+      detail: (error as any)?.data?.statusMessage ?? 'Please try again.',
+      life: 5000
+    })
+  }
 }
 
 function onDrop(event: DragEvent) {

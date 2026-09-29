@@ -43,11 +43,18 @@ export default defineNuxtRouteMiddleware((to) => {
   // toast can't be fired from here because the toast service may not be
   // mounted yet during middleware, so the dashboard watches for this
   // flag on mount and fires the toast itself
+  //
+  // these pages now live under the project slug prefix, so the part after the slug is what
+  // gets checked, the old top level paths are still matched too because they redirect into a project
   const isDeveloper = user.value?.role === 'Developer'
-  const isTestCaseRoute = to.path.startsWith('/test-cases')
-  const isExecutionRoute = to.path.startsWith('/executions')
+  const projectMatch = to.path.match(/^\/projects\/([^/]+)(\/.*)?$/)
+  const pagePath = projectMatch ? (projectMatch[2] ?? '') : to.path
+  const isTestCaseRoute = pagePath.startsWith('/test-cases')
+  const isExecutionRoute = pagePath.startsWith('/executions')
 
   if (isDeveloper && (isTestCaseRoute || isExecutionRoute)) {
-    return navigateTo('/?denied=developer-role')
+    // inside a project the developer goes back to that project dashboard, which shows the toast
+    const backTo = projectMatch ? `/projects/${projectMatch[1]}` : '/'
+    return navigateTo({ path: backTo, query: { denied: 'developer-role' } })
   }
 })

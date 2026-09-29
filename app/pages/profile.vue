@@ -9,7 +9,7 @@
 // the digest is scoped to the bugs assigned to them (owner_id) that
 // had activity in the picked day/week period, with infinite-scroll
 // pagination on that bug list.
-definePageMeta({ layout: 'default' })
+definePageMeta({ layout: 'default', title: 'Profile' })
 
 interface ProfileData {
   id: number
@@ -25,6 +25,9 @@ interface DigestBugRow {
   title: string
   severity: string
   status: string
+  projectId: number
+  projectName: string
+  projectSlug: string
 }
 
 interface DeveloperDigest {
@@ -354,13 +357,16 @@ async function selectAvatar(avatarId: string) {
               :key="bug.id"
             >
               <NuxtLink
-                :to="`/bugs/${bug.id}`"
+                :to="`/projects/${bug.projectSlug}/bugs/${bug.id}`"
                 class="flex items-center justify-between gap-3 rounded-md border border-gray-200 px-3 py-2 transition-colors hover:border-purple-300 hover:bg-purple-50 dark:border-zinc-800 dark:hover:border-purple-500/40 dark:hover:bg-zinc-900"
               >
                 <div class="min-w-0">
                   <p class="truncate text-sm text-gray-900 dark:text-white">
                     <span class="font-mono text-xs text-gray-400 dark:text-zinc-500">{{ bug.code }}</span>
                     {{ bug.title }}
+                  </p>
+                  <p class="truncate text-xs text-gray-400 dark:text-zinc-500">
+                    {{ bug.projectName }}
                   </p>
                 </div>
                 <StatusBadge :status="bug.status" size="sm" />
