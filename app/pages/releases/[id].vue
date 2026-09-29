@@ -326,10 +326,10 @@ async function saveEdit() {
             <div class="flex items-center justify-between border-b border-black/10 p-3 dark:border-white/10">
               <span class="text-sm font-semibold text-gray-900 dark:text-white">{{ severity }}</span>
               <span class="text-xs text-gray-400 dark:text-zinc-500">
-                {{ bugsBySeverity[severity].length }}
+                {{ bugsBySeverity[severity]?.length ?? 0 }}
               </span>
             </div>
-            <div v-if="bugsBySeverity[severity].length === 0" class="p-4 text-center text-xs text-gray-400 dark:text-zinc-500">
+            <div v-if="(bugsBySeverity[severity]?.length ?? 0) === 0" class="p-4 text-center text-xs text-gray-400 dark:text-zinc-500">
               No bugs.
             </div>
             <ul v-else class="divide-y divide-black/5 dark:divide-white/5">

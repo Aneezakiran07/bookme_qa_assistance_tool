@@ -24,7 +24,7 @@ const pageTitle = computed(() => {
   if (rest.length === 0) return 'Dashboard'
 
   const named = rest.filter((part) => !/^\d+$/.test(part))
-  return toTitle(named[named.length - 1] ?? rest[0])
+  return toTitle(named[named.length - 1] ?? rest[0] ?? 'Dashboard')
 })
 
 // the current project stays in the list even when archived, so the picker never shows a blank value

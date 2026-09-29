@@ -43,7 +43,7 @@ const outstandingInvites = computed(() => data.value?.invitations ?? [])
 function initials(email: string) {
   const name = email.split('@')[0] ?? ''
   const parts = name.split(/[.\-_]/).filter(Boolean)
-  if (parts.length >= 2) return (parts[0][0] + parts[1][0]).toUpperCase()
+  if (parts.length >= 2) return ((parts[0]?.[0] ?? '') + (parts[1]?.[0] ?? '')).toUpperCase()
   return name.slice(0, 2).toUpperCase() || '??'
 }
 
@@ -52,7 +52,7 @@ function displayName(email: string) {
   return name
     .split(/[.\-_]/)
     .filter(Boolean)
-    .map((part) => part[0].toUpperCase() + part.slice(1))
+    .map((part) => (part[0] ?? '').toUpperCase() + part.slice(1))
     .join(' ')
 }
 

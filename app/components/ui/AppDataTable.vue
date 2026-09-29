@@ -50,7 +50,7 @@ const props = withDefaults(
 )
 
 const emit = defineEmits<{
-  sort: [payload: { sortBy: string | null; sortOrder: 'asc' | 'desc' | null }]
+  sort: [payload: { sortBy: string | undefined; sortOrder: 'asc' | 'desc' | null }]
 }>()
 
 const search = ref('')
@@ -63,15 +63,19 @@ const filters = computed(() => ({
 // descending, 0 (or null) is unsorted. removableSort below is what lets a
 // third click clear back to 0 instead of just flipping forever between the
 // other two.
-const sortField = ref<string | null>(null)
+const sortField = ref<string | undefined>(undefined)
 const sortOrder = ref<0 | 1 | -1>(0)
 
-function onSort(event: { sortField?: string; sortOrder?: 0 | 1 | -1 }) {
-  sortField.value = event.sortField ?? null
+// PrimeVue's DataTableSortEvent signature allows sortField to be a
+// string OR a function (for programmatic sorting), and uses NoInfer<T>
+// which doesn't play well with our untyped wrapper. Keeping this loose
+// because our usage never passes a function.
+function onSort(event: any) {
+  sortField.value = event.sortField ?? undefined
   sortOrder.value = event.sortOrder ?? 0
 
   emit('sort', {
-    sortBy: sortOrder.value === 0 ? null : sortField.value,
+    sortBy: sortOrder.value === 0 ? undefined : sortField.value,
     sortOrder: sortOrder.value === 1 ? 'asc' : sortOrder.value === -1 ? 'desc' : null
   })
 }

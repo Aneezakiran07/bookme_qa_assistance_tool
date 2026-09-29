@@ -143,8 +143,8 @@ const trendSegments = computed(() => {
   return (['Pass', 'Fail', 'Blocked'] as const).map((key) => ({
     label: key,
     value: totals[key],
-    colorClass: TREND_DONUT_CLASSES[key].stroke,
-    dotClass: TREND_DONUT_CLASSES[key].dot
+    colorClass: TREND_DONUT_CLASSES[key]!.stroke,
+    dotClass: TREND_DONUT_CLASSES[key]!.dot
   }))
 })
 
@@ -159,8 +159,8 @@ const severitySegments = computed(() => {
   return ['Critical', 'High', 'Medium', 'Low'].map((severity) => ({
     label: severity,
     value: bySeverity.get(severity) ?? 0,
-    colorClass: SEVERITY_DONUT_CLASSES[severity].stroke,
-    dotClass: SEVERITY_DONUT_CLASSES[severity].dot
+    colorClass: SEVERITY_DONUT_CLASSES[severity]!.stroke,
+    dotClass: SEVERITY_DONUT_CLASSES[severity]!.dot
   }))
 })
 
@@ -174,8 +174,8 @@ const statusSegments = computed(() => {
   return ['Open', 'In Progress', 'Retest'].map((status) => ({
     label: status,
     value: byStatus.get(status) ?? 0,
-    barClass: STATUS_BAR_CLASSES[status].bar,
-    dotClass: STATUS_BAR_CLASSES[status].dot
+    barClass: STATUS_BAR_CLASSES[status]!.bar,
+    dotClass: STATUS_BAR_CLASSES[status]!.dot
   }))
 })
 
@@ -190,13 +190,13 @@ const requirementsSegments = computed(() => {
   return ['Draft', 'Approved', 'In Testing', 'Done'].map((status) => ({
     label: status,
     value: byStatus.get(status) ?? 0,
-    barClass: REQ_STATUS_CLASSES[status].bar,
-    dotClass: REQ_STATUS_CLASSES[status].dot
+    barClass: REQ_STATUS_CLASSES[status]!.bar,
+    dotClass: REQ_STATUS_CLASSES[status]!.dot
   }))
 })
 
 function initials(email: string) {
-  return email.split('@')[0].slice(0, 2).toUpperCase()
+  return (email.split('@')[0] ?? '').slice(0, 2).toUpperCase()
 }
 
 function bugCode(id: number) {

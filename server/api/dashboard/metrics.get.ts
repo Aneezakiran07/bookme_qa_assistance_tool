@@ -25,7 +25,7 @@ function resolveRange(rangeKey: string): { start: string; end: string } {
   }
 
   const start = new Date(today)
-  start.setDate(start.getDate() - (days - 1))
+  start.setDate(start.getDate() - ((days ?? 30) - 1))
   return { start: toDateOnly(start), end }
 }
 

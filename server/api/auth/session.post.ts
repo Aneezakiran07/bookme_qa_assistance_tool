@@ -1,4 +1,4 @@
-import { setUserSession } from '#imports'
+
 import { useFirebaseAuth } from '~~/server/utils/firebaseAdmin'
 import { onboardingService } from '~~/server/services/onboardingService'
 

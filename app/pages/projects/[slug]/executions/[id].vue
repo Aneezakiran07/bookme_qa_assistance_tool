@@ -77,7 +77,7 @@ const selectedTestCase = computed(
 // auto-select the first visible test case on first load
 watchEffect(() => {
   if (!selectedTestCaseId.value && filteredTestCases.value.length > 0) {
-    selectedTestCaseId.value = filteredTestCases.value[0].id
+    const __first = filteredTestCases.value[0]; if (__first) selectedTestCaseId.value = __first.id
   }
 })
 

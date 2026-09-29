@@ -7,10 +7,10 @@ import { neon } from '@neondatabase/serverless'
 // client to the plain-array form once, here. Every `sql\`...\`` then
 // returns `Promise<T[]>`, and `rows[0]` / `.map` / `.length` work
 // everywhere without per-call casts.
-type SqlFn = <T = any>(
-  strings: TemplateStringsArray,
-  ...values: any[]
-) => Promise<T[]>
+type SqlFn = {
+  <T = any>(strings: TemplateStringsArray, ...values: any[]): Promise<T[]>
+  <T = any>(query: string, ...values: any[]): Promise<T[]>
+}
 
 let sqlClient: SqlFn | null = null
 

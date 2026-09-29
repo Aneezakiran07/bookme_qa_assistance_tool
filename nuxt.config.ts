@@ -130,7 +130,7 @@ export default defineNuxtConfig({
       apiKey: process.env.ONESIGNAL_REST_API_KEY,
     },
     session: {
-      password: process.env.NUXT_SESSION_PASSWORD,
+      password: process.env.NUXT_SESSION_PASSWORD ?? '',
     },
     public: {
       appUrl: process.env.APP_URL,

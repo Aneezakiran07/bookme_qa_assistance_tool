@@ -24,7 +24,7 @@ const { data: users } = await useFetch<UserOption[]>('/api/users')
 
 function initials(email: string) {
   const name = email.split('@')[0]
-  return name.slice(0, 2).toUpperCase()
+  return (name ?? '').slice(0, 2).toUpperCase()
 }
 
 // short label so the badge fits next to an avatar in a tight dropdown row

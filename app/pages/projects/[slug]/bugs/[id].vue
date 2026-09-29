@@ -446,7 +446,7 @@ const timelineEntries = computed(() => {
               class="inline-flex items-center rounded-full bg-sky-100 px-2.5 py-0.5 text-xs font-semibold text-sky-700
                      dark:bg-sky-500/15 dark:text-sky-300"
             >
-              {{ tcCode(bug.linked_test_case_id) }}: {{ bug.linked_test_case_title }}
+              {{ bug.linked_test_case_id !== null ? tcCode(bug.linked_test_case_id) : '—' }}: {{ bug.linked_test_case_title }}
             </span>
           </div>
 
@@ -580,7 +580,7 @@ const timelineEntries = computed(() => {
             Linked Test Case
           </p>
           <p class="text-sm font-medium text-heading">
-            {{ tcCode(bug.linked_test_case_id) }}: {{ bug.linked_test_case_title }}
+            {{ bug.linked_test_case_id !== null ? tcCode(bug.linked_test_case_id) : '—' }}: {{ bug.linked_test_case_title }}
           </p>
           <div class="mt-3">
             <p class="text-xs font-semibold uppercase tracking-wide text-gray-400 dark:text-zinc-500">

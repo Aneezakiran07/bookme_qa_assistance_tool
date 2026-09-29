@@ -54,6 +54,10 @@ const canCreate = computed(() => {
   return !(modules.value ?? []).some((m) => m.name.toLowerCase() === text.toLowerCase())
 })
 
+function handleFilter(e: { value: string }) {
+  filterText.value = e.value
+}
+
 async function createModule() {
   const name = filterText.value.trim()
   if (!name || creating.value) return
@@ -92,7 +96,7 @@ async function createModule() {
     :pt="dropdownPt"
     panel-class="!bg-foreground !text-heading !border !border-border"
     @update:model-value="(v: number) => { $emit('update:modelValue', v); filterText = '' }"
-    @filter="(e: { value: string }) => (filterText = e.value)"
+    @filter="handleFilter"
     @hide="filterText = ''"
   >
     <template #footer>

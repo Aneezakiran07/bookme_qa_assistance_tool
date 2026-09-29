@@ -110,7 +110,7 @@ const ALIASES: Record<string, keyof typeof PALETTES> = {
 const palette = computed<Palette>(() => {
   const key = props.status?.toString().trim().toLowerCase() ?? ''
   const mapped = ALIASES[key]
-  return mapped ? PALETTES[mapped] : { label: props.status, classes: PALETTES.pending.classes }
+  return mapped ? PALETTES[mapped]! : { label: props.status, classes: PALETTES.pending!.classes }
 })
 </script>
 
