@@ -1,14 +1,23 @@
 -- Bookme.pk QA Tool Pilot -- Postgres schema (for Neon)
 -- Run this against a fresh Neon database to create all tables.
+-- Projects were added on top of the flat structure, see migrations/2026-09-29_add_projects.sql.
+-- Every piece of QA data belongs to exactly one project, only users and invitations stay global.
 
 create table users (
   id serial primary key,
   firebase_uid text unique,
   email text unique not null,
-  role text not null default 'Pending' check (role in ('Pending', 'Admin', 'QA Lead', 'Tester', 'Developer')),
+  role text not null check (role in ('Admin', 'QA Lead', 'Tester', 'Developer')),
   active boolean default false,
-  created_at timestamptz default now()
+  created_at timestamptz default now(),
+  display_name text,
+  email_notifications boolean not null default true,
+  daily_digest_enabled boolean not null default true,
+  avatar_id text not null default 'cat',
+  invited_by integer references users(id),
+  invited_at timestamptz
 );
+-- there is no Pending role anymore, people join through an invitation with a role already set
 -- new users land here as role='Pending', active=false on first Google login
 -- an Admin assigns a real role + module(s) via user_modules, then flips active=true
 -- manually promote the very first user to Admin after they sign in once, e.g.:
@@ -18,8 +27,21 @@ create table users (
 -- this index is a DB-level safety net in case the app ever forgets to lowercase
 create unique index users_email_lower_idx on users (lower(email));
 
+-- a project is a product or initiative, the slug is generated once by the server and never changes
+create table projects (
+  id serial primary key,
+  name text not null,
+  slug text not null unique,
+  description text,
+  created_by integer references users(id),
+  archived boolean not null default false,
+  created_at timestamptz not null default now()
+);
+create unique index projects_name_lower_idx on projects (lower(name)) where archived = false;
+
 create table modules (
   id serial primary key,
+  project_id integer not null references projects(id),
   name text not null,
   created_by integer references users(id),
   created_at timestamptz default now(),
@@ -34,8 +56,9 @@ create table modules (
 -- DB-level safety net so 'Payments' and 'payments' can't both exist as
 -- separate ACTIVE modules. Partial (archived = false) so an archived
 -- module's name frees up for reuse instead of squatting on it forever.
-create unique index modules_name_lower_idx on modules (lower(name)) where archived = false;
--- migration for an already-deployed db:
+-- the name is unique per project, so two projects can each have a Payments module
+create unique index modules_project_name_lower_idx on modules (project_id, lower(name)) where archived = false;
+-- older migration notes for a database from before projects existed:
 -- alter table modules add column archived boolean not null default false;
 -- alter table modules drop constraint modules_name_key; -- drops the old plain-unique(name) constraint
 -- drop index modules_name_lower_idx;
@@ -50,6 +73,7 @@ create table user_modules (
 
 create table requirements (
   id serial primary key,
+  project_id integer not null references projects(id),
   title text not null,
   module_id integer not null references modules(id),
   target_release text,
@@ -62,6 +86,7 @@ create table requirements (
 
 create table test_cases (
   id serial primary key,
+  project_id integer not null references projects(id),
   title text not null,
   module_id integer not null references modules(id),
   steps text,
@@ -89,9 +114,11 @@ create table requirement_test_case_links (
 
 create table releases (
   id serial primary key,
-  version text unique not null,
+  project_id integer not null references projects(id),
+  version text not null,
   release_date date,
-  created_at timestamptz default now()
+  created_at timestamptz default now(),
+  constraint releases_project_version_key unique (project_id, version)
 );
 -- regression_status was removed: releases are now just a grouping label
 -- for test runs and bugs (a version and a date), with no dedicated
@@ -150,6 +177,7 @@ for each row execute function prevent_execution_modify();
 
 create table bugs (
   id serial primary key,
+  project_id integer not null references projects(id),
   title text not null,
   module_id integer not null references modules(id),
   severity text not null check (severity in ('Critical', 'High', 'Medium', 'Low')),
@@ -160,6 +188,8 @@ create table bugs (
   linked_test_case_id integer references test_cases(id),
   release_id integer references releases(id),  -- nullable: exploratory bugs found outside a specific release cycle won't have one
   steps_to_reproduce text,
+  actual_result text,
+  expected_result text,
   dev_notes text,  -- implementation notes, environment quirks, or status-decision context; kept
                     -- separate from steps_to_reproduce, which stays QA-owned
   reported_by integer references users(id),
@@ -301,3 +331,57 @@ create index idx_dashboard_daily_metrics_module on dashboard_daily_metrics(modul
 -- select sum(passed_executions)::numeric / nullif(sum(total_executions), 0) as pass_rate
 -- from dashboard_daily_metrics
 -- where metric_date >= current_date - interval '7 days';
+
+-- ============================================================
+-- Invitations: people join by invitation only
+-- ============================================================
+create table invitations (
+  id serial primary key,
+  email text not null,
+  role text not null check (role in ('Admin', 'QA Lead', 'Tester', 'Developer')),
+  token text unique not null,
+  invited_by integer references users(id),
+  created_at timestamptz default now(),
+  expires_at timestamptz not null,
+  accepted_at timestamptz,
+  revoked_at timestamptz
+);
+-- only one outstanding invite per email at a time
+create unique index invitations_email_active_idx
+  on invitations (lower(email))
+  where accepted_at is null and revoked_at is null;
+create index idx_invitations_token on invitations(token);
+
+-- ============================================================
+-- Project scoping
+--
+-- project_id lives on modules, releases, requirements, test_cases and bugs.
+-- test_executions has no project_id, it is scoped through release_id.
+-- The link tables and the bug attachment, history and assignment tables have
+-- no project_id either, their project comes from their parent row.
+--
+-- The composite foreign keys below make the database reject a row that points
+-- at a module, release or test case from a different project. They are skipped
+-- by Postgres when the nullable column is null, which is what bugs.release_id
+-- and bugs.linked_test_case_id need.
+-- ============================================================
+alter table modules    add constraint modules_id_project_key    unique (id, project_id);
+alter table releases   add constraint releases_id_project_key   unique (id, project_id);
+alter table test_cases add constraint test_cases_id_project_key unique (id, project_id);
+
+alter table requirements add constraint requirements_module_project_fk
+  foreign key (module_id, project_id) references modules (id, project_id);
+alter table test_cases add constraint test_cases_module_project_fk
+  foreign key (module_id, project_id) references modules (id, project_id);
+alter table bugs add constraint bugs_module_project_fk
+  foreign key (module_id, project_id) references modules (id, project_id);
+alter table bugs add constraint bugs_release_project_fk
+  foreign key (release_id, project_id) references releases (id, project_id);
+alter table bugs add constraint bugs_test_case_project_fk
+  foreign key (linked_test_case_id, project_id) references test_cases (id, project_id);
+
+create index idx_releases_project     on releases (project_id, created_at desc);
+create index idx_requirements_project on requirements (project_id, module_id) where archived = false;
+create index idx_test_cases_project   on test_cases (project_id, module_id) where archived = false;
+create index idx_bugs_project_status  on bugs (project_id, status) where archived = false;
+create index idx_bugs_project_release on bugs (project_id, release_id);

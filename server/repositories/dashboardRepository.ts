@@ -37,6 +37,9 @@ export interface DeveloperSummary {
 
 export interface DeveloperBugRow {
   id: number
+  project_id: number
+  project_name: string
+  project_slug: string
   title: string
   severity: 'Critical' | 'High' | 'Medium' | 'Low'
   status: string
@@ -65,15 +68,16 @@ export const dashboardRepository = {
   //
   // these numbers are always computed live so the dashboard never shows
   // stale counts, and the source field is kept so the response shape stays the same
-  async getSnapshotMetrics(moduleId: number | null, releaseId: number | null): Promise<SnapshotMetrics & { source: 'snapshot' | 'live' }> {
-    const live = await this.computeLiveSnapshot(moduleId, releaseId)
+  // projectId null means every project, which only the daily digest email uses
+  async getSnapshotMetrics(projectId: number | null, moduleId: number | null, releaseId: number | null): Promise<SnapshotMetrics & { source: 'snapshot' | 'live' }> {
+    const live = await this.computeLiveSnapshot(projectId, moduleId, releaseId)
     return { ...live, source: 'live' }
   },
 
   // requirements and test_cases have no release_id column (a requirement's
   // target_release is free text, not a FK), so only the module filter
   // applies to those two; the release filter still narrows the bug counts
-  async computeLiveSnapshot(moduleId: number | null, releaseId: number | null): Promise<SnapshotMetrics> {
+  async computeLiveSnapshot(projectId: number | null, moduleId: number | null, releaseId: number | null): Promise<SnapshotMetrics> {
     const sql = useDb()
 
     const reqRows = await sql`
@@ -89,6 +93,7 @@ export const dashboardRepository = {
         )::int as covered_requirements
       from requirements r
       where r.archived = false
+        and (${projectId}::int is null or r.project_id = ${projectId}::int)
         and (${moduleId}::int is null or r.module_id = ${moduleId}::int)
     `
 
@@ -98,6 +103,7 @@ export const dashboardRepository = {
         count(*) filter (where type = 'Automated')::int as automated_test_cases
       from test_cases
       where archived = false
+        and (${projectId}::int is null or project_id = ${projectId}::int)
         and (${moduleId}::int is null or module_id = ${moduleId}::int)
     `
 
@@ -107,6 +113,7 @@ export const dashboardRepository = {
         count(*) filter (where status != 'Closed' and severity in ('Critical', 'High'))::int as open_critical_high
       from bugs
       where archived = false
+        and (${projectId}::int is null or project_id = ${projectId}::int)
         and (${moduleId}::int is null or module_id = ${moduleId}::int)
         and (${releaseId}::int is null or release_id = ${releaseId}::int)
     `
@@ -124,6 +131,7 @@ export const dashboardRepository = {
   // pass rate over the selected date range, always counted live from
   // test_executions so it includes every execution up to right now
   async getPassRate(
+    projectId: number | null,
     startDate: string,
     endDate: string,
     moduleId: number | null,
@@ -137,6 +145,7 @@ export const dashboardRepository = {
       from test_executions te
       join test_cases tc on tc.id = te.test_case_id
       where te.execution_date::date between ${startDate}::date and ${endDate}::date
+        and (${projectId}::int is null or tc.project_id = ${projectId}::int)
         and (${moduleId}::int is null or tc.module_id = ${moduleId}::int)
         and (${releaseId}::int is null or te.release_id = ${releaseId}::int)
     `
@@ -147,6 +156,7 @@ export const dashboardRepository = {
 
   // daily Pass/Fail/Blocked trend, always computed live from test_executions
   async getExecutionTrend(
+    projectId: number | null,
     startDate: string,
     endDate: string,
     moduleId: number | null,
@@ -162,6 +172,7 @@ export const dashboardRepository = {
       from test_executions te
       join test_cases tc on tc.id = te.test_case_id
       where te.execution_date::date between ${startDate}::date and ${endDate}::date
+        and (${projectId}::int is null or tc.project_id = ${projectId}::int)
         and (${moduleId}::int is null or tc.module_id = ${moduleId}::int)
         and (${releaseId}::int is null or te.release_id = ${releaseId}::int)
       group by day
@@ -184,12 +195,13 @@ export const dashboardRepository = {
 
   // active (not archived, not Closed) bug counts by severity and, per the
   // spec, by a fixed status subset (Open / In Progress / Retest)
-  async getBugBreakdown(moduleId: number | null, releaseId: number | null): Promise<{ bySeverity: BugBreakdownRow[]; byStatus: BugBreakdownRow[] }> {
+  async getBugBreakdown(projectId: number | null, moduleId: number | null, releaseId: number | null): Promise<{ bySeverity: BugBreakdownRow[]; byStatus: BugBreakdownRow[] }> {
     const sql = useDb()
     const severityRows = await sql`
       select severity, count(*)::int as count
       from bugs
       where archived = false and status != 'Closed'
+        and (${projectId}::int is null or project_id = ${projectId}::int)
         and (${moduleId}::int is null or module_id = ${moduleId}::int)
         and (${releaseId}::int is null or release_id = ${releaseId}::int)
       group by severity
@@ -198,6 +210,7 @@ export const dashboardRepository = {
       select status, count(*)::int as count
       from bugs
       where archived = false and status in ('Open', 'In Progress', 'Retest')
+        and (${projectId}::int is null or project_id = ${projectId}::int)
         and (${moduleId}::int is null or module_id = ${moduleId}::int)
         and (${releaseId}::int is null or release_id = ${releaseId}::int)
       group by status
@@ -209,19 +222,20 @@ export const dashboardRepository = {
   },
 
   // requirements have no release FK, so this only respects the module filter
-  async getRequirementsStatusBreakdown(moduleId: number | null): Promise<BugBreakdownRow[]> {
+  async getRequirementsStatusBreakdown(projectId: number | null, moduleId: number | null): Promise<BugBreakdownRow[]> {
     const sql = useDb()
     const rows = await sql`
       select status, count(*)::int as count
       from requirements
       where archived = false
+        and (${projectId}::int is null or project_id = ${projectId}::int)
         and (${moduleId}::int is null or module_id = ${moduleId}::int)
       group by status
     `
     return rows.map((r: any) => ({ key: r.status, count: r.count }))
   },
 
-  async getCriticalBugsWatchlist(moduleId: number | null, releaseId: number | null, limit = 8) {
+  async getCriticalBugsWatchlist(projectId: number | null, moduleId: number | null, releaseId: number | null, limit = 8) {
     const sql = useDb()
     const rows = await sql`
       select
@@ -231,6 +245,7 @@ export const dashboardRepository = {
       join modules m on m.id = b.module_id
       where b.archived = false and b.status != 'Closed'
         and b.severity in ('Critical', 'High')
+        and (${projectId}::int is null or b.project_id = ${projectId}::int)
         and (${moduleId}::int is null or b.module_id = ${moduleId}::int)
         and (${releaseId}::int is null or b.release_id = ${releaseId}::int)
       order by
@@ -241,7 +256,7 @@ export const dashboardRepository = {
     return rows
   },
 
-  async getRecentExecutions(moduleId: number | null, releaseId: number | null, limit = 8) {
+  async getRecentExecutions(projectId: number | null, moduleId: number | null, releaseId: number | null, limit = 8) {
     const sql = useDb()
     const rows = await sql`
       select
@@ -255,7 +270,8 @@ export const dashboardRepository = {
       join modules m on m.id = tc.module_id
       join users u on u.id = te.executed_by
       join releases r on r.id = te.release_id
-      where (${moduleId}::int is null or tc.module_id = ${moduleId}::int)
+      where (${projectId}::int is null or tc.project_id = ${projectId}::int)
+        and (${moduleId}::int is null or tc.module_id = ${moduleId}::int)
         and (${releaseId}::int is null or te.release_id = ${releaseId}::int)
       order by te.execution_date desc
       limit ${limit}
@@ -273,7 +289,7 @@ export const dashboardRepository = {
   // moves to Fixed *or* Closed today -- either one is a real, same-day
   // win for the developer who owns it, and last_status_change_at is
   // already the field bugs.put.ts stamps on every status change
-  async getDeveloperSummary(userId: number): Promise<DeveloperSummary> {
+  async getDeveloperSummary(projectId: number | null, userId: number): Promise<DeveloperSummary> {
     const sql = useDb()
     const rows = await sql`
       select
@@ -285,6 +301,7 @@ export const dashboardRepository = {
         )::int as resolved_today
       from bugs
       where archived = false and owner_id = ${userId}
+        and (${projectId}::int is null or project_id = ${projectId}::int)
     `
     return rows[0] as DeveloperSummary
   },
@@ -309,6 +326,7 @@ export const dashboardRepository = {
   // reflects the true total for the current mode, not just what is
   // left after the cursor.
   async getDeveloperBugs(
+    projectId: number | null,
     userId: number,
     limit = 50,
     options: { mode?: 'all' | 'open' | 'archived'; cursor?: { lastStatusChangeAt: string; id: number } | null } = {}
@@ -324,6 +342,7 @@ export const dashboardRepository = {
       from bugs
       where archived = ${archived}
         and owner_id = ${userId}
+        and (${projectId}::int is null or project_id = ${projectId}::int)
         and (${!excludeClosed} or status != 'Closed')
     `
     const totalCount = (countRows[0] as any).total as number
@@ -331,11 +350,14 @@ export const dashboardRepository = {
     const rows = await sql`
       select
         b.id, b.title, b.severity, b.status, b.module_id, b.last_status_change_at,
-        m.name as module_name
+        m.name as module_name,
+        b.project_id, p.name as project_name, p.slug as project_slug
       from bugs b
       join modules m on m.id = b.module_id
+      join projects p on p.id = b.project_id
       where b.archived = ${archived}
         and b.owner_id = ${userId}
+        and (${projectId}::int is null or b.project_id = ${projectId}::int)
         and (${!excludeClosed} or b.status != 'Closed')
         and (
           ${cursor?.lastStatusChangeAt ?? null}::timestamptz is null
@@ -358,6 +380,7 @@ export const dashboardRepository = {
   // separate later action and shouldn't hide something that happened
   // during the period being looked at.
   async getDeveloperBugsForPeriod(
+    projectId: number | null,
     userId: number,
     periodStart: string,
     periodEnd: string,
@@ -370,6 +393,7 @@ export const dashboardRepository = {
       select count(*)::int as total
       from bugs
       where owner_id = ${userId}
+        and (${projectId}::int is null or project_id = ${projectId}::int)
         and last_status_change_at >= ${periodStart}::date
         and last_status_change_at < (${periodEnd}::date + interval '1 day')
     `
@@ -378,10 +402,13 @@ export const dashboardRepository = {
     const rows = await sql`
       select
         b.id, b.title, b.severity, b.status, b.module_id, b.last_status_change_at,
-        m.name as module_name
+        m.name as module_name,
+        b.project_id, p.name as project_name, p.slug as project_slug
       from bugs b
       join modules m on m.id = b.module_id
+      join projects p on p.id = b.project_id
       where b.owner_id = ${userId}
+        and (${projectId}::int is null or b.project_id = ${projectId}::int)
         and b.last_status_change_at >= ${periodStart}::date
         and b.last_status_change_at < (${periodEnd}::date + interval '1 day')
         and (
@@ -433,13 +460,14 @@ export const dashboardRepository = {
 
   // which modules this developer's open bugs are concentrated in, so
   // they can see at a glance where most of their current workload sits
-  async getDeveloperHotspots(userId: number, limit = 5): Promise<DeveloperHotspot[]> {
+  async getDeveloperHotspots(projectId: number | null, userId: number, limit = 5): Promise<DeveloperHotspot[]> {
     const sql = useDb()
     const rows = await sql`
       select b.module_id, m.name as module_name, count(*)::int as count
       from bugs b
       join modules m on m.id = b.module_id
       where b.archived = false and b.owner_id = ${userId} and b.status != 'Closed'
+        and (${projectId}::int is null or b.project_id = ${projectId}::int)
       group by b.module_id, m.name
       order by count desc
       limit ${limit}

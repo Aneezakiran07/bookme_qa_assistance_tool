@@ -50,24 +50,27 @@ export const releaseRepository = {
   // total), so a release with nothing executed shows 0 rather than a
   // misleading percentage. open_blockers is open Critical/High bugs
   // against the release, used for the "Release Blockers" metric.
-  async listWithStats(): Promise<ReleaseWithStats[]> {
+  async listWithStats(projectId: number): Promise<ReleaseWithStats[]> {
     const sql = useDb()
     const rows = await sql`
       with latest_executions as (
         select distinct on (release_id, test_case_id)
           release_id, test_case_id, result
         from test_executions
+        where release_id in (select id from releases where project_id = ${projectId})
         order by release_id, test_case_id, execution_date desc
       ),
       suite_counts as (
         select release_id, count(*)::int as total
         from test_case_release_links
+        where release_id in (select id from releases where project_id = ${projectId})
         group by release_id
       ),
       blocker_counts as (
         select release_id, count(*)::int as total
         from bugs
         where archived = false
+          and project_id = ${projectId}
           and status != 'Closed'
           and severity in ('Critical', 'High')
         group by release_id
@@ -92,6 +95,7 @@ export const releaseRepository = {
       left join suite_counts sc on sc.release_id = r.id
       left join latest_executions le on le.release_id = r.id
       left join blocker_counts bc on bc.release_id = r.id
+      where r.project_id = ${projectId}
       group by r.id, sc.total, bc.total
       order by r.created_at desc
     `
@@ -176,26 +180,26 @@ export const releaseRepository = {
     return rows as ReleaseExecutionHistoryRow[]
   },
 
-  async findById(id: number): Promise<ReleaseRecord | null> {
+  async findById(projectId: number, id: number): Promise<ReleaseRecord | null> {
     const sql = useDb()
-    const rows = await sql`select * from releases where id = ${id}`
+    const rows = await sql`select * from releases where id = ${id} and project_id = ${projectId}`
     return (rows[0] as ReleaseRecord) ?? null
   },
 
-  async findByVersion(version: string): Promise<ReleaseRecord | null> {
+  async findByVersion(projectId: number, version: string): Promise<ReleaseRecord | null> {
     const sql = useDb()
-    const rows = await sql`select * from releases where lower(version) = lower(${version})`
+    const rows = await sql`select * from releases where lower(version) = lower(${version}) and project_id = ${projectId}`
     return (rows[0] as ReleaseRecord) ?? null
   },
 
-  async create(input: {
+  async create(projectId: number, input: {
     version: string
     releaseDate: string | null
   }): Promise<ReleaseRecord> {
     const sql = useDb()
     const rows = await sql`
-      insert into releases (version, release_date)
-      values (${input.version}, ${input.releaseDate})
+      insert into releases (project_id, version, release_date)
+      values (${projectId}, ${input.version}, ${input.releaseDate})
       returning *
     `
     return rows[0] as ReleaseRecord
@@ -204,21 +208,21 @@ export const releaseRepository = {
   // dynamic partial update, same pattern as bugRepository.update: only
   // columns present in `fields` are touched. There is no updated_at
   // column on releases, so nothing else needs to move alongside these.
-  async update(id: number, fields: Partial<{
+  async update(projectId: number, id: number, fields: Partial<{
     version: string
     release_date: string | null
   }>): Promise<ReleaseRecord | null> {
     const sql = useDb()
     const entries = Object.entries(fields).filter(([, v]) => v !== undefined)
     if (entries.length === 0) {
-      return this.findById(id)
+      return this.findById(projectId, id)
     }
 
-    const setClauses = entries.map(([key], index) => `${key} = $${index + 2}`).join(', ')
+    const setClauses = entries.map(([key], index) => `${key} = $${index + 3}`).join(', ')
     const values = entries.map(([, value]) => value)
     const rows = await sql(
-      `update releases set ${setClauses} where id = $1 returning *`,
-      [id, ...values]
+      `update releases set ${setClauses} where id = $1 and project_id = $2 returning *`,
+      [id, projectId, ...values]
     )
     return (rows[0] as ReleaseRecord) ?? null
   },
@@ -228,9 +232,9 @@ export const releaseRepository = {
   // Postgres raises a foreign-key violation if either has rows for this
   // release. The caller (the DELETE endpoint) is expected to catch that
   // and turn it into a friendly 409 rather than a raw DB error.
-  async delete(id: number): Promise<ReleaseRecord | null> {
+  async delete(projectId: number, id: number): Promise<ReleaseRecord | null> {
     const sql = useDb()
-    const rows = await sql`delete from releases where id = ${id} returning *`
+    const rows = await sql`delete from releases where id = ${id} and project_id = ${projectId} returning *`
     return (rows[0] as ReleaseRecord) ?? null
   },
 
@@ -239,6 +243,18 @@ export const releaseRepository = {
   // testCaseRepository.setReleaseLinks but keyed the other way round
   // (one release, many test cases) for the Scoped Test Suite tab's bulk
   // add/remove UI.
+  // how many of the given release ids really belong to this project, callers compare it
+  // with the number of ids they sent to reject anything from another project
+  async countInProject(projectId: number, ids: number[]): Promise<number> {
+    if (ids.length === 0) return 0
+    const sql = useDb()
+    const rows = await sql`
+      select count(*)::int as cnt from releases
+      where project_id = ${projectId} and id = any(string_to_array(${ids.join(',')}, ',')::int[])
+    `
+    return (rows[0] as any).cnt as number
+  },
+
   async syncTestCases(releaseId: number, testCaseIds: number[]): Promise<void> {
     const sql = useDb()
     await sql`delete from test_case_release_links where release_id = ${releaseId}`

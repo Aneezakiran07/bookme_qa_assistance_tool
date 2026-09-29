@@ -1,5 +1,6 @@
 import { requirementRepository } from '~~/server/repositories/requirementRepository'
 import { moduleRepository } from '~~/server/repositories/moduleRepository'
+import { requireProject } from '~~/server/utils/requireProject'
 
 const VALID_STATUSES = ['Draft', 'Approved', 'In Testing', 'Done']
 
@@ -7,12 +8,13 @@ const VALID_STATUSES = ['Draft', 'Approved', 'In Testing', 'Done']
 // open to every active team member per the non-restrictive access model
 // for this pilot, so no requireRole call here.
 export default defineEventHandler(async (event) => {
+  const project = await requireProject(event, { write: true })
   const id = Number(getRouterParam(event, 'id'))
   if (!id) {
     throw createError({ statusCode: 400, statusMessage: 'Invalid requirement id' })
   }
 
-  const existing = await requirementRepository.findById(id)
+  const existing = await requirementRepository.findById(project.id, id)
   if (!existing) {
     throw createError({ statusCode: 404, statusMessage: 'Requirement not found' })
   }
@@ -30,7 +32,7 @@ export default defineEventHandler(async (event) => {
   }
 
   if (body?.moduleId !== undefined) {
-    const module = await moduleRepository.findById(Number(body.moduleId))
+    const module = await moduleRepository.findById(project.id, Number(body.moduleId))
     if (!module) {
       throw createError({ statusCode: 404, statusMessage: 'Selected module does not exist' })
     }
@@ -40,7 +42,7 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 400, statusMessage: 'Invalid status' })
   }
 
-  const updated = await requirementRepository.update(id, {
+  const updated = await requirementRepository.update(project.id, id, {
     title: body?.title?.trim(),
     moduleId: body?.moduleId ? Number(body.moduleId) : undefined,
     targetRelease: body?.targetRelease !== undefined ? (body.targetRelease?.trim() || null) : undefined,

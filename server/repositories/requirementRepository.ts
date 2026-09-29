@@ -26,7 +26,7 @@ export const requirementRepository = {
   // moduleId narrows the list to one module, same filter the page's
   // module dropdown uses. left undefined this returns every active
   // (non archived) requirement across all modules.
-  async list(moduleId?: number): Promise<RequirementWithMeta[]> {
+  async list(projectId: number, moduleId?: number): Promise<RequirementWithMeta[]> {
     const sql = useDb()
     const rows = moduleId
       ? await sql`
@@ -45,7 +45,7 @@ export const requirementRepository = {
             where tc.archived = false
             group by l.requirement_id
           ) l on l.requirement_id = r.id
-          where r.archived = false and r.module_id = ${moduleId}
+          where r.archived = false and r.project_id = ${projectId} and r.module_id = ${moduleId}
           order by r.created_at desc
         `
       : await sql`
@@ -64,19 +64,19 @@ export const requirementRepository = {
             where tc.archived = false
             group by l.requirement_id
           ) l on l.requirement_id = r.id
-          where r.archived = false
+          where r.archived = false and r.project_id = ${projectId}
           order by r.created_at desc
         `
     return rows as RequirementWithMeta[]
   },
 
-  async findById(id: number): Promise<RequirementRecord | null> {
+  async findById(projectId: number, id: number): Promise<RequirementRecord | null> {
     const sql = useDb()
-    const rows = await sql`select * from requirements where id = ${id}`
+    const rows = await sql`select * from requirements where id = ${id} and project_id = ${projectId}`
     return (rows[0] as RequirementRecord) ?? null
   },
 
-  async create(input: {
+  async create(projectId: number, input: {
     title: string
     moduleId: number
     targetRelease: string | null
@@ -86,8 +86,9 @@ export const requirementRepository = {
   }): Promise<RequirementRecord> {
     const sql = useDb()
     const rows = await sql`
-      insert into requirements (title, module_id, target_release, status, description, created_by)
+      insert into requirements (project_id, title, module_id, target_release, status, description, created_by)
       values (
+        ${projectId},
         ${input.title},
         ${input.moduleId},
         ${input.targetRelease},
@@ -103,6 +104,7 @@ export const requirementRepository = {
   // partial update: only columns present in patch are touched, so a
   // status-only transition doesn't require resending the whole form
   async update(
+    projectId: number,
     id: number,
     patch: {
       title?: string
@@ -113,7 +115,7 @@ export const requirementRepository = {
     }
   ): Promise<RequirementRecord | null> {
     const sql = useDb()
-    const current = await this.findById(id)
+    const current = await this.findById(projectId, id)
     if (!current) return null
 
     const rows = await sql`
@@ -123,7 +125,7 @@ export const requirementRepository = {
         target_release = ${patch.targetRelease !== undefined ? patch.targetRelease : current.target_release},
         status = ${patch.status ?? current.status},
         description = ${patch.description !== undefined ? patch.description : current.description}
-      where id = ${id}
+      where id = ${id} and project_id = ${projectId}
       returning *
     `
     return (rows[0] as RequirementRecord) ?? null
@@ -131,10 +133,21 @@ export const requirementRepository = {
 
   // soft delete only, matches the schema's archived flag. the row and
   // its links stay in place so history and reporting are not lost.
-  async archive(id: number): Promise<RequirementRecord | null> {
+  // how many of the given requirement ids really belong to this project
+  async countInProject(projectId: number, ids: number[]): Promise<number> {
+    if (ids.length === 0) return 0
     const sql = useDb()
     const rows = await sql`
-      update requirements set archived = true where id = ${id}
+      select count(*)::int as cnt from requirements
+      where project_id = ${projectId} and id = any(string_to_array(${ids.join(',')}, ',')::int[])
+    `
+    return (rows[0] as any).cnt as number
+  },
+
+  async archive(projectId: number, id: number): Promise<RequirementRecord | null> {
+    const sql = useDb()
+    const rows = await sql`
+      update requirements set archived = true where id = ${id} and project_id = ${projectId}
       returning *
     `
     return (rows[0] as RequirementRecord) ?? null

@@ -1,10 +1,13 @@
 import { useCloudinary } from '~~/server/utils/cloudinary'
 import { bugAttachmentRepository } from '~~/server/repositories/bugAttachmentRepository'
+import { bugRepository } from '~~/server/repositories/bugRepository'
+import { requireProject } from '~~/server/utils/requireProject'
 
 // video length is capped in the frontend uploader before it ever reaches here,
 // this endpoint does not transcode anything, it just forwards the file
 export default defineEventHandler(async (event) => {
   const currentUser = event.context.currentUser
+  const project = await requireProject(event, { write: true })
   const form = await readMultipartFormData(event)
   if (!form) {
     throw createError({ statusCode: 400, statusMessage: 'No file uploaded' })
@@ -17,6 +20,16 @@ export default defineEventHandler(async (event) => {
   }
 
   const bugId = Number(bugIdField.data.toString())
+  if (!bugId || Number.isNaN(bugId)) {
+    throw createError({ statusCode: 400, statusMessage: 'Invalid bug id' })
+  }
+
+  // the bug has to belong to the current project before anything is uploaded
+  const bug = await bugRepository.findById(project.id, bugId)
+  if (!bug) {
+    throw createError({ statusCode: 404, statusMessage: 'Bug not found' })
+  }
+
   const isVideo = fileField.type?.startsWith('video')
   const fileType: 'image' | 'video' = isVideo ? 'video' : 'image'
 

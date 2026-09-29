@@ -1,4 +1,5 @@
 import { bugRepository } from '~~/server/repositories/bugRepository'
+import { requireProject } from '~~/server/utils/requireProject'
 import { VALID_PERIODS, resolvePeriodRange, type Period } from '~~/server/utils/karachiDate'
 
 // QA/Tester/Admin-facing Bug Tracker (app/pages/bugs/index.vue). Same
@@ -9,11 +10,12 @@ import { VALID_PERIODS, resolvePeriodRange, type Period } from '~~/server/utils/
 // the same karachiDate helper developer/bugs.get.ts uses, so both pages
 // agree on where a day/week/month starts.
 export default defineEventHandler(async (event) => {
+  const project = await requireProject(event)
   const query = getQuery(event)
   const period: Period = VALID_PERIODS.includes(query.period as Period) ? (query.period as Period) : 'all'
   const { periodStart, periodEnd } = resolvePeriodRange(period)
 
-  return bugRepository.list({
+  return bugRepository.list(project.id, {
     moduleId: query.moduleId ? Number(query.moduleId) : undefined,
     severity: query.severity ? String(query.severity) : undefined,
     status: query.status ? String(query.status) : undefined,

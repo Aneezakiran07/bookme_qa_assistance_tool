@@ -1,5 +1,8 @@
 import { bugRepository } from '~~/server/repositories/bugRepository'
+import { releaseRepository } from '~~/server/repositories/releaseRepository'
+import { testCaseRepository } from '~~/server/repositories/testCaseRepository'
 import { userRepository } from '~~/server/repositories/userRepository'
+import { requireProject } from '~~/server/utils/requireProject'
 import { bugStatusHistoryRepository } from '~~/server/repositories/bugStatusHistoryRepository'
 import { bugAssignmentLogRepository } from '~~/server/repositories/bugAssignmentLogRepository'
 import { sendEmail } from '~~/server/utils/email'
@@ -10,12 +13,13 @@ const VALID_STATUSES = ['Open', 'In Progress', 'Fixed', 'Retest', 'Closed', 'Reo
 
 export default defineEventHandler(async (event) => {
   const currentUser = event.context.currentUser
+  const project = await requireProject(event, { write: true })
   const bugId = Number(getRouterParam(event, 'id'))
   if (!bugId || Number.isNaN(bugId)) {
     throw createError({ statusCode: 400, statusMessage: 'Invalid bug id' })
   }
 
-  const existing = await bugRepository.findById(bugId)
+  const existing = await bugRepository.findById(project.id, bugId)
   if (!existing) {
     throw createError({ statusCode: 404, statusMessage: 'Bug not found' })
   }
@@ -102,10 +106,16 @@ export default defineEventHandler(async (event) => {
   }
 
   if (body.releaseId !== undefined) {
+    if (body.releaseId !== null && !(await releaseRepository.findById(project.id, Number(body.releaseId)))) {
+      throw createError({ statusCode: 404, statusMessage: 'Release not found' })
+    }
     fields.release_id = body.releaseId ?? null
   }
 
   if (body.linkedTestCaseId !== undefined) {
+    if (body.linkedTestCaseId !== null && !(await testCaseRepository.findById(project.id, Number(body.linkedTestCaseId)))) {
+      throw createError({ statusCode: 404, statusMessage: 'Linked test case not found' })
+    }
     fields.linked_test_case_id = body.linkedTestCaseId ?? null
   }
 
@@ -135,7 +145,7 @@ export default defineEventHandler(async (event) => {
   }
 
   if (Object.keys(fields).length === 0) {
-    return bugRepository.findByIdWithMeta(bugId)
+    return bugRepository.findByIdWithMeta(project.id, bugId)
   }
 
   if (fields.status) {
@@ -156,7 +166,7 @@ export default defineEventHandler(async (event) => {
     })
   }
 
-  await bugRepository.update(bugId, fields as any)
+  await bugRepository.update(project.id, bugId, fields as any)
 
   if (newOwner) {
     const bugCode = `BUG-${String(bugId).padStart(3, '0')}`
@@ -181,5 +191,5 @@ export default defineEventHandler(async (event) => {
     })
   }
 
-  return bugRepository.findByIdWithMeta(bugId)
+  return bugRepository.findByIdWithMeta(project.id, bugId)
 })

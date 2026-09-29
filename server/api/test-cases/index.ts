@@ -1,5 +1,8 @@
 import { testCaseRepository } from '~~/server/repositories/testCaseRepository'
 import { moduleRepository } from '~~/server/repositories/moduleRepository'
+import { requirementRepository } from '~~/server/repositories/requirementRepository'
+import { releaseRepository } from '~~/server/repositories/releaseRepository'
+import { requireProject } from '~~/server/utils/requireProject'
 
 const VALID_PRIORITIES = ['High', 'Medium', 'Low']
 const VALID_TYPES = ['Manual', 'Automated']
@@ -10,6 +13,7 @@ const VALID_TYPES = ['Manual', 'Automated']
 // can list and create test cases, so no requireRole call here.
 export default defineEventHandler(async (event) => {
   const currentUser = event.context.currentUser
+  const project = await requireProject(event, { write: event.method !== 'GET' })
 
   if (event.method === 'GET') {
     const query = getQuery(event)
@@ -30,7 +34,7 @@ export default defineEventHandler(async (event) => {
       throw createError({ statusCode: 400, statusMessage: 'Invalid releaseId' })
     }
 
-    return testCaseRepository.list({ moduleId, priority, type, releaseId })
+    return testCaseRepository.list(project.id, { moduleId, priority, type, releaseId })
   }
 
   if (event.method === 'POST') {
@@ -54,7 +58,7 @@ export default defineEventHandler(async (event) => {
     if (!moduleId) {
       throw createError({ statusCode: 400, statusMessage: 'Module is required' })
     }
-    const module = await moduleRepository.findById(moduleId)
+    const module = await moduleRepository.findById(project.id, moduleId)
     if (!module) {
       throw createError({ statusCode: 404, statusMessage: 'Selected module does not exist' })
     }
@@ -76,7 +80,17 @@ export default defineEventHandler(async (event) => {
       ? body.releaseIds.map(Number).filter((n) => Number.isFinite(n))
       : []
 
-    return testCaseRepository.create({
+    // every requirement and release being linked must belong to this project
+    const uniqueRequirementIds = [...new Set(requirementIds)]
+    if ((await requirementRepository.countInProject(project.id, uniqueRequirementIds)) !== uniqueRequirementIds.length) {
+      throw createError({ statusCode: 400, statusMessage: 'One or more requirements do not belong to this project' })
+    }
+    const uniqueReleaseIds = [...new Set(releaseIds)]
+    if ((await releaseRepository.countInProject(project.id, uniqueReleaseIds)) !== uniqueReleaseIds.length) {
+      throw createError({ statusCode: 400, statusMessage: 'One or more releases do not belong to this project' })
+    }
+
+    return testCaseRepository.create(project.id, {
       title,
       moduleId,
       steps: body?.steps ?? null,

@@ -23,7 +23,7 @@ export const moduleRepository = {
   // only active (non-archived) modules -- an archived module drops out
   // of every "Filter by Module" dropdown and the App Map table, same as
   // an archived requirement or test case drops out of their own lists.
-  async list(): Promise<ModuleWithMeta[]> {
+  async list(projectId: number): Promise<ModuleWithMeta[]> {
     const sql = useDb()
     const rows = await sql`
       select
@@ -39,7 +39,7 @@ export const moduleRepository = {
       left join (
         select module_id, count(*) as cnt from test_cases where archived = false group by module_id
       ) t on t.module_id = m.id
-      where m.archived = false
+      where m.archived = false and m.project_id = ${projectId}
       order by m.name asc
     `
     return rows as ModuleWithMeta[]
@@ -51,17 +51,17 @@ export const moduleRepository = {
   // when checking its own (possibly unchanged) name against itself.
   // Only checks active modules -- an archived module's old name is free
   // to reuse, matching the partial unique index in the schema.
-  async findByNameLower(name: string, excludeId?: number): Promise<ModuleRecord | null> {
+  async findByNameLower(projectId: number, name: string, excludeId?: number): Promise<ModuleRecord | null> {
     const sql = useDb()
     const rows = excludeId
-      ? await sql`select * from modules where lower(name) = lower(${name}) and archived = false and id != ${excludeId}`
-      : await sql`select * from modules where lower(name) = lower(${name}) and archived = false`
+      ? await sql`select * from modules where lower(name) = lower(${name}) and archived = false and project_id = ${projectId} and id != ${excludeId}`
+      : await sql`select * from modules where lower(name) = lower(${name}) and archived = false and project_id = ${projectId}`
     return (rows[0] as ModuleRecord) ?? null
   },
 
-  async findById(id: number): Promise<ModuleRecord | null> {
+  async findById(projectId: number, id: number): Promise<ModuleRecord | null> {
     const sql = useDb()
-    const rows = await sql`select * from modules where id = ${id}`
+    const rows = await sql`select * from modules where id = ${id} and project_id = ${projectId}`
     return (rows[0] as ModuleRecord) ?? null
   },
 
@@ -72,23 +72,23 @@ export const moduleRepository = {
   // this, so it gets a proper 409 instead of silently getting the
   // existing row back. the where clause mirrors the partial unique
   // index so Postgres can actually use it as the conflict target.
-  async create(name: string, createdBy: number): Promise<ModuleRecord> {
+  async create(projectId: number, name: string, createdBy: number): Promise<ModuleRecord> {
     const sql = useDb()
     const rows = await sql`
-      insert into modules (name, created_by)
-      values (${name}, ${createdBy})
-      on conflict (lower(name)) where archived = false do nothing
+      insert into modules (project_id, name, created_by)
+      values (${projectId}, ${name}, ${createdBy})
+      on conflict (project_id, lower(name)) where archived = false do nothing
       returning *
     `
     if (rows[0]) return rows[0] as ModuleRecord
-    const existing = await sql`select * from modules where lower(name) = lower(${name}) and archived = false`
+    const existing = await sql`select * from modules where lower(name) = lower(${name}) and archived = false and project_id = ${projectId}`
     return existing[0] as ModuleRecord
   },
 
-  async update(id: number, name: string): Promise<ModuleRecord | null> {
+  async update(projectId: number, id: number, name: string): Promise<ModuleRecord | null> {
     const sql = useDb()
     const rows = await sql`
-      update modules set name = ${name} where id = ${id}
+      update modules set name = ${name} where id = ${id} and project_id = ${projectId}
       returning *
     `
     return (rows[0] as ModuleRecord) ?? null
@@ -121,10 +121,10 @@ export const moduleRepository = {
   // deleted anyway. Flipping archived instead sidesteps that for good:
   // the row (and everything that still legitimately references it)
   // stays put, it just disappears from every list and dropdown.
-  async archive(id: number): Promise<ModuleRecord | null> {
+  async archive(projectId: number, id: number): Promise<ModuleRecord | null> {
     const sql = useDb()
     const rows = await sql`
-      update modules set archived = true where id = ${id}
+      update modules set archived = true where id = ${id} and project_id = ${projectId}
       returning *
     `
     return (rows[0] as ModuleRecord) ?? null

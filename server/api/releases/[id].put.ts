@@ -1,12 +1,14 @@
 import { releaseRepository } from '~~/server/repositories/releaseRepository'
+import { requireProject } from '~~/server/utils/requireProject'
 
 export default defineEventHandler(async (event) => {
+  const project = await requireProject(event, { write: true })
   const id = Number(getRouterParam(event, 'id'))
   if (!id || Number.isNaN(id)) {
     throw createError({ statusCode: 400, statusMessage: 'Invalid release id' })
   }
 
-  const existing = await releaseRepository.findById(id)
+  const existing = await releaseRepository.findById(project.id, id)
   if (!existing) {
     throw createError({ statusCode: 404, statusMessage: 'Release not found' })
   }
@@ -24,7 +26,7 @@ export default defineEventHandler(async (event) => {
       throw createError({ statusCode: 400, statusMessage: 'Version is required' })
     }
     if (version.toLowerCase() !== existing.version.toLowerCase()) {
-      const clashing = await releaseRepository.findByVersion(version)
+      const clashing = await releaseRepository.findByVersion(project.id, version)
       if (clashing) {
         throw createError({
           statusCode: 409,
@@ -43,5 +45,5 @@ export default defineEventHandler(async (event) => {
     return existing
   }
 
-  return releaseRepository.update(id, fields as any)
+  return releaseRepository.update(project.id, id, fields as any)
 })

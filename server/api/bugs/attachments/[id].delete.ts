@@ -1,12 +1,14 @@
 import { useCloudinary } from '~~/server/utils/cloudinary'
 import { bugAttachmentRepository } from '~~/server/repositories/bugAttachmentRepository'
+import { requireProject } from '~~/server/utils/requireProject'
 export default defineEventHandler(async (event) => {
+  const project = await requireProject(event, { write: true })
   const attachmentId = Number(getRouterParam(event, 'id'))
   if (!attachmentId || Number.isNaN(attachmentId)) {
     throw createError({ statusCode: 400, statusMessage: 'Invalid attachment id' })
   }
 
-  const deleted = await bugAttachmentRepository.delete(attachmentId)
+  const deleted = await bugAttachmentRepository.delete(project.id, attachmentId)
 
   if (!deleted) {
     throw createError({ statusCode: 404, statusMessage: 'Attachment not found' })

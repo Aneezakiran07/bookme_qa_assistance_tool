@@ -36,11 +36,16 @@ export const bugAttachmentRepository = {
     return mapRow(rows[0])
   },
 
-  async delete(attachmentId: number) {
+  // the attachment only counts as found when its bug belongs to the given project
+  async delete(projectId: number, attachmentId: number) {
     const sql = useDb()
     const rows = await sql`
-      delete from bug_attachments where id = ${attachmentId}
-      returning *
+      delete from bug_attachments a
+      using bugs b
+      where a.id = ${attachmentId}
+        and b.id = a.bug_id
+        and b.project_id = ${projectId}
+      returning a.*
     `
     return mapRow(rows[0])
   }

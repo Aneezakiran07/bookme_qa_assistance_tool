@@ -62,7 +62,7 @@ export interface BugMetrics {
 }
 
 export const bugRepository = {
-  async list(filters: BugFilters = {}): Promise<BugWithMeta[]> {
+  async list(projectId: number, filters: BugFilters = {}): Promise<BugWithMeta[]> {
     const sql = useDb()
     const rows = await sql`
       select
@@ -80,6 +80,7 @@ export const bugRepository = {
       left join test_cases tc on tc.id = b.linked_test_case_id
       where
         b.archived = false
+        and b.project_id = ${projectId}
         and (${filters.moduleId ?? null}::int is null or b.module_id = ${filters.moduleId ?? null}::int)
         and (${filters.severity ?? null}::text is null or b.severity = ${filters.severity ?? null}::text)
         and (${filters.status ?? null}::text is null or b.status = ${filters.status ?? null}::text)
@@ -91,7 +92,7 @@ export const bugRepository = {
     return rows as BugWithMeta[]
   },
 
-  async findByIdWithMeta(id: number): Promise<BugWithMeta | null> {
+  async findByIdWithMeta(projectId: number, id: number): Promise<BugWithMeta | null> {
     const sql = useDb()
     const rows = await sql`
       select
@@ -108,7 +109,7 @@ export const bugRepository = {
       left join users reporter on reporter.id = b.reported_by
       left join releases r on r.id = b.release_id
       left join test_cases tc on tc.id = b.linked_test_case_id
-      where b.id = ${id}
+      where b.id = ${id} and b.project_id = ${projectId}
     `
     return (rows[0] as BugWithMeta) ?? null
   },
@@ -116,7 +117,7 @@ export const bugRepository = {
   // powers the 4 metric cards on the list page. deliberately unfiltered
   // by the current table filters, same as a dashboard summary, so the
   // header numbers stay a stable overview while the table below narrows
-  async metrics(): Promise<BugMetrics> {
+  async metrics(projectId: number): Promise<BugMetrics> {
     const sql = useDb()
     const rows = await sql`
       select
@@ -125,14 +126,14 @@ export const bugRepository = {
         count(*) filter (where status = 'Retest')::int as in_retest,
         count(*) filter (where status = 'Closed')::int as closed
       from bugs
-      where archived = false
+      where archived = false and project_id = ${projectId}
     `
     return rows[0] as BugMetrics
   },
 
-  async findById(id: number): Promise<BugRecord | null> {
+  async findById(projectId: number, id: number): Promise<BugRecord | null> {
     const sql = useDb()
-    const rows = await sql`select * from bugs where id = ${id}`
+    const rows = await sql`select * from bugs where id = ${id} and project_id = ${projectId}`
     return (rows[0] as BugRecord) ?? null
   },
 
@@ -156,6 +157,7 @@ export const bugRepository = {
   // directory behaves exactly as before: every non archived bug in scope,
   // no matter when it last moved.
   async listForDeveloper(
+    projectId: number,
     userId: number,
     scope: DeveloperBugScope,
     filters: DeveloperBugFilters = {}
@@ -187,6 +189,7 @@ export const bugRepository = {
       left join test_cases tc on tc.id = b.linked_test_case_id
       where
         b.archived = false
+        and b.project_id = ${projectId}
         and (${scopeOwnerId}::int is null or b.owner_id = ${scopeOwnerId}::int)
         and (${filters.moduleId ?? null}::int is null or b.module_id = ${filters.moduleId ?? null}::int)
         and (${filters.severity ?? null}::text is null or b.severity = ${filters.severity ?? null}::text)
@@ -202,7 +205,7 @@ export const bugRepository = {
   // has a non closed, non archived bug against it, the modal should offer
   // to reopen or link to that ticket instead of silently creating a new
   // one for the same underlying defect
-  async findOpenByTestCase(testCaseId: number): Promise<BugWithMeta | null> {
+  async findOpenByTestCase(projectId: number, testCaseId: number): Promise<BugWithMeta | null> {
     const sql = useDb()
     const rows = await sql`
       select
@@ -219,6 +222,7 @@ export const bugRepository = {
       left join releases r on r.id = b.release_id
       left join test_cases tc on tc.id = b.linked_test_case_id
       where b.linked_test_case_id = ${testCaseId}
+        and b.project_id = ${projectId}
         and b.status != 'Closed'
         and b.archived = false
       order by b.reported_at desc
@@ -230,7 +234,7 @@ export const bugRepository = {
   // dynamic partial update: only the fields present in `fields` are
   // touched. `status` and `owner_id` changes are audited by the caller
   // (the PUT endpoint), not here, so this stays a plain column update
-  async update(id: number, fields: Partial<{
+  async update(projectId: number, id: number, fields: Partial<{
     title: string
     severity: string
     priority: string | null
@@ -248,14 +252,14 @@ export const bugRepository = {
     const sql = useDb()
     const entries = Object.entries(fields).filter(([, v]) => v !== undefined)
     if (entries.length === 0) {
-      return this.findById(id)
+      return this.findById(projectId, id)
     }
 
-    const setClauses = entries.map(([key], index) => `${key} = $${index + 2}`).join(', ')
+    const setClauses = entries.map(([key], index) => `${key} = $${index + 3}`).join(', ')
     const values = entries.map(([, value]) => value)
     const rows = await sql(
-      `update bugs set ${setClauses} where id = $1 returning *`,
-      [id, ...values]
+      `update bugs set ${setClauses} where id = $1 and project_id = $2 returning *`,
+      [id, projectId, ...values]
     )
     return (rows[0] as BugRecord) ?? null
   },
@@ -263,16 +267,16 @@ export const bugRepository = {
   // soft delete only, matches requirements' pattern: the row, its
   // attachments, assignment log, and status history all stay in place
   // so a bug's audit trail and reporting are never lost
-  async archive(id: number): Promise<BugRecord | null> {
+  async archive(projectId: number, id: number): Promise<BugRecord | null> {
     const sql = useDb()
     const rows = await sql`
-      update bugs set archived = true where id = ${id}
+      update bugs set archived = true where id = ${id} and project_id = ${projectId}
       returning *
     `
     return (rows[0] as BugRecord) ?? null
   },
 
-  async create(input: {
+  async create(projectId: number, input: {
     title: string
     moduleId: number
     severity: string
@@ -289,11 +293,12 @@ export const bugRepository = {
     const sql = useDb()
     const rows = await sql`
       insert into bugs (
-        title, module_id, severity, priority, status,
+        project_id, title, module_id, severity, priority, status,
         environment_build, linked_test_case_id, release_id,
         steps_to_reproduce, actual_result, expected_result, reported_by, owner_id
       )
       values (
+        ${projectId},
         ${input.title},
         ${input.moduleId},
         ${input.severity},

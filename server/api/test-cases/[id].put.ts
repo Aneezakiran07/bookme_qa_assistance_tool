@@ -1,5 +1,8 @@
 import { testCaseRepository } from '~~/server/repositories/testCaseRepository'
 import { moduleRepository } from '~~/server/repositories/moduleRepository'
+import { requirementRepository } from '~~/server/repositories/requirementRepository'
+import { releaseRepository } from '~~/server/repositories/releaseRepository'
+import { requireProject } from '~~/server/utils/requireProject'
 
 const VALID_PRIORITIES = ['High', 'Medium', 'Low']
 const VALID_TYPES = ['Manual', 'Automated']
@@ -8,12 +11,13 @@ const VALID_TYPES = ['Manual', 'Automated']
 // open to every active team member per the non-restrictive access model.
 export default defineEventHandler(async (event) => {
   const currentUser = event.context.currentUser
+  const project = await requireProject(event, { write: true })
   const id = Number(getRouterParam(event, 'id'))
   if (!id) {
     throw createError({ statusCode: 400, statusMessage: 'Invalid test case id' })
   }
 
-  const existing = await testCaseRepository.findById(id)
+  const existing = await testCaseRepository.findById(project.id, id)
   if (!existing) {
     throw createError({ statusCode: 404, statusMessage: 'Test case not found' })
   }
@@ -34,7 +38,7 @@ export default defineEventHandler(async (event) => {
   }
 
   if (body?.moduleId !== undefined) {
-    const module = await moduleRepository.findById(Number(body.moduleId))
+    const module = await moduleRepository.findById(project.id, Number(body.moduleId))
     if (!module) {
       throw createError({ statusCode: 404, statusMessage: 'Selected module does not exist' })
     }
@@ -48,7 +52,27 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 400, statusMessage: 'Invalid type' })
   }
 
-  const updated = await testCaseRepository.update(id, {
+  // link ids are checked before anything is written so a bad id cannot leave a half saved test case
+  const requirementIds = Array.isArray(body?.requirementIds)
+    ? body.requirementIds.map(Number).filter((n) => Number.isFinite(n))
+    : null
+  if (requirementIds) {
+    const uniqueIds = [...new Set(requirementIds)]
+    if ((await requirementRepository.countInProject(project.id, uniqueIds)) !== uniqueIds.length) {
+      throw createError({ statusCode: 400, statusMessage: 'One or more requirements do not belong to this project' })
+    }
+  }
+  const releaseIds = Array.isArray(body?.releaseIds)
+    ? body.releaseIds.map(Number).filter((n) => Number.isFinite(n))
+    : null
+  if (releaseIds) {
+    const uniqueIds = [...new Set(releaseIds)]
+    if ((await releaseRepository.countInProject(project.id, uniqueIds)) !== uniqueIds.length) {
+      throw createError({ statusCode: 400, statusMessage: 'One or more releases do not belong to this project' })
+    }
+  }
+
+  const updated = await testCaseRepository.update(project.id, id, {
     title: body?.title?.trim(),
     moduleId: body?.moduleId ? Number(body.moduleId) : undefined,
     steps: body?.steps !== undefined ? body.steps : undefined,
@@ -58,13 +82,11 @@ export default defineEventHandler(async (event) => {
     lastModifiedBy: currentUser.id
   })
 
-  if (Array.isArray(body?.requirementIds)) {
-    const requirementIds = body.requirementIds.map(Number).filter((n) => Number.isFinite(n))
+  if (requirementIds) {
     await testCaseRepository.setRequirementLinks(id, requirementIds)
   }
 
-  if (Array.isArray(body?.releaseIds)) {
-    const releaseIds = body.releaseIds.map(Number).filter((n) => Number.isFinite(n))
+  if (releaseIds) {
     await testCaseRepository.setReleaseLinks(id, releaseIds)
   }
 

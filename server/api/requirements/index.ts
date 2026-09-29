@@ -1,5 +1,6 @@
 import { requirementRepository } from '~~/server/repositories/requirementRepository'
 import { moduleRepository } from '~~/server/repositories/moduleRepository'
+import { requireProject } from '~~/server/utils/requireProject'
 
 const VALID_STATUSES = ['Draft', 'Approved', 'In Testing', 'Done']
 
@@ -10,6 +11,7 @@ const VALID_STATUSES = ['Draft', 'Approved', 'In Testing', 'Done']
 // signed in and active before this handler ever runs.
 export default defineEventHandler(async (event) => {
   const currentUser = event.context.currentUser
+  const project = await requireProject(event, { write: event.method !== 'GET' })
 
   if (event.method === 'GET') {
     const query = getQuery(event)
@@ -17,7 +19,7 @@ export default defineEventHandler(async (event) => {
     if (query.moduleId && (!moduleId || Number.isNaN(moduleId))) {
       throw createError({ statusCode: 400, statusMessage: 'Invalid moduleId' })
     }
-    return requirementRepository.list(moduleId)
+    return requirementRepository.list(project.id, moduleId)
   }
 
   if (event.method === 'POST') {
@@ -38,7 +40,7 @@ export default defineEventHandler(async (event) => {
     if (!moduleId) {
       throw createError({ statusCode: 400, statusMessage: 'Module is required' })
     }
-    const module = await moduleRepository.findById(moduleId)
+    const module = await moduleRepository.findById(project.id, moduleId)
     if (!module) {
       throw createError({ statusCode: 404, statusMessage: 'Selected module does not exist' })
     }
@@ -48,7 +50,7 @@ export default defineEventHandler(async (event) => {
       throw createError({ statusCode: 400, statusMessage: 'Invalid status' })
     }
 
-    return requirementRepository.create({
+    return requirementRepository.create(project.id, {
       title,
       moduleId,
       targetRelease: body?.targetRelease?.trim() || null,

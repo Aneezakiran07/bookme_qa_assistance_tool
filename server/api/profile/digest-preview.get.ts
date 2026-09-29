@@ -12,6 +12,9 @@ import { karachiNow, mondayOfThisWeek } from '~~/server/utils/karachiDate'
 // the bug list uses cursor pagination rather than offset/limit -- see
 // getDeveloperBugsForPeriod for why.
 //
+// the profile page is not tied to one project, so this digest spans every
+// project and each bug row carries its project name and slug
+//
 // karachiNow/mondayOfThisWeek live in server/utils/karachiDate.ts and
 // are shared with the developer bugs directory's period filter, so both
 // pages agree on where a day/week starts.
@@ -25,13 +28,18 @@ function parseCursor(query: Record<string, unknown>): { lastStatusChangeAt: stri
   return { lastStatusChangeAt: ts, id: parsedId }
 }
 
-function formatBugRows(bugs: { id: number; title: string; severity: string; status: string }[]) {
+function formatBugRows(
+  bugs: { id: number; title: string; severity: string; status: string; project_id: number; project_name: string; project_slug: string }[]
+) {
   return bugs.map((b) => ({
     id: b.id,
     code: `BUG-${String(b.id).padStart(3, '0')}`,
     title: b.title,
     severity: b.severity,
-    status: b.status
+    status: b.status,
+    projectId: b.project_id,
+    projectName: b.project_name,
+    projectSlug: b.project_slug
   }))
 }
 
@@ -63,6 +71,7 @@ export default defineEventHandler(async (event) => {
   // rows for the same period
   if (bugsOnly) {
     const { bugs, totalCount } = await dashboardRepository.getDeveloperBugsForPeriod(
+      null,
       currentUser.id,
       periodStart,
       periodEnd,
@@ -80,6 +89,7 @@ export default defineEventHandler(async (event) => {
   }
 
   const { bugs, totalCount } = await dashboardRepository.getDeveloperBugsForPeriod(
+    null,
     currentUser.id,
     periodStart,
     periodEnd,

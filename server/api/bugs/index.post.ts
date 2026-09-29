@@ -6,6 +6,7 @@ import { userRepository } from '~~/server/repositories/userRepository'
 import { bugStatusHistoryRepository } from '~~/server/repositories/bugStatusHistoryRepository'
 import { bugAssignmentLogRepository } from '~~/server/repositories/bugAssignmentLogRepository'
 import { sendEmail } from '~~/server/utils/email'
+import { requireProject } from '~~/server/utils/requireProject'
 
 const VALID_SEVERITIES = ['Critical', 'High', 'Medium', 'Low']
 const VALID_PRIORITIES = ['High', 'Medium', 'Low']
@@ -33,6 +34,7 @@ function escapeHtml(value: string): string {
 // and is always stored as the reporter, never taken from the request body
 export default defineEventHandler(async (event) => {
   const currentUser = event.context.currentUser
+  const project = await requireProject(event, { write: true })
 
   const body = await readBody<{
     title?: string
@@ -57,7 +59,7 @@ export default defineEventHandler(async (event) => {
   if (!moduleId) {
     throw createError({ statusCode: 400, statusMessage: 'Module is required' })
   }
-  const moduleRecord = await moduleRepository.findById(moduleId)
+  const moduleRecord = await moduleRepository.findById(project.id, moduleId)
   if (!moduleRecord || moduleRecord.archived) {
     throw createError({ statusCode: 404, statusMessage: 'Module not found' })
   }
@@ -70,12 +72,12 @@ export default defineEventHandler(async (event) => {
   }
 
   const linkedTestCaseId = parseOptionalId(body.linkedTestCaseId, 'test case')
-  if (linkedTestCaseId && !(await testCaseRepository.findById(linkedTestCaseId))) {
+  if (linkedTestCaseId && !(await testCaseRepository.findById(project.id, linkedTestCaseId))) {
     throw createError({ statusCode: 404, statusMessage: 'Linked test case not found' })
   }
 
   const releaseId = parseOptionalId(body.releaseId, 'release')
-  if (releaseId && !(await releaseRepository.findById(releaseId))) {
+  if (releaseId && !(await releaseRepository.findById(project.id, releaseId))) {
     throw createError({ statusCode: 404, statusMessage: 'Release not found' })
   }
 
@@ -85,7 +87,7 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 404, statusMessage: 'Assignee not found' })
   }
 
-  const created = await bugRepository.create({
+  const created = await bugRepository.create(project.id, {
     title,
     moduleId,
     severity: body.severity,
@@ -136,5 +138,5 @@ export default defineEventHandler(async (event) => {
     })
   }
 
-  return bugRepository.findByIdWithMeta(created.id)
+  return bugRepository.findByIdWithMeta(project.id, created.id)
 })

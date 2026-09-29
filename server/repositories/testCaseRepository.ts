@@ -33,7 +33,7 @@ export interface TestCaseFilters {
 }
 
 export const testCaseRepository = {
-  async list(filters: TestCaseFilters = {}): Promise<TestCaseWithMeta[]> {
+  async list(projectId: number, filters: TestCaseFilters = {}): Promise<TestCaseWithMeta[]> {
     const sql = useDb()
     const rows = await sql`
       select
@@ -56,6 +56,7 @@ export const testCaseRepository = {
       ) rl on rl.test_case_id = tc.id
       where
         tc.archived = false
+        and tc.project_id = ${projectId}
         and (${filters.moduleId ?? null}::int is null or tc.module_id = ${filters.moduleId ?? null}::int)
         and (${filters.priority ?? null}::text is null or tc.priority = ${filters.priority ?? null}::text)
         and (${filters.type ?? null}::text is null or tc.type = ${filters.type ?? null}::text)
@@ -71,9 +72,9 @@ export const testCaseRepository = {
     return rows as TestCaseWithMeta[]
   },
 
-  async findById(id: number): Promise<TestCaseRecord | null> {
+  async findById(projectId: number, id: number): Promise<TestCaseRecord | null> {
     const sql = useDb()
-    const rows = await sql`select * from test_cases where id = ${id}`
+    const rows = await sql`select * from test_cases where id = ${id} and project_id = ${projectId}`
     return (rows[0] as TestCaseRecord) ?? null
   },
 
@@ -109,7 +110,7 @@ export const testCaseRepository = {
     return rows.length > 0
   },
 
-  async create(input: {
+  async create(projectId: number, input: {
     title: string
     moduleId: number
     steps: string | null
@@ -122,8 +123,9 @@ export const testCaseRepository = {
   }): Promise<TestCaseRecord> {
     const sql = useDb()
     const rows = await sql`
-      insert into test_cases (title, module_id, steps, expected_result, priority, type, created_by, last_modified_by)
+      insert into test_cases (project_id, title, module_id, steps, expected_result, priority, type, created_by, last_modified_by)
       values (
+        ${projectId},
         ${input.title},
         ${input.moduleId},
         ${input.steps},
@@ -143,6 +145,7 @@ export const testCaseRepository = {
 
   // partial update: only columns present in patch are touched
   async update(
+    projectId: number,
     id: number,
     patch: {
       title?: string
@@ -155,7 +158,7 @@ export const testCaseRepository = {
     }
   ): Promise<TestCaseRecord | null> {
     const sql = useDb()
-    const current = await this.findById(id)
+    const current = await this.findById(projectId, id)
     if (!current) return null
 
     const rows = await sql`
@@ -168,7 +171,7 @@ export const testCaseRepository = {
         type = ${patch.type ?? current.type},
         last_modified_by = ${patch.lastModifiedBy},
         last_modified_at = now()
-      where id = ${id}
+      where id = ${id} and project_id = ${projectId}
       returning *
     `
     return (rows[0] as TestCaseRecord) ?? null
@@ -210,10 +213,21 @@ export const testCaseRepository = {
   // links, and its execution history all stay in place -- test_executions
   // has an `on delete restrict` FK to test_cases specifically so a hard
   // delete here would 500 once a test case has any runs logged against it.
-  async archive(id: number): Promise<TestCaseRecord | null> {
+  // how many of the given test case ids really belong to this project
+  async countInProject(projectId: number, ids: number[]): Promise<number> {
+    if (ids.length === 0) return 0
     const sql = useDb()
     const rows = await sql`
-      update test_cases set archived = true where id = ${id}
+      select count(*)::int as cnt from test_cases
+      where project_id = ${projectId} and id = any(string_to_array(${ids.join(',')}, ',')::int[])
+    `
+    return (rows[0] as any).cnt as number
+  },
+
+  async archive(projectId: number, id: number): Promise<TestCaseRecord | null> {
+    const sql = useDb()
+    const rows = await sql`
+      update test_cases set archived = true where id = ${id} and project_id = ${projectId}
       returning *
     `
     return (rows[0] as TestCaseRecord) ?? null
@@ -221,16 +235,17 @@ export const testCaseRepository = {
 
   // creates a copy of an existing test case (title suffixed "(Copy)") and
   // carries over its requirement links, used by the table's Duplicate action
-  async duplicate(id: number, duplicatedBy: number): Promise<TestCaseRecord | null> {
+  async duplicate(projectId: number, id: number, duplicatedBy: number): Promise<TestCaseRecord | null> {
     const sql = useDb()
-    const source = await this.findById(id)
+    const source = await this.findById(projectId, id)
     if (!source) return null
 
     const links = await this.linkedRequirementIds(id)
     const releaseLinks = await this.linkedReleaseIds(id)
     const rows = await sql`
-      insert into test_cases (title, module_id, steps, expected_result, priority, type, created_by, last_modified_by)
+      insert into test_cases (project_id, title, module_id, steps, expected_result, priority, type, created_by, last_modified_by)
       values (
+        ${projectId},
         ${`${source.title} (Copy)`},
         ${source.module_id},
         ${source.steps},

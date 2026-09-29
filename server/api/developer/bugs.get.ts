@@ -1,5 +1,6 @@
 import { bugRepository } from '~~/server/repositories/bugRepository'
 import type { DeveloperBugScope } from '~~/server/repositories/bugRepository'
+import { requireProject } from '~~/server/utils/requireProject'
 import { VALID_PERIODS, resolvePeriodRange, type Period } from '~~/server/utils/karachiDate'
 
 const VALID_SCOPES: DeveloperBugScope[] = ['mine', 'team']
@@ -17,6 +18,7 @@ const VALID_SCOPES: DeveloperBugScope[] = ['mine', 'team']
 // changing the request. only the "team" scope is intentionally
 // unscoped by owner.
 export default defineEventHandler(async (event) => {
+  const project = await requireProject(event)
   const currentUser = event.context.currentUser
   const userId = currentUser.id
 
@@ -28,7 +30,7 @@ export default defineEventHandler(async (event) => {
 
   const { periodStart, periodEnd } = resolvePeriodRange(period)
 
-  const bugs = await bugRepository.listForDeveloper(userId, scope, {
+  const bugs = await bugRepository.listForDeveloper(project.id, userId, scope, {
     moduleId: query.moduleId ? Number(query.moduleId) : undefined,
     severity: query.severity ? String(query.severity) : undefined,
     status: query.status ? String(query.status) : undefined,

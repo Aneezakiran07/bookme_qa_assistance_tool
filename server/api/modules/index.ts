@@ -1,4 +1,5 @@
 import { moduleRepository } from '~~/server/repositories/moduleRepository'
+import { requireProject } from '~~/server/utils/requireProject'
 
 // step 1 of the workflow: modules are the top level grouping every
 // requirement and test case hangs off of. every active team member can
@@ -8,9 +9,10 @@ import { moduleRepository } from '~~/server/repositories/moduleRepository'
 // module are restricted separately in [id].put.ts and [id].delete.ts.
 export default defineEventHandler(async (event) => {
   const currentUser = event.context.currentUser
+  const project = await requireProject(event, { write: event.method !== 'GET' })
 
   if (event.method === 'GET') {
-    return moduleRepository.list()
+    return moduleRepository.list(project.id)
   }
 
   if (event.method === 'POST') {
@@ -20,7 +22,7 @@ export default defineEventHandler(async (event) => {
       throw createError({ statusCode: 400, statusMessage: 'Module name is required' })
     }
 
-    const existing = await moduleRepository.findByNameLower(name)
+    const existing = await moduleRepository.findByNameLower(project.id, name)
     if (existing) {
       throw createError({
         statusCode: 409,
@@ -28,7 +30,7 @@ export default defineEventHandler(async (event) => {
       })
     }
 
-    return moduleRepository.create(name, currentUser.id)
+    return moduleRepository.create(project.id, name, currentUser.id)
   }
 
   throw createError({ statusCode: 405, statusMessage: 'Method not allowed' })

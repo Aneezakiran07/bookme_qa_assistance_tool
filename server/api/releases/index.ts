@@ -1,8 +1,11 @@
 import { releaseRepository } from '~~/server/repositories/releaseRepository'
+import { requireProject } from '~~/server/utils/requireProject'
 
 export default defineEventHandler(async (event) => {
+  const project = await requireProject(event, { write: event.method !== 'GET' })
+
   if (event.method === 'GET') {
-    return releaseRepository.listWithStats()
+    return releaseRepository.listWithStats(project.id)
   }
 
   if (event.method === 'POST') {
@@ -16,7 +19,7 @@ export default defineEventHandler(async (event) => {
       throw createError({ statusCode: 400, statusMessage: 'Version is required' })
     }
 
-    const existing = await releaseRepository.findByVersion(version)
+    const existing = await releaseRepository.findByVersion(project.id, version)
     if (existing) {
       throw createError({
         statusCode: 409,
@@ -24,7 +27,7 @@ export default defineEventHandler(async (event) => {
       })
     }
 
-    return releaseRepository.create({
+    return releaseRepository.create(project.id, {
       version,
       releaseDate: body?.releaseDate ?? null
     })

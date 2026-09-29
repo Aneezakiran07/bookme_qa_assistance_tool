@@ -1,5 +1,6 @@
 import { moduleRepository } from '~~/server/repositories/moduleRepository'
 import { requireRole } from '~~/server/utils/authorize'
+import { requireProject } from '~~/server/utils/requireProject'
 
 // soft delete only: flips `archived` to true instead of removing the row,
 // same pattern as requirements/bugs/test_cases. This isn't just for
@@ -14,13 +15,14 @@ import { requireRole } from '~~/server/utils/authorize'
 // doesn't disappear out from under things people are still using.
 export default defineEventHandler(async (event) => {
   requireRole(event, ['Admin', 'QA Lead'])
+  const project = await requireProject(event, { write: true })
 
   const id = Number(getRouterParam(event, 'id'))
   if (!id) {
     throw createError({ statusCode: 400, statusMessage: 'Invalid module id' })
   }
 
-  const current = await moduleRepository.findById(id)
+  const current = await moduleRepository.findById(project.id, id)
   if (!current) {
     throw createError({ statusCode: 404, statusMessage: 'Module not found' })
   }
@@ -36,6 +38,6 @@ export default defineEventHandler(async (event) => {
     })
   }
 
-  const archived = await moduleRepository.archive(id)
+  const archived = await moduleRepository.archive(project.id, id)
   return { archived: true, module: archived }
 })

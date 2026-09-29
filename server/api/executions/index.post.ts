@@ -1,11 +1,13 @@
 import { releaseRepository } from '~~/server/repositories/releaseRepository'
 import { testCaseRepository } from '~~/server/repositories/testCaseRepository'
 import { executionRepository } from '~~/server/repositories/executionRepository'
+import { requireProject } from '~~/server/utils/requireProject'
 
 const VALID_RESULTS = ['Pass', 'Fail', 'Blocked', 'Not Run'] as const
 
 export default defineEventHandler(async (event) => {
   const currentUser = event.context.currentUser
+  const project = await requireProject(event, { write: true })
 
   const body = await readBody<{
     testCaseId: number
@@ -27,12 +29,12 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 400, statusMessage: 'Invalid result' })
   }
 
-  const testCase = await testCaseRepository.findById(testCaseId)
+  const testCase = await testCaseRepository.findById(project.id, testCaseId)
   if (!testCase) {
     throw createError({ statusCode: 404, statusMessage: 'Test case not found' })
   }
 
-  const release = await releaseRepository.findById(releaseId)
+  const release = await releaseRepository.findById(project.id, releaseId)
   if (!release) {
     throw createError({ statusCode: 404, statusMessage: 'Release not found' })
   }
