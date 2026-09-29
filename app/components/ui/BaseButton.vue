@@ -2,9 +2,10 @@
 // wraps the primevue button with the shared button language of the app
 // primary is the filled brand blue commit action such as save or create
 // danger is filled red and only used at the point of no return in the confirm dialog
-// outline is a blue border with blue text for inline row actions and secondary actions
+// outline is a blue border with neutral heading text for inline row actions and secondary actions
 // dangerOutline is a red border with red text for destructive actions that open a confirm
-// soft is a light blue tint for selected filters and toggles
+// soft is a light blue tint with neutral text for selected filters and toggles
+// the accent blue is only used for borders, backgrounds and focus rings and never for label text
 // secondary is a neutral border for cancel and back style actions
 // every variant is rounded and uses a brand blue focus ring in light and dark mode
 type ButtonVariant = 'primary' | 'secondary' | 'outline' | 'danger' | 'dangerOutline' | 'soft'
@@ -47,11 +48,11 @@ const variantClass = computed(() => {
     case 'primary':
       return '!bg-[#245CB1] !border-[#245CB1] !text-white hover:!bg-[#1d4a8f] hover:!border-[#1d4a8f] dark:!bg-[#5B8FE0] dark:!border-[#5B8FE0] dark:hover:!bg-[#3a72cd] dark:hover:!border-[#3a72cd]'
     case 'secondary':
-      return '!bg-transparent !text-gray-800 !border-black/15 hover:!bg-black/5 dark:!text-white dark:!border-white/15 dark:hover:!bg-white/10 focus:!ring-gray-400 dark:focus:!ring-white/40'
+      return '!bg-transparent !text-gray-800 !border-black/15 hover:!bg-black/5 dark:!text-white dark:!border-white/25 dark:hover:!bg-white/10 focus:!ring-gray-400 dark:focus:!ring-white/40'
     case 'outline':
-      return '!bg-transparent !border-[#245CB1]/50 !text-[#245CB1] hover:!bg-[#245CB1]/10 hover:!border-[#245CB1] dark:!border-[#5B8FE0]/50 dark:!text-[#5B8FE0] dark:hover:!bg-[#5B8FE0]/15 dark:hover:!border-[#5B8FE0]'
+      return '!bg-transparent !border-[#245CB1]/50 !text-heading hover:!bg-[#245CB1]/10 hover:!border-[#245CB1] dark:!border-[#5B8FE0]/50 dark:hover:!bg-[#5B8FE0]/15 dark:hover:!border-[#5B8FE0]'
     case 'soft':
-      return '!bg-[#245CB1]/10 !border-[#245CB1]/30 !text-[#245CB1] hover:!bg-[#245CB1]/20 dark:!bg-[#5B8FE0]/15 dark:!border-[#5B8FE0]/30 dark:!text-[#5B8FE0] dark:hover:!bg-[#5B8FE0]/25'
+      return '!bg-[#245CB1]/10 !border-[#245CB1]/30 !text-gray-900 hover:!bg-[#245CB1]/20 dark:!bg-[#5B8FE0]/15 dark:!border-[#5B8FE0]/40 dark:!text-white dark:hover:!bg-[#5B8FE0]/25'
     case 'danger':
       return '!bg-red-600 !border-red-600 !text-white hover:!bg-red-700 hover:!border-red-700 focus:!ring-red-500 dark:focus:!ring-red-400'
     case 'dangerOutline':

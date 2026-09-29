@@ -86,8 +86,8 @@ const globalLinks = computed<NavLink[]>(() => [
 
 const roleBadgeClass = computed(() => {
   return isAdmin.value
-    ? 'bg-[#245CB1]/15 dark:bg-[#5B8FE0]/15 text-[#245CB1] dark:text-[#5B8FE0]'
-    : 'bg-[#245CB1]/10 dark:bg-[#5B8FE0]/10 text-[#245CB1] dark:text-[#5B8FE0]'
+    ? 'bg-[#245CB1]/15 dark:bg-[#5B8FE0]/15 text-heading'
+    : 'bg-[#245CB1]/10 dark:bg-[#5B8FE0]/10 text-heading'
 })
 
 async function handleLogout() {
@@ -161,8 +161,8 @@ async function handleLogout() {
             class="flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium text-body
                    transition-colors hover:bg-secondary"
             :class="collapsed ? 'justify-center' : ''"
-            active-class="!bg-[#245CB1]/10 dark:!bg-[#5B8FE0]/10 !text-[#245CB1] dark:!text-[#5B8FE0]"
-            exact-active-class="!bg-[#245CB1]/10 dark:!bg-[#5B8FE0]/10 !text-[#245CB1] dark:!text-[#5B8FE0]"
+            active-class="!bg-[#245CB1]/10 dark:!bg-[#5B8FE0]/10 !text-heading"
+            exact-active-class="!bg-[#245CB1]/10 dark:!bg-[#5B8FE0]/10 !text-heading"
           >
             <i :class="link.icon" class="shrink-0 text-base" />
             <span v-if="!collapsed" class="truncate">{{ link.label }}</span>
@@ -182,8 +182,8 @@ async function handleLogout() {
             class="flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium text-body
                    transition-colors hover:bg-secondary"
             :class="collapsed ? 'justify-center' : ''"
-            active-class="!bg-[#245CB1]/10 dark:!bg-[#5B8FE0]/10 !text-[#245CB1] dark:!text-[#5B8FE0]"
-            exact-active-class="!bg-[#245CB1]/10 dark:!bg-[#5B8FE0]/10 !text-[#245CB1] dark:!text-[#5B8FE0]"
+            active-class="!bg-[#245CB1]/10 dark:!bg-[#5B8FE0]/10 !text-heading"
+            exact-active-class="!bg-[#245CB1]/10 dark:!bg-[#5B8FE0]/10 !text-heading"
           >
             <i :class="link.icon" class="shrink-0 text-base" />
             <span v-if="!collapsed" class="truncate">{{ link.label }}</span>

@@ -55,7 +55,7 @@ const ROLE_SHORT: Record<string, string> = {
         <template v-for="u in users.filter((u) => u.id === value)" :key="u.id">
           <span
             class="flex h-6 w-6 items-center justify-center rounded-full bg-[#245CB1]/10
-                   text-xs font-semibold text-[#245CB1] dark:bg-[#5B8FE0]/15 dark:text-[#7FAEEB]"
+                   text-xs font-semibold text-heading dark:bg-[#5B8FE0]/15"
           >
             {{ initials(u.email) }}
           </span>
@@ -68,7 +68,7 @@ const ROLE_SHORT: Record<string, string> = {
       <div class="flex w-full items-center gap-2">
         <span
           class="flex h-6 w-6 items-center justify-center rounded-full bg-[#245CB1]/10
-                 text-xs font-semibold text-[#245CB1] dark:bg-[#5B8FE0]/15 dark:text-[#7FAEEB]"
+                 text-xs font-semibold text-heading dark:bg-[#5B8FE0]/15"
         >
           {{ initials(option.email) }}
         </span>

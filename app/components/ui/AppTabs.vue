@@ -32,7 +32,7 @@ const active = computed({
         type="button"
         class="-mb-px border-b-2 px-3 py-2 text-sm font-medium transition-colors"
         :class="active === tab.id
-          ? 'border-[#245CB1] text-[#245CB1] dark:border-[#5B8FE0] dark:text-[#5B8FE0]'
+          ? 'border-[#245CB1] text-heading dark:border-[#5B8FE0]'
           : 'border-transparent text-body hover:text-heading'"
         @click="active = tab.id"
       >

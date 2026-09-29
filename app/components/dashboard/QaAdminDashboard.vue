@@ -426,7 +426,7 @@ function executionStatusKey(result: string): string {
           <div class="flex min-w-0 items-center gap-2.5">
             <span
               class="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[#245CB1]/10 text-xs font-semibold
-                     text-[#245CB1] dark:bg-[#5B8FE0]/15 dark:text-[#7FAEEB]"
+                     text-heading dark:bg-[#5B8FE0]/15"
             >
               {{ initials(run.executed_by_email) }}
             </span>

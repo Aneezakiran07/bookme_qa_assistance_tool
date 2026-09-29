@@ -23,7 +23,7 @@ export function useDropdownPt() {
     },
     option: {
       class:
-        '!text-heading hover:!bg-secondary aria-selected:!bg-[#245CB1]/10 aria-selected:!text-[#245CB1] dark:aria-selected:!bg-[#5B8FE0]/15 dark:aria-selected:!text-[#5B8FE0]',
+        '!text-heading hover:!bg-secondary aria-selected:!bg-[#245CB1]/10 dark:aria-selected:!bg-[#5B8FE0]/15',
     },
     optionGroup: {
       class: '!bg-foreground !text-body',

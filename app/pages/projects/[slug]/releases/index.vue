@@ -169,8 +169,8 @@ async function handleDelete(row: ReleaseRow) {
         <NuxtLink
           :to="projectPath(`/releases/${row.id}`)"
           class="inline-flex items-center rounded-full border border-[#245CB1]/30 bg-[#245CB1]/10 px-2.5 py-0.5
-                 text-xs font-semibold text-[#245CB1] hover:bg-[#245CB1]/20
-                 dark:border-[#5B8FE0]/30 dark:bg-[#5B8FE0]/15 dark:text-[#7FAEEB] dark:hover:bg-[#5B8FE0]/25"
+                 text-xs font-semibold text-heading hover:bg-[#245CB1]/20
+                 dark:border-[#5B8FE0]/30 dark:bg-[#5B8FE0]/15 dark:hover:bg-[#5B8FE0]/25"
         >
           {{ row.version }}
         </NuxtLink>

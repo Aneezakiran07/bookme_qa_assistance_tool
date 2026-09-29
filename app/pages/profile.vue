@@ -245,7 +245,7 @@ async function selectAvatar(avatarId: string) {
           </h2>
           <span
             class="mt-1 inline-block rounded bg-[#245CB1]/10 dark:bg-[#5B8FE0]/10 px-1.5 py-0.5 text-[11px]
-                   font-medium text-[#245CB1] dark:text-[#5B8FE0]"
+                   font-medium text-heading"
           >
             {{ data?.role }}
           </span>

@@ -119,12 +119,12 @@
   .dark .p-select-option[aria-selected='true'],
   .dark .p-multiselect-option[aria-selected='true'] {
     background-color: rgb(91 143 224 / 0.15) !important;
-    color: #5B8FE0 !important;
+    color: var(--color-text-heading) !important;
   }
 
   .dark .p-multiselect-chip {
     background-color: rgb(91 143 224 / 0.15) !important;
-    color: #5B8FE0 !important;
+    color: var(--color-text-heading) !important;
   }
 
   .dark .p-toast-message {

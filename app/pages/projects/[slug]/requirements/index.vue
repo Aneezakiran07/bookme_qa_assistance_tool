@@ -208,7 +208,7 @@ async function archiveRequirement(row: RequirementRow) {
       <template #cell-req_id="{ data: row }">
         <span
           class="inline-flex items-center rounded-full border border-[#245CB1]/30 bg-[#245CB1]/10 px-2 py-0.5
-                 text-xs font-semibold text-[#245CB1] dark:border-[#5B8FE0]/30 dark:bg-[#5B8FE0]/15 dark:text-[#7FAEEB]"
+                 text-xs font-semibold text-heading dark:border-[#5B8FE0]/30 dark:bg-[#5B8FE0]/15"
         >
           {{ reqCode(row.id) }}
         </span>

@@ -166,7 +166,7 @@ async function submitResult(result: 'Pass' | 'Fail' | 'Blocked') {
 const PRIORITY_CLASSES: Record<string, string> = {
   High: 'bg-red-100 text-red-700 border-red-200 dark:bg-red-500/15 dark:text-red-400 dark:border-red-500/30',
   Medium:
-    'bg-[#245CB1]/10 text-[#245CB1] border-[#245CB1]/30 dark:bg-[#5B8FE0]/15 dark:text-[#5B8FE0] dark:border-[#5B8FE0]/30',
+    'bg-[#245CB1]/10 text-heading border-[#245CB1]/30 dark:bg-[#5B8FE0]/15 dark:border-[#5B8FE0]/30',
   Low: 'bg-green-100 text-green-700 border-green-200 dark:bg-green-500/15 dark:text-green-400 dark:border-green-500/30'
 }
 
@@ -413,8 +413,8 @@ function statusKey(latest: string | null): string {
               <button
                 type="button"
                 class="rounded-md border-2 border-[#245CB1] bg-[#245CB1]/5 px-4 py-3 text-sm font-semibold
-                       text-[#245CB1] transition-colors hover:bg-[#245CB1]/10 disabled:opacity-50
-                       dark:border-[#5B8FE0] dark:bg-[#5B8FE0]/10 dark:text-[#5B8FE0] dark:hover:bg-[#5B8FE0]/15"
+                       text-heading transition-colors hover:bg-[#245CB1]/10 disabled:opacity-50
+                       dark:border-[#5B8FE0] dark:bg-[#5B8FE0]/10 dark:hover:bg-[#5B8FE0]/15"
                 :disabled="submitting"
                 @click="submitResult('Blocked')"
               >

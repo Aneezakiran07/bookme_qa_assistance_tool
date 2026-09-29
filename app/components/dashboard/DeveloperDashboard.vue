@@ -69,7 +69,7 @@ const SEVERITY_CLASSES: Record<string, string> = {
     'bg-red-100 text-red-700 border-red-200 dark:bg-red-500/15 dark:text-red-400 dark:border-red-500/30 animate-pulse',
   High: 'bg-[#f3e6d8] text-[#7a5233] border-[#e2c9ab] dark:bg-[#a9784f]/15 dark:text-[#cfa77d] dark:border-[#a9784f]/30',
   Medium:
-    'bg-[#245CB1]/10 text-[#245CB1] border-[#245CB1]/30 dark:bg-[#5B8FE0]/15 dark:text-[#5B8FE0] dark:border-[#5B8FE0]/30',
+    'bg-[#245CB1]/10 text-heading border-[#245CB1]/30 dark:bg-[#5B8FE0]/15 dark:border-[#5B8FE0]/30',
   Low: 'bg-blue-100 text-blue-700 border-blue-200 dark:bg-blue-500/15 dark:text-blue-400 dark:border-blue-500/30'
 }
 

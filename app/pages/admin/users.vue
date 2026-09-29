@@ -298,8 +298,8 @@ async function deactivate(user: ActiveUserRow) {
           <div class="flex items-center gap-3">
             <span
               class="flex h-8 w-8 shrink-0 items-center justify-center rounded-full
-                     bg-[#245CB1]/10 text-xs font-semibold text-[#245CB1]
-                     dark:bg-[#5B8FE0]/15 dark:text-[#7FAEEB]"
+                     bg-[#245CB1]/10 text-xs font-semibold text-heading
+                     dark:bg-[#5B8FE0]/15"
             >
               {{ initials(row.email) }}
             </span>
@@ -308,7 +308,7 @@ async function deactivate(user: ActiveUserRow) {
                 {{ displayName(row.email) }}
                 <span
                   v-if="row.id === sessionUser?.id"
-                  class="shrink-0 rounded-full bg-[#245CB1]/10 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-[#245CB1] dark:bg-[#5B8FE0]/15 dark:text-[#5B8FE0]"
+                  class="shrink-0 rounded-full bg-[#245CB1]/10 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-heading dark:bg-[#5B8FE0]/15"
                 >
                   You
                 </span>
@@ -377,7 +377,7 @@ async function deactivate(user: ActiveUserRow) {
         <template #cell-role="{ data: row }">
           <span
             class="rounded-full bg-[#245CB1]/10 dark:bg-[#5B8FE0]/10 px-2.5 py-1 text-xs font-medium
-                   text-[#245CB1] dark:text-[#5B8FE0]"
+                   text-heading"
           >
             {{ row.role }}
           </span>

@@ -108,7 +108,7 @@ async function setArchived(project: ProjectSummary, archived: boolean, successTe
     >
       <div
         class="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full
-               bg-[#245CB1]/10 text-[#245CB1] dark:bg-[#5B8FE0]/10 dark:text-[#5B8FE0]"
+               bg-[#245CB1]/10 text-heading dark:bg-[#5B8FE0]/10"
       >
         <i class="pi pi-folder-open text-xl" />
       </div>

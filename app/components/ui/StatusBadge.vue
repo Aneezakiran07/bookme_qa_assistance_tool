@@ -33,7 +33,7 @@ const PALETTES: Record<string, Palette> = {
   inProgress: {
     label: 'In Progress',
     classes:
-      'bg-[#245CB1]/10 text-[#245CB1] border-[#245CB1]/30 dark:bg-[#5B8FE0]/15 dark:text-[#5B8FE0] dark:border-[#5B8FE0]/30'
+      'bg-[#245CB1]/10 text-heading border-[#245CB1]/30 dark:bg-[#5B8FE0]/15 dark:border-[#5B8FE0]/30'
   },
   resolved: {
     label: 'Resolved',
@@ -63,7 +63,7 @@ const PALETTES: Record<string, Palette> = {
   pending: {
     label: 'Pending',
     classes:
-      'bg-[#245CB1]/10 text-[#245CB1] border-[#245CB1]/30 dark:bg-[#5B8FE0]/15 dark:text-[#7FAEEB] dark:border-[#5B8FE0]/30'
+      'bg-[#245CB1]/10 text-heading border-[#245CB1]/30 dark:bg-[#5B8FE0]/15 dark:border-[#5B8FE0]/30'
   },
   notStarted: {
     label: 'Not Started',
