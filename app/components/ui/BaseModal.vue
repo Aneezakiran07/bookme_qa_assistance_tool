@@ -35,8 +35,8 @@ const dialogPt = useDialogPt()
     :style="{ width, maxWidth: '95vw', maxHeight: '90vh' }"
     :closable="closable"
     :dismissable-mask="dismissableMask"
-    class="!bg-white !text-gray-900 dark:!bg-black dark:!text-white
-           !border !border-black/10 dark:!border-white/10"
+    class="!bg-foreground !text-heading
+           !border !border-border"
     :pt="{
       ...dialogPt,
       root: { class: [dialogPt.root.class, 'flex flex-col'] },
@@ -45,13 +45,13 @@ const dialogPt = useDialogPt()
   >
     <template v-if="title || $slots.header" #header>
       <slot name="header">
-        <h2 class="text-lg font-semibold text-gray-900 dark:text-white">
+        <h2 class="text-lg font-semibold text-heading">
           {{ title }}
         </h2>
       </slot>
     </template>
 
-    <div class="text-sm text-gray-700 dark:text-white/80">
+    <div class="text-sm text-body">
       <slot />
     </div>
 

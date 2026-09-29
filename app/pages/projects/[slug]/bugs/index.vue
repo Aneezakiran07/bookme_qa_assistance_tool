@@ -211,10 +211,10 @@ async function updateStatus(bug: BugRow, status: string) {
   <div class="space-y-6">
     <div class="flex flex-wrap items-start justify-between gap-4">
       <div>
-        <h1 class="text-xl font-semibold text-gray-900 dark:text-white">
+        <h1 class="text-xl font-semibold text-heading">
           Bug Tracker
         </h1>
-        <p class="mt-1 text-sm text-gray-500 dark:text-zinc-400">
+        <p class="mt-1 text-sm text-body">
           Monitor, assign, and resolve reported application defects.
         </p>
       </div>
@@ -252,7 +252,7 @@ async function updateStatus(bug: BugRow, status: string) {
           option-value="value"
           class="w-36"
           :pt="dropdownPt"
-          panel-class="!bg-white dark:!bg-zinc-900 !text-gray-900 dark:!text-white !border !border-black/10 dark:!border-white/10"
+          panel-class="!bg-foreground !text-heading !border !border-border"
         />
         <Select
           v-model="selectedModuleId"
@@ -262,7 +262,7 @@ async function updateStatus(bug: BugRow, status: string) {
           placeholder="All Modules"
           class="w-40"
           :pt="dropdownPt"
-          panel-class="!bg-white dark:!bg-zinc-900 !text-gray-900 dark:!text-white !border !border-black/10 dark:!border-white/10"
+          panel-class="!bg-foreground !text-heading !border !border-border"
         />
         <Select
           v-model="selectedSeverity"
@@ -272,7 +272,7 @@ async function updateStatus(bug: BugRow, status: string) {
           placeholder="All Severities"
           class="w-40"
           :pt="dropdownPt"
-          panel-class="!bg-white dark:!bg-zinc-900 !text-gray-900 dark:!text-white !border !border-black/10 dark:!border-white/10"
+          panel-class="!bg-foreground !text-heading !border !border-border"
         />
         <Select
           v-model="selectedStatus"
@@ -282,7 +282,7 @@ async function updateStatus(bug: BugRow, status: string) {
           placeholder="All Statuses"
           class="w-40"
           :pt="dropdownPt"
-          panel-class="!bg-white dark:!bg-zinc-900 !text-gray-900 dark:!text-white !border !border-black/10 dark:!border-white/10"
+          panel-class="!bg-foreground !text-heading !border !border-border"
         />
         <Select
           v-model="selectedReleaseId"
@@ -292,7 +292,7 @@ async function updateStatus(bug: BugRow, status: string) {
           placeholder="All Releases"
           class="w-40"
           :pt="dropdownPt"
-          panel-class="!bg-white dark:!bg-zinc-900 !text-gray-900 dark:!text-white !border !border-black/10 dark:!border-white/10"
+          panel-class="!bg-foreground !text-heading !border !border-border"
         />
       </template>
 
@@ -310,13 +310,12 @@ async function updateStatus(bug: BugRow, status: string) {
         <div class="max-w-[16rem]">
           <p
             :title="row.title"
-            class="truncate text-sm font-bold text-gray-900 dark:text-white"
+            class="truncate text-sm font-bold text-heading"
           >
             {{ row.title }}
           </p>
           <span
-            class="mt-0.5 inline-block rounded-full bg-gray-100 px-2 py-0.5 text-xs font-medium text-gray-600
-                   dark:bg-white/10 dark:text-zinc-300"
+            class="mt-0.5 inline-block rounded-full bg-secondary px-2 py-0.5 text-xs font-medium text-body"
           >
             {{ row.module_name }}
           </span>
@@ -339,7 +338,7 @@ async function updateStatus(bug: BugRow, status: string) {
           :disabled="isReadOnly || savingBugId === row.id"
           class="w-40"
           :pt="dropdownPt"
-          panel-class="!bg-white dark:!bg-zinc-900 !text-gray-900 dark:!text-white !border !border-black/10 dark:!border-white/10"
+          panel-class="!bg-foreground !text-heading !border !border-border"
           @update:model-value="(status: string) => updateStatus(row, status)"
         />
       </template>
@@ -357,8 +356,7 @@ async function updateStatus(bug: BugRow, status: string) {
         <div class="flex flex-wrap items-center gap-1.5">
           <span
             v-if="row.release_version"
-            class="rounded-full border border-black/10 px-2 py-0.5 text-xs font-medium text-gray-700
-                   dark:border-white/10 dark:text-zinc-300"
+            class="rounded-full border border-border px-2 py-0.5 text-xs font-medium text-body"
           >
             {{ row.release_version }}
           </span>

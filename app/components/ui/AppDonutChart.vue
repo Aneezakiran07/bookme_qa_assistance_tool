@@ -94,12 +94,12 @@ const selectedPct = computed(() =>
       </svg>
       <div class="pointer-events-none absolute inset-0 flex flex-col items-center justify-center text-center">
         <template v-if="selectedSegment">
-          <span class="text-lg font-semibold text-gray-900 dark:text-white">{{ selectedSegment.value }}</span>
-          <span class="text-[11px] text-gray-500 dark:text-zinc-400">{{ selectedSegment.label }} &middot; {{ selectedPct }}%</span>
+          <span class="text-lg font-semibold text-heading">{{ selectedSegment.value }}</span>
+          <span class="text-[11px] text-body">{{ selectedSegment.label }} &middot; {{ selectedPct }}%</span>
         </template>
         <template v-else>
-          <span class="text-lg font-semibold text-gray-900 dark:text-white">{{ total }}</span>
-          <span class="text-[11px] text-gray-500 dark:text-zinc-400">{{ centerLabel }}</span>
+          <span class="text-lg font-semibold text-heading">{{ total }}</span>
+          <span class="text-[11px] text-body">{{ centerLabel }}</span>
         </template>
       </div>
     </div>
@@ -110,15 +110,15 @@ const selectedPct = computed(() =>
         :key="segment.label"
         type="button"
         class="flex w-full items-center justify-between gap-3 rounded px-1 py-0.5 text-left text-sm
-               transition-colors hover:bg-gray-50 dark:hover:bg-white/5"
+               transition-colors hover:bg-secondary"
         :class="selectedLabel && selectedLabel !== segment.label ? 'opacity-50' : ''"
         @click="toggleSegment(segment.label)"
       >
-        <span class="flex items-center gap-2 text-gray-600 dark:text-zinc-300">
+        <span class="flex items-center gap-2 text-body">
           <span class="h-2.5 w-2.5 shrink-0 rounded-full" :class="segment.dotClass" />
           {{ segment.label }}
         </span>
-        <span class="font-medium text-gray-900 dark:text-white">{{ segment.value }}</span>
+        <span class="font-medium text-heading">{{ segment.value }}</span>
       </button>
     </div>
   </div>

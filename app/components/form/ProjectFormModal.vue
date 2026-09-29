@@ -87,7 +87,7 @@ async function save() {
   <BaseModal v-model="visible" :title="isEdit ? 'Edit Project' : 'New Project'" width="28rem">
     <div class="space-y-4">
       <div class="space-y-2">
-        <label class="mb-1 block text-xs font-medium text-gray-600 dark:text-zinc-300">
+        <label class="mb-1 block text-xs font-medium text-body">
           Project Name
         </label>
         <InputText
@@ -104,7 +104,7 @@ async function save() {
       </div>
 
       <div class="space-y-2">
-        <label class="mb-1 block text-xs font-medium text-gray-600 dark:text-zinc-300">
+        <label class="mb-1 block text-xs font-medium text-body">
           Description (optional)
         </label>
         <Textarea

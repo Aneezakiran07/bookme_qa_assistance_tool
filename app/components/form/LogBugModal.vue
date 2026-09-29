@@ -324,7 +324,7 @@ async function save() {
 
       <div v-if="!blockedByDuplicate">
       <div>
-        <label class="mb-1 block text-xs font-medium text-gray-600 dark:text-zinc-300">
+        <label class="mb-1 block text-xs font-medium text-body">
           Title
         </label>
         <InputText
@@ -339,7 +339,7 @@ async function save() {
       </div>
 
       <div>
-        <label class="mb-1 block text-xs font-medium text-gray-600 dark:text-zinc-300">
+        <label class="mb-1 block text-xs font-medium text-body">
           Module
         </label>
         <ModuleSelect v-model="form.moduleId" :invalid="!!moduleError" />
@@ -350,7 +350,7 @@ async function save() {
 
       <div class="grid grid-cols-2 gap-4">
         <div>
-          <label class="mb-1 block text-xs font-medium text-gray-600 dark:text-zinc-300">
+          <label class="mb-1 block text-xs font-medium text-body">
             Severity
           </label>
           <Select
@@ -358,11 +358,11 @@ async function save() {
             :options="SEVERITIES"
             class="w-full"
             :pt="dropdownPt"
-            panel-class="!bg-white dark:!bg-zinc-900 !text-gray-900 dark:!text-white !border !border-black/10 dark:!border-white/10"
+            panel-class="!bg-foreground !text-heading !border !border-border"
           />
         </div>
         <div>
-          <label class="mb-1 block text-xs font-medium text-gray-600 dark:text-zinc-300">
+          <label class="mb-1 block text-xs font-medium text-body">
             Priority
           </label>
           <Select
@@ -370,20 +370,20 @@ async function save() {
             :options="PRIORITIES"
             class="w-full"
             :pt="dropdownPt"
-            panel-class="!bg-white dark:!bg-zinc-900 !text-gray-900 dark:!text-white !border !border-black/10 dark:!border-white/10"
+            panel-class="!bg-foreground !text-heading !border !border-border"
           />
         </div>
       </div>
 
       <div>
-        <label class="mb-1 block text-xs font-medium text-gray-600 dark:text-zinc-300">
+        <label class="mb-1 block text-xs font-medium text-body">
           Assign to
         </label>
         <UserAvatarSelect v-model="form.ownerId" placeholder="Unassigned" />
       </div>
 
       <div>
-        <label class="mb-1 block text-xs font-medium text-gray-600 dark:text-zinc-300">
+        <label class="mb-1 block text-xs font-medium text-body">
           Environment / Build
         </label>
         <InputText
@@ -394,7 +394,7 @@ async function save() {
       </div>
 
       <div>
-        <label class="mb-1 block text-xs font-medium text-gray-600 dark:text-zinc-300">
+        <label class="mb-1 block text-xs font-medium text-body">
           Steps to reproduce
         </label>
         <RichTextEditor
@@ -405,7 +405,7 @@ async function save() {
       </div>
 
       <div>
-        <label class="mb-1 block text-xs font-medium text-gray-600 dark:text-zinc-300">
+        <label class="mb-1 block text-xs font-medium text-body">
           Expected result
         </label>
         <RichTextEditor
@@ -419,7 +419,7 @@ async function save() {
       </div>
 
       <div>
-        <label class="mb-1 block text-xs font-medium text-gray-600 dark:text-zinc-300">
+        <label class="mb-1 block text-xs font-medium text-body">
           Actual result
         </label>
         <RichTextEditor
@@ -433,7 +433,7 @@ async function save() {
       </div>
 
       <div>
-        <label class="mb-1 block text-xs font-medium text-gray-600 dark:text-zinc-300">
+        <label class="mb-1 block text-xs font-medium text-body">
           Attachments (optional)
         </label>
         <div
@@ -448,7 +448,7 @@ async function save() {
           @drop.prevent="onStagedDrop"
         >
           <i class="pi pi-image text-2xl text-gray-400 dark:text-white/40" />
-          <p class="text-sm text-gray-600 dark:text-white/60">
+          <p class="text-sm text-body">
             Drag & drop a screenshot or video, or click to browse
           </p>
           <input
@@ -465,7 +465,7 @@ async function save() {
           <div
             v-for="staged in stagedFiles"
             :key="staged.localId"
-            class="group relative overflow-hidden rounded-md border border-black/10 dark:border-white/10"
+            class="group relative overflow-hidden rounded-md border border-border"
           >
             <video
               v-if="staged.type === 'video'"

@@ -47,7 +47,7 @@ const ROLE_SHORT: Record<string, string> = {
     filter
     class="w-full"
     :pt="dropdownPt"
-    panel-class="!bg-white dark:!bg-zinc-900 !text-gray-900 dark:!text-white !border !border-black/10 dark:!border-white/10"
+    panel-class="!bg-foreground !text-heading !border !border-border"
     @update:model-value="(v: number) => $emit('update:modelValue', v)"
   >
     <template #value="{ value }">
@@ -74,8 +74,7 @@ const ROLE_SHORT: Record<string, string> = {
         </span>
         <span class="flex-1 truncate">{{ option.email }}</span>
         <span
-          class="rounded-full bg-gray-100 px-2 py-0.5 text-[10px] font-medium text-gray-600
-                 dark:bg-white/10 dark:text-white/60"
+          class="rounded-full bg-secondary px-2 py-0.5 text-[10px] font-medium text-body"
         >
           {{ ROLE_SHORT[option.role] ?? option.role }}
         </span>

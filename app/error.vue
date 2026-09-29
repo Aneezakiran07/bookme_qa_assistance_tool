@@ -39,10 +39,9 @@ function handlePrimaryAction() {
 </script>
 
 <template>
-  <div class="flex min-h-screen items-center justify-center bg-gray-50 dark:bg-black">
+  <div class="flex min-h-screen items-center justify-center bg-background">
     <div
-      class="w-full max-w-sm rounded-lg border border-black/10 bg-white p-8 text-center
-             dark:border-white/20 dark:bg-black"
+      class="w-full max-w-sm rounded-lg border border-border bg-foreground p-8 text-center"
     >
       <div
         class="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full
@@ -51,10 +50,10 @@ function handlePrimaryAction() {
         <i class="pi pi-exclamation-triangle text-xl" />
       </div>
 
-      <h1 class="mb-2 text-lg font-semibold text-gray-900 dark:text-white">
+      <h1 class="mb-2 text-lg font-semibold text-heading">
         {{ title }}
       </h1>
-      <p class="mb-6 text-sm text-gray-600 dark:text-white/60">
+      <p class="mb-6 text-sm text-body">
         {{ description }}
       </p>
 

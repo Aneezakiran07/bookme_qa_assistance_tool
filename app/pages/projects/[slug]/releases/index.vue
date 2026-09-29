@@ -135,10 +135,10 @@ async function handleDelete(row: ReleaseRow) {
   <div class="space-y-6">
     <div class="flex flex-wrap items-start justify-between gap-4">
       <div>
-        <h1 class="text-xl font-semibold text-gray-900 dark:text-white">
+        <h1 class="text-xl font-semibold text-heading">
           Release Cycles
         </h1>
-        <p class="mt-1 text-sm text-gray-500 dark:text-zinc-400">
+        <p class="mt-1 text-sm text-body">
           Define release milestones, assign version test suites, and track release health.
         </p>
       </div>
@@ -177,7 +177,7 @@ async function handleDelete(row: ReleaseRow) {
       </template>
 
       <template #cell-release_date="{ data: row }">
-        <span class="text-sm text-gray-600 dark:text-zinc-300">
+        <span class="text-sm text-body">
           {{ formatDate(row.release_date) }}
         </span>
       </template>
@@ -190,7 +190,7 @@ async function handleDelete(row: ReleaseRow) {
             size="sm"
             class="flex-1"
           />
-          <span class="whitespace-nowrap text-xs text-gray-600 dark:text-zinc-400">
+          <span class="whitespace-nowrap text-xs text-body">
             {{ row.executed_count }}/{{ row.total_test_cases }}
           </span>
         </div>
@@ -252,7 +252,7 @@ async function handleDelete(row: ReleaseRow) {
     <BaseModal v-model="modalOpen" title="Create New Release" width="30rem">
       <div class="space-y-4">
         <div>
-          <label class="mb-1 block text-xs font-medium text-gray-600 dark:text-zinc-300">
+          <label class="mb-1 block text-xs font-medium text-body">
             Version
           </label>
           <InputText
@@ -267,16 +267,15 @@ async function handleDelete(row: ReleaseRow) {
         </div>
 
         <div>
-          <label class="mb-1 block text-xs font-medium text-gray-600 dark:text-zinc-300">
+          <label class="mb-1 block text-xs font-medium text-body">
             Release Date
           </label>
           <input
             v-model="form.releaseDate"
             type="date"
-            class="w-full rounded-md border border-black/10 bg-transparent px-3 py-2 text-sm
-                   text-gray-900 outline-none transition-colors
-                   focus:border-[#245CB1] dark:focus:border-[#5B8FE0] focus:ring-1 focus:ring-[#245CB1] dark:focus:ring-[#5B8FE0]
-                   dark:border-white/10 dark:text-white dark:[color-scheme:dark]"
+            class="w-full rounded-md border border-border bg-transparent px-3 py-2 text-sm
+                   text-heading outline-none transition-colors
+                   focus:border-[#245CB1] dark:focus:border-[#5B8FE0] focus:ring-1 focus:ring-[#245CB1] dark:focus:ring-[#5B8FE0] dark:[color-scheme:dark]"
           />
         </div>
       </div>

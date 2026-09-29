@@ -167,10 +167,10 @@ async function archiveRequirement(row: RequirementRow) {
   <div class="space-y-6">
     <div class="flex flex-wrap items-start justify-between gap-4">
       <div>
-        <h1 class="text-xl font-semibold text-gray-900 dark:text-white">
+        <h1 class="text-xl font-semibold text-heading">
           Product Requirements
         </h1>
-        <p class="mt-1 text-sm text-gray-500 dark:text-zinc-400">
+        <p class="mt-1 text-sm text-body">
           Manage feature specifications and link them to application modules.
         </p>
       </div>
@@ -201,7 +201,7 @@ async function archiveRequirement(row: RequirementRow) {
           placeholder="All Modules"
           class="w-48"
           :pt="dropdownPt"
-          panel-class="!bg-white dark:!bg-zinc-900 !text-gray-900 dark:!text-white !border !border-black/10 dark:!border-white/10"
+          panel-class="!bg-foreground !text-heading !border !border-border"
         />
       </template>
 
@@ -216,10 +216,10 @@ async function archiveRequirement(row: RequirementRow) {
 
       <template #cell-title="{ data: row }">
         <div class="max-w-sm">
-          <p class="text-sm font-bold text-gray-900 dark:text-white">
+          <p class="text-sm font-bold text-heading">
             {{ row.title }}
           </p>
-          <p class="mt-0.5 truncate text-xs text-gray-500 dark:text-zinc-400">
+          <p class="mt-0.5 truncate text-xs text-body">
             {{ row.description || 'No description provided.' }}
           </p>
         </div>
@@ -227,8 +227,7 @@ async function archiveRequirement(row: RequirementRow) {
 
       <template #cell-module_name="{ data: row }">
         <span
-          class="rounded-full bg-gray-100 px-2 py-0.5 text-xs font-medium text-gray-600
-                 dark:bg-white/10 dark:text-zinc-300"
+          class="rounded-full bg-secondary px-2 py-0.5 text-xs font-medium text-body"
         >
           {{ row.module_name }}
         </span>
@@ -241,8 +240,7 @@ async function archiveRequirement(row: RequirementRow) {
       <template #cell-target_release="{ data: row }">
         <span
           v-if="row.target_release"
-          class="rounded-full border border-black/10 px-2 py-0.5 text-xs font-medium text-gray-700
-                 dark:border-white/10 dark:text-zinc-300"
+          class="rounded-full border border-border px-2 py-0.5 text-xs font-medium text-body"
         >
           {{ row.target_release }}
         </span>
@@ -286,7 +284,7 @@ async function archiveRequirement(row: RequirementRow) {
     >
       <div class="space-y-4">
         <div>
-          <label class="mb-1 block text-xs font-medium text-gray-600 dark:text-zinc-300">
+          <label class="mb-1 block text-xs font-medium text-body">
             Title
           </label>
           <InputText
@@ -301,7 +299,7 @@ async function archiveRequirement(row: RequirementRow) {
         </div>
 
         <div>
-          <label class="mb-1 block text-xs font-medium text-gray-600 dark:text-zinc-300">
+          <label class="mb-1 block text-xs font-medium text-body">
             Module
           </label>
           <ModuleSelect v-model="form.moduleId" :invalid="!!moduleError" />
@@ -312,7 +310,7 @@ async function archiveRequirement(row: RequirementRow) {
 
         <div class="grid grid-cols-2 gap-4">
           <div>
-            <label class="mb-1 block text-xs font-medium text-gray-600 dark:text-zinc-300">
+            <label class="mb-1 block text-xs font-medium text-body">
               Status
             </label>
             <Select
@@ -320,12 +318,12 @@ async function archiveRequirement(row: RequirementRow) {
               :options="STATUS_OPTIONS"
               class="w-full"
               :pt="dropdownPt"
-              panel-class="!bg-white dark:!bg-zinc-900 !text-gray-900 dark:!text-white !border !border-black/10 dark:!border-white/10"
+              panel-class="!bg-foreground !text-heading !border !border-border"
             />
           </div>
 
           <div>
-            <label class="mb-1 block text-xs font-medium text-gray-600 dark:text-zinc-300">
+            <label class="mb-1 block text-xs font-medium text-body">
               Target Release
             </label>
             <InputText
@@ -337,7 +335,7 @@ async function archiveRequirement(row: RequirementRow) {
         </div>
 
         <div>
-          <label class="mb-1 block text-xs font-medium text-gray-600 dark:text-zinc-300">
+          <label class="mb-1 block text-xs font-medium text-body">
             Description
           </label>
           <RichTextEditor

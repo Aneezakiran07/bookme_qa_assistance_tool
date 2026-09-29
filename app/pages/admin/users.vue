@@ -253,10 +253,10 @@ async function deactivate(user: ActiveUserRow) {
   <div class="space-y-6">
     <div class="flex flex-wrap items-start justify-between gap-3">
       <div>
-        <h1 class="text-xl font-semibold text-gray-900 dark:text-white">
+        <h1 class="text-xl font-semibold text-heading">
           Team & Invites
         </h1>
-        <p class="mt-1 text-sm text-gray-500 dark:text-zinc-400">
+        <p class="mt-1 text-sm text-body">
           Invite new teammates by email and role, and manage existing team access.
         </p>
       </div>
@@ -284,7 +284,7 @@ async function deactivate(user: ActiveUserRow) {
 
     <!-- active team members -->
     <div>
-      <h2 class="mb-3 text-sm font-semibold text-gray-700 dark:text-zinc-300">
+      <h2 class="mb-3 text-sm font-semibold text-body">
         Active Team Members
       </h2>
       <AppDataTable
@@ -304,7 +304,7 @@ async function deactivate(user: ActiveUserRow) {
               {{ initials(row.email) }}
             </span>
             <div class="min-w-0">
-              <p class="flex items-center gap-1.5 truncate text-sm font-medium text-gray-900 dark:text-white">
+              <p class="flex items-center gap-1.5 truncate text-sm font-medium text-heading">
                 {{ displayName(row.email) }}
                 <span
                   v-if="row.id === sessionUser?.id"
@@ -313,7 +313,7 @@ async function deactivate(user: ActiveUserRow) {
                   You
                 </span>
               </p>
-              <p class="truncate text-xs text-gray-500 dark:text-zinc-400">
+              <p class="truncate text-xs text-body">
                 {{ row.email }}
               </p>
             </div>
@@ -327,14 +327,14 @@ async function deactivate(user: ActiveUserRow) {
             class="w-40"
             size="small"
             :pt="dropdownPt"
-            panel-class="!bg-white dark:!bg-zinc-900 !text-gray-900 dark:!text-white !border !border-black/10 dark:!border-white/10"
+            panel-class="!bg-foreground !text-heading !border !border-border"
             :disabled="changingRoleId === row.id"
             @update:model-value="(role: string) => changeRole(row, role)"
           />
         </template>
 
         <template #cell-created_at="{ data: row }">
-          <span class="text-sm text-gray-600 dark:text-zinc-300">
+          <span class="text-sm text-body">
             {{ formatDate(row.created_at) }}
           </span>
         </template>
@@ -353,7 +353,7 @@ async function deactivate(user: ActiveUserRow) {
 
     <!-- outstanding invites -->
     <div>
-      <h2 class="mb-3 text-sm font-semibold text-gray-700 dark:text-zinc-300">
+      <h2 class="mb-3 text-sm font-semibold text-body">
         Outstanding Invites
       </h2>
       <AppDataTable
@@ -365,10 +365,10 @@ async function deactivate(user: ActiveUserRow) {
       >
         <template #cell-email="{ data: row }">
           <div class="min-w-0">
-            <p class="truncate text-sm font-medium text-gray-900 dark:text-white">
+            <p class="truncate text-sm font-medium text-heading">
               {{ displayName(row.email) }}
             </p>
-            <p class="truncate text-xs text-gray-500 dark:text-zinc-400">
+            <p class="truncate text-xs text-body">
               {{ row.email }}
             </p>
           </div>
@@ -384,13 +384,13 @@ async function deactivate(user: ActiveUserRow) {
         </template>
 
         <template #cell-invited_by_email="{ data: row }">
-          <span class="text-sm text-gray-600 dark:text-zinc-300">
+          <span class="text-sm text-body">
             {{ row.invited_by_email ?? '--' }}
           </span>
         </template>
 
         <template #cell-expires_at="{ data: row }">
-          <span class="text-sm text-gray-600 dark:text-zinc-300">
+          <span class="text-sm text-body">
             {{ formatDate(row.expires_at) }}
           </span>
         </template>
@@ -411,14 +411,14 @@ async function deactivate(user: ActiveUserRow) {
     <BaseModal v-model="inviteModalOpen" title="Invite User" width="28rem">
       <div class="space-y-4">
         <div>
-          <label class="mb-1 block text-xs font-medium text-gray-600 dark:text-zinc-300">
+          <label class="mb-1 block text-xs font-medium text-body">
             Email
           </label>
           <InputText v-model="inviteEmail" type="email" placeholder="name@bookme.pk" class="w-full" />
         </div>
 
         <div>
-          <label class="mb-1 block text-xs font-medium text-gray-600 dark:text-zinc-300">
+          <label class="mb-1 block text-xs font-medium text-body">
             Role
           </label>
           <Select
@@ -426,7 +426,7 @@ async function deactivate(user: ActiveUserRow) {
             :options="ASSIGNABLE_ROLES"
             class="w-full"
             :pt="dropdownPt"
-            panel-class="!bg-white dark:!bg-zinc-900 !text-gray-900 dark:!text-white !border !border-black/10 dark:!border-white/10"
+            panel-class="!bg-foreground !text-heading !border !border-border"
           />
         </div>
       </div>

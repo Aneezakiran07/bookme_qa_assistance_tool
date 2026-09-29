@@ -24,14 +24,14 @@ const trendDirection = computed(() => {
 
 <template>
   <div
-    class="rounded-lg border border-black/10 bg-white p-5 dark:border-white/10 dark:bg-black"
+    class="rounded-lg border border-border bg-foreground p-5"
   >
     <div class="flex items-start justify-between">
-      <p class="text-sm font-medium text-gray-500 dark:text-white/60">{{ label }}</p>
+      <p class="text-sm font-medium text-body">{{ label }}</p>
       <i v-if="icon" :class="icon" class="text-lg text-[#245CB1] dark:text-[#5B8FE0]" />
     </div>
 
-    <p class="mt-2 text-3xl font-semibold text-gray-900 dark:text-white">
+    <p class="mt-2 text-3xl font-semibold text-heading">
       {{ value }}
     </p>
 
@@ -41,7 +41,7 @@ const trendDirection = computed(() => {
       :class="{
         'text-green-600 dark:text-green-400': trendDirection === 'up',
         'text-red-600 dark:text-red-400': trendDirection === 'down',
-        'text-gray-500 dark:text-white/50': trendDirection === 'flat'
+        'text-body': trendDirection === 'flat'
       }"
     >
       <i

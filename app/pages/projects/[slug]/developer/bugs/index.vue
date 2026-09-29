@@ -191,10 +191,10 @@ function viewBug(bug: DeveloperBugRow) {
 <template>
   <div class="space-y-4">
     <div>
-      <h1 class="text-xl font-semibold text-gray-900 dark:text-white">
+      <h1 class="text-xl font-semibold text-heading">
         Bugs Directory
       </h1>
-      <p class="mt-1 text-sm text-gray-500 dark:text-zinc-400">
+      <p class="mt-1 text-sm text-body">
         Manage, filter, and resolve tracking tickets.
       </p>
     </div>
@@ -208,7 +208,7 @@ function viewBug(bug: DeveloperBugRow) {
         option-value="value"
         class="w-44"
         :pt="dropdownPt"
-        panel-class="!bg-white dark:!bg-zinc-900 !text-gray-900 dark:!text-white !border !border-black/10 dark:!border-white/10"
+        panel-class="!bg-foreground !text-heading !border !border-border"
       />
       <Select
         v-model="activePeriod"
@@ -217,7 +217,7 @@ function viewBug(bug: DeveloperBugRow) {
         option-value="value"
         class="w-36"
         :pt="dropdownPt"
-        panel-class="!bg-white dark:!bg-zinc-900 !text-gray-900 dark:!text-white !border !border-black/10 dark:!border-white/10"
+        panel-class="!bg-foreground !text-heading !border !border-border"
       />
       <Select
         v-model="selectedModuleId"
@@ -227,7 +227,7 @@ function viewBug(bug: DeveloperBugRow) {
         placeholder="All Modules"
         class="w-44"
         :pt="dropdownPt"
-        panel-class="!bg-white dark:!bg-zinc-900 !text-gray-900 dark:!text-white !border !border-black/10 dark:!border-white/10"
+        panel-class="!bg-foreground !text-heading !border !border-border"
       />
       <Select
         v-model="selectedSeverity"
@@ -238,7 +238,7 @@ function viewBug(bug: DeveloperBugRow) {
         show-clear
         class="w-48"
         :pt="dropdownPt"
-        panel-class="!bg-white dark:!bg-zinc-900 !text-gray-900 dark:!text-white !border !border-black/10 dark:!border-white/10"
+        panel-class="!bg-foreground !text-heading !border !border-border"
       />
       <Select
         v-model="selectedStatus"
@@ -249,7 +249,7 @@ function viewBug(bug: DeveloperBugRow) {
         show-clear
         class="w-44"
         :pt="dropdownPt"
-        panel-class="!bg-white dark:!bg-zinc-900 !text-gray-900 dark:!text-white !border !border-black/10 dark:!border-white/10"
+        panel-class="!bg-foreground !text-heading !border !border-border"
       />
     </div>
 
@@ -262,7 +262,7 @@ function viewBug(bug: DeveloperBugRow) {
       :empty-message="emptyMessage"
     >
       <template #cell-bug_code="{ data: row }">
-        <span class="font-mono text-xs text-gray-500 dark:text-zinc-400">{{ row.bug_code }}</span>
+        <span class="font-mono text-xs text-body">{{ row.bug_code }}</span>
       </template>
 
       <template #cell-severity="{ data: row }">
@@ -277,7 +277,7 @@ function viewBug(bug: DeveloperBugRow) {
       <template #cell-title="{ data: row }">
         <span
           :title="row.title"
-          class="block max-w-[16rem] truncate font-medium text-gray-900 dark:text-white"
+          class="block max-w-[16rem] truncate font-medium text-heading"
         >
           {{ row.title }}
         </span>
@@ -290,7 +290,7 @@ function viewBug(bug: DeveloperBugRow) {
           :disabled="isReadOnly || savingBugId === row.id"
           class="w-36"
           :pt="dropdownPt"
-          panel-class="!bg-white dark:!bg-zinc-900 !text-gray-900 dark:!text-white !border !border-black/10 dark:!border-white/10"
+          panel-class="!bg-foreground !text-heading !border !border-border"
           @update:model-value="(status: string) => updateStatus(row, status)"
         />
       </template>
@@ -305,19 +305,18 @@ function viewBug(bug: DeveloperBugRow) {
       </template>
 
       <template #cell-reported_by_email="{ data: row }">
-        <span class="text-sm text-gray-600 dark:text-zinc-300">{{ row.reported_by_email ?? 'Unknown' }}</span>
+        <span class="text-sm text-body">{{ row.reported_by_email ?? 'Unknown' }}</span>
       </template>
 
       <template #cell-created_on="{ data: row }">
-        <span class="text-sm text-gray-500 dark:text-zinc-400">{{ formatDate(row.reported_at) }}</span>
+        <span class="text-sm text-body">{{ formatDate(row.reported_at) }}</span>
       </template>
 
       <template #actions="{ data: row }">
         <button
           type="button"
-          class="inline-flex items-center gap-1.5 rounded-md border border-black/10 px-2.5 py-1.5
-                 text-xs font-medium text-gray-700 transition-colors hover:bg-gray-50
-                 dark:border-white/10 dark:text-zinc-200 dark:hover:bg-white/5"
+          class="inline-flex items-center gap-1.5 rounded-md border border-border px-2.5 py-1.5
+                 text-xs font-medium text-body transition-colors hover:bg-secondary"
           @click="viewBug(row)"
         >
           <i class="pi pi-eye text-xs" />

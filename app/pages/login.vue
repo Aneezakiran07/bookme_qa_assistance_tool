@@ -100,12 +100,11 @@ async function signInWithPassword() {
 </script>
 
 <template>
-  <div class="flex min-h-screen items-center justify-center bg-gray-50 dark:bg-black">
+  <div class="flex min-h-screen items-center justify-center bg-background">
     <div
-      class="w-full max-w-sm rounded-lg border border-black/10 bg-white p-8 text-center
-             dark:border-white/20 dark:bg-black"
+      class="w-full max-w-sm rounded-lg border border-border bg-foreground p-8 text-center"
     >
-      <h1 class="mb-2 text-xl font-semibold text-gray-900 dark:text-white">
+      <h1 class="mb-2 text-xl font-semibold text-heading">
         Bookme QA Tool
       </h1>
 
@@ -116,7 +115,7 @@ async function signInWithPassword() {
       >
         Please log in to continue.
       </p>
-      <p v-else class="mb-6 text-sm text-gray-600 dark:text-white/60">
+      <p v-else class="mb-6 text-sm text-body">
         Sign in with the account you were invited with.
       </p>
 
@@ -129,14 +128,14 @@ async function signInWithPassword() {
       />
 
       <div class="my-5 flex items-center gap-3">
-        <div class="h-px flex-1 bg-gray-200 dark:bg-white/10" />
+        <div class="h-px flex-1 bg-secondary" />
         <span class="text-xs uppercase tracking-wide text-gray-400 dark:text-white/40">or</span>
-        <div class="h-px flex-1 bg-gray-200 dark:bg-white/10" />
+        <div class="h-px flex-1 bg-secondary" />
       </div>
 
       <form class="space-y-3 text-left" @submit.prevent="signInWithPassword">
         <div>
-          <label class="mb-1 block text-xs font-medium text-gray-600 dark:text-white/60">
+          <label class="mb-1 block text-xs font-medium text-body">
             Email
           </label>
           <InputText
@@ -149,7 +148,7 @@ async function signInWithPassword() {
           />
         </div>
         <div>
-          <label class="mb-1 block text-xs font-medium text-gray-600 dark:text-white/60">
+          <label class="mb-1 block text-xs font-medium text-body">
             Password
           </label>
           <Password

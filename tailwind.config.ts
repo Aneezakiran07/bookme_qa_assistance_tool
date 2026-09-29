@@ -18,7 +18,20 @@ export default <Partial<Config>>{
   ],
 
   theme: {
-    extend: {},
+    extend: {
+      // semantic surface, border and text tokens, the values live in assets/css/main.css
+      // and switch on the dark class, so components never need dark variants for these
+      colors: {
+        background: 'var(--color-bg-background)',
+        foreground: 'var(--color-bg-foreground)',
+        secondary: 'var(--color-bg-secondary)',
+        border: 'var(--color-border-default)',
+        heading: 'var(--color-text-heading)',
+        body: 'var(--color-text-body)',
+        accent: 'var(--color-accent)',
+        'accent-hover': 'var(--color-accent-hover)',
+      },
+    },
   },
 
   plugins: [],

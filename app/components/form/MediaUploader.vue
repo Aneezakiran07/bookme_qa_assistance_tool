@@ -138,7 +138,7 @@ function onDrop(event: DragEvent) {
       @drop.prevent="onDrop"
     >
       <i class="pi pi-image text-2xl text-gray-400 dark:text-white/40" />
-      <p class="text-sm text-gray-600 dark:text-white/60">
+      <p class="text-sm text-body">
         Drag & drop a screenshot or video, or click to browse
       </p>
       <ProgressSpinner v-if="uploading" style="width: 1.5rem; height: 1.5rem" stroke-width="6" />
@@ -163,7 +163,7 @@ function onDrop(event: DragEvent) {
       <div
         v-for="(attachment, index) in visibleAttachments"
         :key="attachment.id"
-        class="group relative overflow-hidden rounded-md border border-black/10 dark:border-white/10"
+        class="group relative overflow-hidden rounded-md border border-border"
       >
         <video
           v-if="attachment.file_type === 'video'"

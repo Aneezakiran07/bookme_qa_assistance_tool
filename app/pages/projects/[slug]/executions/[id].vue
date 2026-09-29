@@ -187,24 +187,24 @@ function statusKey(latest: string | null): string {
       <div class="flex items-center gap-3">
         <NuxtLink
           :to="projectPath('/executions')"
-          class="flex h-8 w-8 items-center justify-center rounded-md text-gray-500
-                 hover:bg-gray-100 dark:text-zinc-400 dark:hover:bg-white/5"
+          class="flex h-8 w-8 items-center justify-center rounded-md text-body
+                 hover:bg-secondary"
           aria-label="Back to releases"
         >
           <i class="pi pi-arrow-left text-sm" />
         </NuxtLink>
         <div>
           <p class="text-xs text-gray-400 dark:text-zinc-500">Executing Release</p>
-          <h1 class="text-lg font-semibold text-gray-900 dark:text-white">
+          <h1 class="text-lg font-semibold text-heading">
             {{ release?.version ?? '—' }}
           </h1>
         </div>
       </div>
 
       <div class="grid grid-cols-2 gap-3 sm:grid-cols-4">
-        <div class="rounded-lg border border-black/10 bg-white p-3 dark:border-white/10 dark:bg-black">
-          <p class="text-xs text-gray-500 dark:text-zinc-400">Executed</p>
-          <p class="mt-1 text-lg font-semibold text-gray-900 dark:text-white">
+        <div class="rounded-lg border border-border bg-foreground p-3">
+          <p class="text-xs text-body">Executed</p>
+          <p class="mt-1 text-lg font-semibold text-heading">
             {{ stats.executed }}<span class="text-sm text-gray-400">/{{ stats.total }}</span>
           </p>
           <AppProgressBar
@@ -214,20 +214,20 @@ function statusKey(latest: string | null): string {
             class="mt-2"
           />
         </div>
-        <div class="rounded-lg border border-black/10 bg-white p-3 dark:border-white/10 dark:bg-black">
-          <p class="text-xs text-gray-500 dark:text-zinc-400">Passed</p>
+        <div class="rounded-lg border border-border bg-foreground p-3">
+          <p class="text-xs text-body">Passed</p>
           <p class="mt-1 text-lg font-semibold text-green-600 dark:text-green-400">
             {{ stats.passed }}
           </p>
         </div>
-        <div class="rounded-lg border border-black/10 bg-white p-3 dark:border-white/10 dark:bg-black">
-          <p class="text-xs text-gray-500 dark:text-zinc-400">Failed</p>
+        <div class="rounded-lg border border-border bg-foreground p-3">
+          <p class="text-xs text-body">Failed</p>
           <p class="mt-1 text-lg font-semibold text-red-600 dark:text-red-400">
             {{ stats.failed }}
           </p>
         </div>
-        <div class="rounded-lg border border-black/10 bg-white p-3 dark:border-white/10 dark:bg-black">
-          <p class="text-xs text-gray-500 dark:text-zinc-400">Blocked</p>
+        <div class="rounded-lg border border-border bg-foreground p-3">
+          <p class="text-xs text-body">Blocked</p>
           <p class="mt-1 text-lg font-semibold text-[#245CB1] dark:text-[#5B8FE0]">
             {{ stats.blocked }}
           </p>
@@ -239,10 +239,9 @@ function statusKey(latest: string | null): string {
     <div class="flex flex-1 gap-4 overflow-hidden">
       <!-- left: test suite sidebar -->
       <aside
-        class="flex w-80 shrink-0 flex-col rounded-lg border border-black/10 bg-white
-               dark:border-white/10 dark:bg-black"
+        class="flex w-80 shrink-0 flex-col rounded-lg border border-border bg-foreground"
       >
-        <div class="space-y-2 border-b border-black/10 p-3 dark:border-white/10">
+        <div class="space-y-2 border-b border-border p-3">
           <IconField icon-position="left">
             <InputIcon class="pi pi-search" />
             <InputText
@@ -259,7 +258,7 @@ function statusKey(latest: string | null): string {
             placeholder="All Modules"
             class="w-full"
             :pt="dropdownPt"
-            panel-class="!bg-white dark:!bg-zinc-900 !text-gray-900 dark:!text-white !border !border-black/10 dark:!border-white/10"
+            panel-class="!bg-foreground !text-heading !border !border-border"
           />
         </div>
 
@@ -271,18 +270,18 @@ function statusKey(latest: string | null): string {
           >
             No test cases match.
           </div>
-          <ul v-else class="divide-y divide-black/5 dark:divide-white/5">
+          <ul v-else class="divide-y divide-border">
             <li v-for="tc in filteredTestCases" :key="tc.id">
               <button
                 type="button"
                 class="w-full px-3 py-2.5 text-left transition-colors"
                 :class="selectedTestCaseId === tc.id
                   ? 'bg-[#245CB1]/5 dark:bg-[#5B8FE0]/10'
-                  : 'hover:bg-gray-50 dark:hover:bg-white/5'"
+                  : 'hover:bg-secondary'"
                 @click="selectedTestCaseId = tc.id"
               >
                 <div class="min-w-0">
-                  <p class="truncate text-sm font-medium text-gray-900 dark:text-white">
+                  <p class="truncate text-sm font-medium text-heading">
                     {{ tc.title }}
                   </p>
                   <div class="mt-1 flex flex-wrap items-center gap-1.5">
@@ -304,8 +303,7 @@ function statusKey(latest: string | null): string {
 
       <!-- right: active workspace -->
       <section
-        class="flex flex-1 flex-col overflow-hidden rounded-lg border border-black/10 bg-white
-               dark:border-white/10 dark:bg-black"
+        class="flex flex-1 flex-col overflow-hidden rounded-lg border border-border bg-foreground"
       >
         <div
           v-if="!selectedTestCase"
@@ -317,15 +315,14 @@ function statusKey(latest: string | null): string {
           <div class="flex-1 space-y-5 overflow-y-auto p-6">
             <div>
               <div class="flex items-start justify-between gap-4">
-                <h2 class="text-base font-semibold text-gray-900 dark:text-white">
+                <h2 class="text-base font-semibold text-heading">
                   {{ selectedTestCase.title }}
                 </h2>
                 <StatusBadge :status="statusKey(selectedTestCase.latest_result)" size="sm" />
               </div>
               <div class="mt-2 flex flex-wrap items-center gap-2">
                 <span
-                  class="rounded-full bg-gray-100 px-2 py-0.5 text-xs font-medium text-gray-600
-                         dark:bg-white/10 dark:text-zinc-300"
+                  class="rounded-full bg-secondary px-2 py-0.5 text-xs font-medium text-body"
                 >
                   {{ selectedTestCase.module_name }}
                 </span>
@@ -344,8 +341,8 @@ function statusKey(latest: string | null): string {
                 Test Data
               </p>
               <div
-                class="whitespace-pre-wrap rounded-md border border-black/10 bg-gray-50 p-3 text-sm
-                       text-gray-800 dark:border-white/10 dark:bg-white/5 dark:text-zinc-200"
+                class="whitespace-pre-wrap rounded-md border border-border bg-background p-3 text-sm
+                       text-heading"
               >
                 {{ selectedTestCase.steps || 'No steps recorded.' }}
               </div>
@@ -356,8 +353,8 @@ function statusKey(latest: string | null): string {
                 Expected Result
               </p>
               <div
-                class="whitespace-pre-wrap rounded-md border border-black/10 bg-gray-50 p-3 text-sm
-                       text-gray-800 dark:border-white/10 dark:bg-white/5 dark:text-zinc-200"
+                class="whitespace-pre-wrap rounded-md border border-border bg-background p-3 text-sm
+                       text-heading"
               >
                 {{ selectedTestCase.expected_result || 'No expected result recorded.' }}
               </div>
@@ -375,22 +372,21 @@ function statusKey(latest: string | null): string {
             </div>
 
             <div v-if="!isReadOnly">
-              <label class="mb-1.5 block text-xs font-medium text-gray-600 dark:text-zinc-300">
+              <label class="mb-1.5 block text-xs font-medium text-body">
                 Actual Result (optional)
               </label>
               <textarea
                 v-model="form.actual_result"
                 rows="3"
                 placeholder="Environment, observed behavior, or anything worth capturing with this run..."
-                class="w-full resize-y rounded-md border border-black/10 bg-transparent p-3 text-sm
-                       text-gray-900 outline-none placeholder:text-gray-400
-                       focus:border-[#245CB1] dark:focus:border-[#5B8FE0] focus:ring-1 focus:ring-[#245CB1] dark:focus:ring-[#5B8FE0]
-                       dark:border-white/10 dark:text-white dark:placeholder:text-white/40"
+                class="w-full resize-y rounded-md border border-border bg-transparent p-3 text-sm
+                       text-heading outline-none placeholder:text-gray-400
+                       focus:border-[#245CB1] dark:focus:border-[#5B8FE0] focus:ring-1 focus:ring-[#245CB1] dark:focus:ring-[#5B8FE0] dark:placeholder:text-white/40"
               />
             </div>
           </div>
 
-          <div v-if="!isReadOnly" class="border-t border-black/10 bg-gray-50 p-4 dark:border-white/10 dark:bg-white/5">
+          <div v-if="!isReadOnly" class="border-t border-border bg-background p-4">
             <div class="grid grid-cols-3 gap-3">
               <button
                 type="button"

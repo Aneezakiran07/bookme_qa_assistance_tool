@@ -112,10 +112,10 @@ async function updateStatus(bug: DeveloperBugRow, status: string) {
 <template>
   <div class="space-y-6">
     <div>
-      <h1 class="text-xl font-semibold text-gray-900 dark:text-white">
+      <h1 class="text-xl font-semibold text-heading">
         My Dashboard
       </h1>
-      <p class="mt-1 text-sm text-gray-500 dark:text-zinc-400">
+      <p class="mt-1 text-sm text-body">
         Bugs assigned to you, and where they're concentrated.
       </p>
     </div>
@@ -133,13 +133,13 @@ async function updateStatus(bug: DeveloperBugRow, status: string) {
         :class="
           summary.critical_high_open > 0
             ? 'border-red-200 bg-red-50 dark:border-red-500/30 dark:bg-red-500/10'
-            : 'border-black/10 bg-white dark:border-white/10 dark:bg-black'
+            : 'border-border bg-foreground'
         "
       >
         <div class="flex items-start justify-between">
           <p
             class="text-sm font-medium"
-            :class="summary.critical_high_open > 0 ? 'text-red-700 dark:text-red-300' : 'text-gray-500 dark:text-white/60'"
+            :class="summary.critical_high_open > 0 ? 'text-red-700 dark:text-red-300' : 'text-body'"
           >
             Critical / High Blockers
           </p>
@@ -150,7 +150,7 @@ async function updateStatus(bug: DeveloperBugRow, status: string) {
         </div>
         <p
           class="mt-2 text-3xl font-semibold"
-          :class="summary.critical_high_open > 0 ? 'text-red-700 dark:text-red-300' : 'text-gray-900 dark:text-white'"
+          :class="summary.critical_high_open > 0 ? 'text-red-700 dark:text-red-300' : 'text-heading'"
         >
           {{ summary.critical_high_open }}
         </p>
@@ -180,7 +180,7 @@ async function updateStatus(bug: DeveloperBugRow, status: string) {
           empty-message="No open bugs assigned to you. Nice work."
         >
           <template #cell-bug_id="{ data: row }">
-            <span class="font-mono text-xs text-gray-500 dark:text-zinc-400">{{ bugCode(row.id) }}</span>
+            <span class="font-mono text-xs text-body">{{ bugCode(row.id) }}</span>
           </template>
 
           <template #cell-severity="{ data: row }">
@@ -199,13 +199,13 @@ async function updateStatus(bug: DeveloperBugRow, status: string) {
               :disabled="isReadOnly || savingBugId === row.id"
               class="w-36"
               :pt="dropdownPt"
-              panel-class="!bg-white dark:!bg-zinc-900 !text-gray-900 dark:!text-white !border !border-black/10 dark:!border-white/10"
+              panel-class="!bg-foreground !text-heading !border !border-border"
               @update:model-value="(status: string) => updateStatus(row, status)"
             />
           </template>
 
           <template #cell-updated_at="{ data: row }">
-            <span class="text-sm text-gray-500 dark:text-zinc-400">{{ formatDate(row.last_status_change_at) }}</span>
+            <span class="text-sm text-body">{{ formatDate(row.last_status_change_at) }}</span>
           </template>
 
           <template #actions="{ data: row }">
@@ -220,8 +220,8 @@ async function updateStatus(bug: DeveloperBugRow, status: string) {
       </div>
 
       <!-- defect hotspots / module breakdown -->
-      <div class="rounded-lg border border-black/10 bg-white dark:border-white/10 dark:bg-black">
-        <div class="border-b border-black/10 p-4 dark:border-white/10">
+      <div class="rounded-lg border border-border bg-foreground">
+        <div class="border-b border-border p-4">
           <p class="text-xs font-semibold uppercase tracking-wide text-gray-400 dark:text-zinc-500">
             Defect Hotspots
           </p>
@@ -232,10 +232,10 @@ async function updateStatus(bug: DeveloperBugRow, status: string) {
         <div v-else class="space-y-3 p-4">
           <div v-for="hotspot in hotspots" :key="hotspot.module_id">
             <div class="mb-1 flex items-center justify-between text-sm">
-              <span class="font-medium text-gray-900 dark:text-white">{{ hotspot.module_name }}</span>
-              <span class="text-gray-500 dark:text-zinc-400">{{ hotspot.count }}</span>
+              <span class="font-medium text-heading">{{ hotspot.module_name }}</span>
+              <span class="text-body">{{ hotspot.count }}</span>
             </div>
-            <div class="h-1.5 w-full overflow-hidden rounded-full bg-gray-100 dark:bg-white/10">
+            <div class="h-1.5 w-full overflow-hidden rounded-full bg-secondary">
               <div
                 class="h-full rounded-full bg-[#245CB1] dark:bg-[#5B8FE0]"
                 :style="{ width: `${Math.round((hotspot.count / maxHotspotCount) * 100)}%` }"

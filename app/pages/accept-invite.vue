@@ -102,20 +102,19 @@ async function acceptWithGoogle() {
 </script>
 
 <template>
-  <div class="flex min-h-screen items-center justify-center bg-gray-50 dark:bg-black">
+  <div class="flex min-h-screen items-center justify-center bg-background">
     <div
-      class="w-full max-w-sm rounded-lg border border-black/10 bg-white p-8 text-center
-             dark:border-white/20 dark:bg-black"
+      class="w-full max-w-sm rounded-lg border border-border bg-foreground p-8 text-center"
     >
       <template v-if="state === 'loading' || state === 'finishing'">
-        <p class="text-sm text-gray-500 dark:text-white/60">Setting up your account...</p>
+        <p class="text-sm text-body">Setting up your account...</p>
       </template>
 
       <template v-else-if="state === 'invalid'">
-        <h1 class="mb-2 text-xl font-semibold text-gray-900 dark:text-white">
+        <h1 class="mb-2 text-xl font-semibold text-heading">
           Invite not found
         </h1>
-        <p class="mb-6 text-sm text-gray-600 dark:text-white/60">
+        <p class="mb-6 text-sm text-body">
           This invite link is invalid, expired, or has already been used. If you already set your password, just log in.
         </p>
         <NuxtLink to="/login" class="text-sm text-[#245CB1] hover:underline dark:text-[#5B8FE0]">
@@ -124,10 +123,10 @@ async function acceptWithGoogle() {
       </template>
 
       <template v-else-if="state === 'done'">
-        <h1 class="mb-2 text-xl font-semibold text-gray-900 dark:text-white">
+        <h1 class="mb-2 text-xl font-semibold text-heading">
           You're all set
         </h1>
-        <p class="mb-6 text-sm text-gray-600 dark:text-white/60">
+        <p class="mb-6 text-sm text-body">
           Your account has been created for {{ invite?.email }}. You can now log in with the
           password you just set.
         </p>
@@ -137,13 +136,13 @@ async function acceptWithGoogle() {
       </template>
 
       <template v-else-if="state === 'failed'">
-        <h1 class="mb-2 text-xl font-semibold text-gray-900 dark:text-white">
+        <h1 class="mb-2 text-xl font-semibold text-heading">
           Something went wrong
         </h1>
-        <p class="mb-2 text-sm text-gray-600 dark:text-white/60">
+        <p class="mb-2 text-sm text-body">
           {{ errorMessage }}
         </p>
-        <p class="mb-6 text-sm text-gray-600 dark:text-white/60">
+        <p class="mb-6 text-sm text-body">
           If you already set a password, try logging in directly. Otherwise you can also
           continue with Google below.
         </p>

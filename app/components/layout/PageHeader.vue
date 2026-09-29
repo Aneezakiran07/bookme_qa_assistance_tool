@@ -65,8 +65,8 @@ async function handleSaved(saved: ProjectSummary) {
 
 <template>
   <header
-    class="flex h-16 shrink-0 items-center justify-between border-b border-gray-200
-           bg-white px-6 dark:border-zinc-800 dark:bg-black"
+    class="flex h-16 shrink-0 items-center justify-between border-b border-border
+           bg-foreground px-6"
   >
     <div class="flex min-w-0 items-center gap-2">
       <template v-if="isProjectRoute && !notFound">
@@ -78,14 +78,14 @@ async function handleSaved(saved: ProjectSummary) {
           option-value="slug"
           placeholder="Select a project"
           class="w-56 max-w-[40vw] !border !border-black/15 !bg-transparent !shadow-none dark:!border-white/15
-                 hover:!border-[#245CB1] hover:!bg-gray-100 dark:hover:!border-[#5B8FE0] dark:hover:!bg-zinc-900"
+                 hover:!border-[#245CB1] hover:!bg-secondary dark:hover:!border-[#5B8FE0]"
           :pt="dropdownPt"
-          panel-class="!bg-white dark:!bg-zinc-900 !text-gray-900 dark:!text-white !border !border-black/10 dark:!border-white/10"
+          panel-class="!bg-foreground !text-heading !border !border-border"
           aria-label="Project"
           @update:model-value="onPick"
         >
           <template #footer>
-            <div class="space-y-1 border-t border-black/10 p-2 dark:border-white/10">
+            <div class="space-y-1 border-t border-border p-2">
               <BaseButton
                 v-if="canManage"
                 label="New project"
@@ -109,7 +109,7 @@ async function handleSaved(saved: ProjectSummary) {
         <span class="text-gray-300 dark:text-zinc-600" aria-hidden="true">/</span>
       </template>
 
-      <h1 class="min-w-0 truncate text-lg font-semibold text-gray-900 dark:text-white">
+      <h1 class="min-w-0 truncate text-lg font-semibold text-heading">
         {{ pageTitle }}
       </h1>
     </div>

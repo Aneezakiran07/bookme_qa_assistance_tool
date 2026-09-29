@@ -1,3 +1,41 @@
+/*
+ * Semantic color tokens. Light values live in :root and the dark class swaps
+ * them, tailwind.config.ts maps each one to a utility such as bg-foreground,
+ * so components pick up the right value in both modes without dark variants.
+ * Page sits on background, cards, sidebar, header and modals sit on foreground.
+ */
+:root {
+  /* surfaces */
+  --color-bg-background: #F8FAFC;
+  --color-bg-foreground: #FFFFFF;
+  --color-bg-secondary: #E4E8F0;
+
+  /* borders */
+  --color-border-default: #E2E8F0;
+
+  /* typography */
+  --color-text-heading: #0F172A;
+  --color-text-body: #475569;
+
+  /* brand */
+  --color-accent: #245CB1;
+  --color-accent-hover: #1D4A8F;
+}
+
+.dark {
+  --color-bg-background: #09090B;
+  --color-bg-foreground: #18181B;
+  --color-bg-secondary: #27272A;
+
+  --color-border-default: #27272A;
+
+  --color-text-heading: #FAFAFA;
+  --color-text-body: #A1A1AA;
+
+  --color-accent: #5B8FE0;
+  --color-accent-hover: #7FAEEB;
+}
+
 @layer tailwind-base, primevue, tailwind-utilities;
 
 @layer tailwind-base {
@@ -29,16 +67,16 @@
   .dark .p-dialog-header,
   .dark .p-dialog-content,
   .dark .p-dialog-footer {
-    background-color: #000000 !important;
-    color: #ffffff !important;
-    border-color: rgb(255 255 255 / 0.1) !important;
+    background-color: var(--color-bg-foreground) !important;
+    color: var(--color-text-heading) !important;
+    border-color: var(--color-border-default) !important;
   }
 
   .dark .p-select,
   .dark .p-multiselect,
   .dark .p-inputtext,
   .dark .p-textarea {
-    background-color: #000000 !important;
+    background-color: var(--color-bg-background) !important;
     color: #ffffff !important;
     border-color: rgb(255 255 255 / 0.15) !important;
   }
@@ -62,9 +100,9 @@
   .dark .p-multiselect-header,
   .dark .p-datatable,
   .dark .p-datatable-header {
-    background-color: #18181b !important;
-    color: #ffffff !important;
-    border-color: rgb(255 255 255 / 0.1) !important;
+    background-color: var(--color-bg-foreground) !important;
+    color: var(--color-text-heading) !important;
+    border-color: var(--color-border-default) !important;
   }
 
   /* the closed select box gets a hover outline in the brand blue so it reads as interactive */
@@ -90,9 +128,9 @@
   }
 
   .dark .p-toast-message {
-    background-color: #000000 !important;
-    color: #ffffff !important;
-    border-color: rgb(255 255 255 / 0.1) !important;
+    background-color: var(--color-bg-foreground) !important;
+    color: var(--color-text-heading) !important;
+    border-color: var(--color-border-default) !important;
   }
 
   /* the rule above only ever reliably painted the outer message
@@ -153,7 +191,18 @@
   .p-multiselect,
   .p-select-overlay,
   .p-multiselect-overlay {
-    background-color: #ffffff;
-    color: #111827;
+    background-color: var(--color-bg-foreground);
+    color: var(--color-text-heading);
+  }
+
+  /* table chrome follows the tokens, header rows use the secondary surface and
+     striped rows use the page tone. the sorted header rule above reads these
+     same variables, so a sorted column keeps matching the other headers */
+  .p-datatable {
+    --p-datatable-header-cell-background: var(--color-bg-secondary);
+    --p-datatable-header-cell-color: var(--color-text-heading);
+    --p-datatable-header-cell-border-color: var(--color-border-default);
+    --p-datatable-body-cell-border-color: var(--color-border-default);
+    --p-datatable-row-striped-background: var(--color-bg-background);
   }
 }

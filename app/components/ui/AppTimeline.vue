@@ -36,8 +36,8 @@ function formatTimestamp(value: string) {
   <Timeline v-else :value="entries" align="left" class="w-full">
     <template #marker="{ item }">
       <span
-        class="flex h-7 w-7 items-center justify-center rounded-full border border-black/10 bg-white
-               text-xs dark:border-white/10 dark:bg-black"
+        class="flex h-7 w-7 items-center justify-center rounded-full border border-border bg-foreground
+               text-xs"
         :class="item.iconClass ?? 'text-[#245CB1] dark:text-[#5B8FE0]'"
       >
         <i :class="item.icon" />
@@ -46,10 +46,10 @@ function formatTimestamp(value: string) {
 
     <template #content="{ item }">
       <div class="pb-4">
-        <p class="text-sm font-medium text-gray-900 dark:text-white">
+        <p class="text-sm font-medium text-heading">
           {{ item.title }}
         </p>
-        <p v-if="item.detail" class="mt-0.5 text-xs text-gray-500 dark:text-zinc-400">
+        <p v-if="item.detail" class="mt-0.5 text-xs text-body">
           {{ item.detail }}
         </p>
         <p class="mt-0.5 text-xs text-gray-400 dark:text-zinc-500">

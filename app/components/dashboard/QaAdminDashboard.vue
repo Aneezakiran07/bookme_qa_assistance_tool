@@ -233,16 +233,16 @@ function executionStatusKey(result: string): string {
 <template>
   <div class="space-y-6">
     <div>
-      <h1 class="text-xl font-semibold text-gray-900 dark:text-white">
+      <h1 class="text-xl font-semibold text-heading">
         Executive Dashboard
       </h1>
-      <p class="mt-1 text-sm text-gray-500 dark:text-zinc-400">
+      <p class="mt-1 text-sm text-body">
         Coverage, pass rates, and active defects across the project.
       </p>
     </div>
 
     <!-- global filter bar -->
-    <div class="flex flex-wrap items-center gap-3 rounded-lg border border-black/10 bg-white p-3 dark:border-white/10 dark:bg-black">
+    <div class="flex flex-wrap items-center gap-3 rounded-lg border border-border bg-foreground p-3">
       <div class="flex items-center gap-1.5">
         <BaseButton
           v-for="option in RANGE_OPTIONS"
@@ -254,7 +254,7 @@ function executionStatusKey(result: string): string {
         />
       </div>
 
-      <div class="h-6 w-px bg-black/10 dark:bg-white/10" />
+      <div class="h-6 w-px bg-border" />
 
       <Select
         v-model="selectedModuleId"
@@ -264,7 +264,7 @@ function executionStatusKey(result: string): string {
         placeholder="All Modules"
         class="w-44"
         :pt="dropdownPt"
-        panel-class="!bg-white dark:!bg-zinc-900 !text-gray-900 dark:!text-white !border !border-black/10 dark:!border-white/10"
+        panel-class="!bg-foreground !text-heading !border !border-border"
       />
 
       <Select
@@ -275,7 +275,7 @@ function executionStatusKey(result: string): string {
         placeholder="All Releases"
         class="w-44"
         :pt="dropdownPt"
-        panel-class="!bg-white dark:!bg-zinc-900 !text-gray-900 dark:!text-white !border !border-black/10 dark:!border-white/10"
+        panel-class="!bg-foreground !text-heading !border !border-border"
       />
     </div>
 
@@ -289,12 +289,12 @@ function executionStatusKey(result: string): string {
         :trend="0"
       />
 
-      <div class="rounded-lg border border-black/10 bg-white p-5 dark:border-white/10 dark:bg-black">
+      <div class="rounded-lg border border-border bg-foreground p-5">
         <div class="flex items-start justify-between">
-          <p class="text-sm font-medium text-gray-500 dark:text-white/60">Execution Pass Rate</p>
+          <p class="text-sm font-medium text-body">Execution Pass Rate</p>
           <i class="pi pi-chart-line text-lg text-[#245CB1] dark:text-[#5B8FE0]" />
         </div>
-        <p class="mt-2 text-3xl font-semibold text-gray-900 dark:text-white">{{ passRate.pass_rate }}%</p>
+        <p class="mt-2 text-3xl font-semibold text-heading">{{ passRate.pass_rate }}%</p>
         <AppProgressBar
           class="mt-3"
           :value="passRate.pass_rate"
@@ -319,13 +319,13 @@ function executionStatusKey(result: string): string {
         :class="
           snapshot.open_critical_high > 0
             ? 'border-red-200 bg-red-50 dark:border-red-500/30 dark:bg-red-500/10'
-            : 'border-black/10 bg-white dark:border-white/10 dark:bg-black'
+            : 'border-border bg-foreground'
         "
       >
         <div class="flex items-start justify-between">
           <p
             class="text-sm font-medium"
-            :class="snapshot.open_critical_high > 0 ? 'text-red-700 dark:text-red-300' : 'text-gray-500 dark:text-white/60'"
+            :class="snapshot.open_critical_high > 0 ? 'text-red-700 dark:text-red-300' : 'text-body'"
           >
             Open Critical / High Bugs
           </p>
@@ -336,7 +336,7 @@ function executionStatusKey(result: string): string {
         </div>
         <p
           class="mt-2 text-3xl font-semibold"
-          :class="snapshot.open_critical_high > 0 ? 'text-red-700 dark:text-red-300' : 'text-gray-900 dark:text-white'"
+          :class="snapshot.open_critical_high > 0 ? 'text-red-700 dark:text-red-300' : 'text-heading'"
         >
           {{ snapshot.open_critical_high }}
         </p>
@@ -348,14 +348,14 @@ function executionStatusKey(result: string): string {
 
     <!-- trend + severity donut -->
     <div class="grid grid-cols-1 gap-4 lg:grid-cols-3">
-      <div class="rounded-lg border border-black/10 bg-white p-5 lg:col-span-2 dark:border-white/10 dark:bg-black">
+      <div class="rounded-lg border border-border bg-foreground p-5 lg:col-span-2">
         <p class="mb-3 text-xs font-semibold uppercase tracking-wide text-gray-400 dark:text-zinc-500">
           Test Execution Trend
         </p>
         <AppDonutChart :segments="trendSegments" empty-message="No executions recorded in this range." />
       </div>
 
-      <div class="rounded-lg border border-black/10 bg-white p-5 dark:border-white/10 dark:bg-black">
+      <div class="rounded-lg border border-border bg-foreground p-5">
         <p class="mb-3 text-xs font-semibold uppercase tracking-wide text-gray-400 dark:text-zinc-500">
           Active Bugs by Severity
         </p>
@@ -365,14 +365,14 @@ function executionStatusKey(result: string): string {
 
     <!-- status breakdowns -->
     <div class="grid grid-cols-1 gap-4 lg:grid-cols-2">
-      <div class="rounded-lg border border-black/10 bg-white p-5 dark:border-white/10 dark:bg-black">
+      <div class="rounded-lg border border-border bg-foreground p-5">
         <p class="mb-3 text-xs font-semibold uppercase tracking-wide text-gray-400 dark:text-zinc-500">
           Active Bugs by Status
         </p>
         <AppBreakdownBar :segments="statusSegments" empty-message="No Open, In Progress, or Retest bugs." />
       </div>
 
-      <div class="rounded-lg border border-black/10 bg-white p-5 dark:border-white/10 dark:bg-black">
+      <div class="rounded-lg border border-border bg-foreground p-5">
         <p class="mb-3 text-xs font-semibold uppercase tracking-wide text-gray-400 dark:text-zinc-500">
           Requirements Coverage Status
         </p>
@@ -382,8 +382,8 @@ function executionStatusKey(result: string): string {
 
     <!-- watchlist + recent executions -->
     <div class="grid grid-cols-1 gap-4 lg:grid-cols-2">
-      <div class="rounded-lg border border-black/10 bg-white dark:border-white/10 dark:bg-black">
-        <div class="border-b border-black/10 p-4 dark:border-white/10">
+      <div class="rounded-lg border border-border bg-foreground">
+        <div class="border-b border-border p-4">
           <p class="text-xs font-semibold uppercase tracking-wide text-gray-400 dark:text-zinc-500">
             Critical Bugs Watchlist
           </p>
@@ -395,10 +395,10 @@ function executionStatusKey(result: string): string {
           v-for="bug in criticalBugs"
           :key="bug.id"
           :to="projectPath(`/bugs/${bug.id}`)"
-          class="flex items-center justify-between gap-3 border-b border-black/5 p-3 last:border-b-0 hover:bg-gray-50 dark:border-white/5 dark:hover:bg-white/5"
+          class="flex items-center justify-between gap-3 border-b border-border p-3 last:border-b-0 hover:bg-secondary"
         >
           <div class="min-w-0">
-            <p class="truncate text-sm font-medium text-gray-900 dark:text-white">{{ bug.title }}</p>
+            <p class="truncate text-sm font-medium text-heading">{{ bug.title }}</p>
             <p class="text-xs text-gray-400 dark:text-zinc-500">
               {{ bugCode(bug.id) }} &middot; {{ bug.module_name }} &middot; {{ timeAgo(bug.reported_at) }}
             </p>
@@ -409,8 +409,8 @@ function executionStatusKey(result: string): string {
         </NuxtLink>
       </div>
 
-      <div class="rounded-lg border border-black/10 bg-white dark:border-white/10 dark:bg-black">
-        <div class="border-b border-black/10 p-4 dark:border-white/10">
+      <div class="rounded-lg border border-border bg-foreground">
+        <div class="border-b border-border p-4">
           <p class="text-xs font-semibold uppercase tracking-wide text-gray-400 dark:text-zinc-500">
             Recent Executions
           </p>
@@ -421,7 +421,7 @@ function executionStatusKey(result: string): string {
         <div
           v-for="run in recentExecutions"
           :key="run.id"
-          class="flex items-center justify-between gap-3 border-b border-black/5 p-3 last:border-b-0 dark:border-white/5"
+          class="flex items-center justify-between gap-3 border-b border-border p-3 last:border-b-0"
         >
           <div class="flex min-w-0 items-center gap-2.5">
             <span
@@ -431,7 +431,7 @@ function executionStatusKey(result: string): string {
               {{ initials(run.executed_by_email) }}
             </span>
             <div class="min-w-0">
-              <p class="truncate text-sm font-medium text-gray-900 dark:text-white">{{ run.test_case_title }}</p>
+              <p class="truncate text-sm font-medium text-heading">{{ run.test_case_title }}</p>
               <p class="text-xs text-gray-400 dark:text-zinc-500">
                 {{ run.module_name }} &middot; {{ run.release_version }} &middot; {{ timeAgo(run.execution_date) }}
               </p>

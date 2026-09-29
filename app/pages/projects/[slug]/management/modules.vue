@@ -163,10 +163,10 @@ async function deleteModule(row: ModuleRow) {
   <div class="space-y-6">
     <div class="flex flex-wrap items-start justify-between gap-4">
       <div>
-        <h1 class="text-xl font-semibold text-gray-900 dark:text-white">
+        <h1 class="text-xl font-semibold text-heading">
           Modules
         </h1>
-        <p class="mt-1 text-sm text-gray-500 dark:text-zinc-400">
+        <p class="mt-1 text-sm text-body">
           Define core application modules to organize requirements, tests, and bugs.
         </p>
       </div>
@@ -189,7 +189,7 @@ async function deleteModule(row: ModuleRow) {
       data-key="id"
     >
       <template #cell-name="{ data: row }">
-        <span class="text-sm font-bold text-gray-900 dark:text-white">
+        <span class="text-sm font-bold text-heading">
           {{ row.name }}
         </span>
       </template>
@@ -203,7 +203,7 @@ async function deleteModule(row: ModuleRow) {
           >
             {{ initials(row.created_by_email) }}
           </span>
-          <span class="truncate text-sm text-gray-700 dark:text-zinc-300">
+          <span class="truncate text-sm text-body">
             {{ displayName(row.created_by_email) }}
           </span>
         </div>
@@ -211,7 +211,7 @@ async function deleteModule(row: ModuleRow) {
       </template>
 
       <template #cell-created_at="{ data: row }">
-        <span class="text-sm text-gray-600 dark:text-zinc-300">
+        <span class="text-sm text-body">
           {{ formatDate(row.created_at) }}
         </span>
       </template>
@@ -219,14 +219,12 @@ async function deleteModule(row: ModuleRow) {
       <template #cell-linked_items="{ data: row }">
         <div class="flex flex-wrap gap-1.5">
           <span
-            class="rounded-full bg-gray-100 px-2 py-0.5 text-xs font-medium text-gray-600
-                   dark:bg-white/10 dark:text-zinc-300"
+            class="rounded-full bg-secondary px-2 py-0.5 text-xs font-medium text-body"
           >
             {{ row.requirements_count }} Requirement{{ row.requirements_count === 1 ? '' : 's' }}
           </span>
           <span
-            class="rounded-full bg-gray-100 px-2 py-0.5 text-xs font-medium text-gray-600
-                   dark:bg-white/10 dark:text-zinc-300"
+            class="rounded-full bg-secondary px-2 py-0.5 text-xs font-medium text-body"
           >
             {{ row.test_cases_count }} Test Case{{ row.test_cases_count === 1 ? '' : 's' }}
           </span>
@@ -260,7 +258,7 @@ async function deleteModule(row: ModuleRow) {
       width="26rem"
     >
       <div class="space-y-2">
-        <label class="mb-1 block text-xs font-medium text-gray-600 dark:text-zinc-300">
+        <label class="mb-1 block text-xs font-medium text-body">
           Module Name
         </label>
         <InputText

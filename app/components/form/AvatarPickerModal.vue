@@ -35,7 +35,7 @@ const visible = computed({
                disabled:cursor-not-allowed disabled:opacity-50"
         :class="option.id === selectedId
           ? 'border-[#245CB1] dark:border-[#5B8FE0] bg-[#245CB1]/10 dark:bg-[#5B8FE0]/10'
-          : 'border-transparent hover:border-[#245CB1]/40 hover:bg-gray-50 dark:hover:border-[#5B8FE0]/40 dark:hover:bg-white/5'"
+          : 'border-transparent hover:border-[#245CB1]/40 hover:bg-secondary dark:hover:border-[#5B8FE0]/40'"
         @click="$emit('select', option.id)"
       >
         <div
@@ -46,7 +46,7 @@ const visible = computed({
                no baked-in background box -->
           <div class="avatar-svg h-full w-full" v-html="option.svg" />
         </div>
-        <span class="text-[11px] text-gray-500 dark:text-zinc-400">{{ option.label }}</span>
+        <span class="text-[11px] text-body">{{ option.label }}</span>
       </button>
     </div>
   </BaseModal>

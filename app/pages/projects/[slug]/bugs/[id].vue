@@ -361,30 +361,30 @@ const timelineEntries = computed(() => {
     <div class="flex items-center gap-3">
       <NuxtLink
         :to="projectPath('/bugs')"
-        class="flex h-8 w-8 items-center justify-center rounded-md text-gray-500
-               hover:bg-gray-100 dark:text-zinc-400 dark:hover:bg-white/5"
+        class="flex h-8 w-8 items-center justify-center rounded-md text-body
+               hover:bg-secondary"
         aria-label="Back to bugs"
       >
         <i class="pi pi-arrow-left text-sm" />
       </NuxtLink>
       <div>
         <p class="text-xs text-gray-400 dark:text-zinc-500">Bug</p>
-        <h1 class="text-lg font-semibold text-gray-900 dark:text-white">
+        <h1 class="text-lg font-semibold text-heading">
           {{ bug ? bugCode(bug.id) : '\u2014' }}
         </h1>
       </div>
     </div>
 
-    <div v-if="loading" class="rounded-lg border border-black/10 bg-white p-8 text-center text-sm text-gray-400 dark:border-white/10 dark:bg-black">
+    <div v-if="loading" class="rounded-lg border border-border bg-foreground p-8 text-center text-sm text-gray-400">
       Loading...
     </div>
 
     <div v-else-if="bug" class="grid grid-cols-1 gap-4 lg:grid-cols-3">
       <!-- left column -->
       <div class="space-y-4 lg:col-span-2">
-        <div class="rounded-lg border border-black/10 bg-white p-5 dark:border-white/10 dark:bg-black">
+        <div class="rounded-lg border border-border bg-foreground p-5">
           <div class="flex items-start justify-between gap-4">
-            <h2 class="text-base font-semibold text-gray-900 dark:text-white">
+            <h2 class="text-base font-semibold text-heading">
               {{ bug.title }}
             </h2>
             <Select
@@ -393,7 +393,7 @@ const timelineEntries = computed(() => {
               :disabled="isReadOnly || changingStatus"
               class="w-44"
               :pt="dropdownPt"
-              panel-class="!bg-white dark:!bg-zinc-900 !text-gray-900 dark:!text-white !border !border-black/10 dark:!border-white/10"
+              panel-class="!bg-foreground !text-heading !border !border-border"
               @update:model-value="moveToStatus"
             >
               <template #value="{ value }">
@@ -420,15 +420,13 @@ const timelineEntries = computed(() => {
               {{ bug.priority }} Priority
             </span>
             <span
-              class="rounded-full bg-gray-100 px-2 py-0.5 text-xs font-medium text-gray-600
-                     dark:bg-white/10 dark:text-zinc-300"
+              class="rounded-full bg-secondary px-2 py-0.5 text-xs font-medium text-body"
             >
               {{ bug.module_name }}
             </span>
             <span
               v-if="bug.environment_build"
-              class="rounded-full border border-black/10 px-2 py-0.5 text-xs font-medium text-gray-600
-                     dark:border-white/10 dark:text-zinc-300"
+              class="rounded-full border border-border px-2 py-0.5 text-xs font-medium text-body"
             >
               <i class="pi pi-desktop mr-1 text-[10px]" />{{ bug.environment_build }}
             </span>
@@ -460,7 +458,7 @@ const timelineEntries = computed(() => {
 
         <!-- steps to reproduce: QA-owned, developers don't need this at
              all so it's hidden entirely rather than shown read-only -->
-        <div v-if="!isDeveloper" class="rounded-lg border border-black/10 bg-white p-5 dark:border-white/10 dark:bg-black">
+        <div v-if="!isDeveloper" class="rounded-lg border border-border bg-foreground p-5">
           <div class="flex items-center justify-between">
             <p class="text-xs font-semibold uppercase tracking-wide text-gray-400 dark:text-zinc-500">
               Steps to Reproduce
@@ -478,8 +476,8 @@ const timelineEntries = computed(() => {
           <RichTextEditor v-if="editingSteps" v-model="stepsDraft" class="mt-2" :rows="6" />
           <div
             v-else
-            class="mt-2 whitespace-pre-wrap rounded-md border border-black/10 bg-gray-50 p-3 text-sm
-                   text-gray-800 dark:border-white/10 dark:bg-white/5 dark:text-zinc-200"
+            class="mt-2 whitespace-pre-wrap rounded-md border border-border bg-background p-3 text-sm
+                   text-heading"
           >
             {{ bug.steps_to_reproduce || 'No steps recorded.' }}
           </div>
@@ -497,7 +495,7 @@ const timelineEntries = computed(() => {
         </div>
 
         <!-- expected result, owned by the bug itself and editable by QA roles -->
-        <div class="rounded-lg border border-black/10 bg-white p-5 dark:border-white/10 dark:bg-black">
+        <div class="rounded-lg border border-border bg-foreground p-5">
           <div class="flex items-center justify-between">
             <p class="text-xs font-semibold uppercase tracking-wide text-gray-400 dark:text-zinc-500">
               Expected Result
@@ -515,8 +513,8 @@ const timelineEntries = computed(() => {
           <RichTextEditor v-if="editingExpectedResult" v-model="expectedResultDraft" class="mt-2" :rows="6" />
           <div
             v-else
-            class="mt-2 whitespace-pre-wrap rounded-md border border-black/10 bg-gray-50 p-3 text-sm
-                   text-gray-800 dark:border-white/10 dark:bg-white/5 dark:text-zinc-200"
+            class="mt-2 whitespace-pre-wrap rounded-md border border-border bg-background p-3 text-sm
+                   text-heading"
           >
             {{ bug.expected_result || 'No expected result recorded.' }}
           </div>
@@ -537,7 +535,7 @@ const timelineEntries = computed(() => {
              occurred (as opposed to the linked test case's expected
              result below). developers see it read-only, since they need
              this context to fix the bug even though they can't edit it -->
-        <div class="rounded-lg border border-black/10 bg-white p-5 dark:border-white/10 dark:bg-black">
+        <div class="rounded-lg border border-border bg-foreground p-5">
           <div class="flex items-center justify-between">
             <p class="text-xs font-semibold uppercase tracking-wide text-gray-400 dark:text-zinc-500">
               Actual Result
@@ -555,8 +553,8 @@ const timelineEntries = computed(() => {
           <RichTextEditor v-if="editingActualResult" v-model="actualResultDraft" class="mt-2" :rows="6" />
           <div
             v-else
-            class="mt-2 whitespace-pre-wrap rounded-md border border-black/10 bg-gray-50 p-3 text-sm
-                   text-gray-800 dark:border-white/10 dark:bg-white/5 dark:text-zinc-200"
+            class="mt-2 whitespace-pre-wrap rounded-md border border-border bg-background p-3 text-sm
+                   text-heading"
           >
             {{ bug.actual_result || 'No actual result recorded.' }}
           </div>
@@ -576,12 +574,12 @@ const timelineEntries = computed(() => {
         <!-- linked test case, read only preview, no link into the test case's edit or execute flows -->
         <div
           v-if="bug.linked_test_case_id"
-          class="rounded-lg border border-black/10 bg-white p-5 dark:border-white/10 dark:bg-black"
+          class="rounded-lg border border-border bg-foreground p-5"
         >
           <p class="mb-2 text-xs font-semibold uppercase tracking-wide text-gray-400 dark:text-zinc-500">
             Linked Test Case
           </p>
-          <p class="text-sm font-medium text-gray-900 dark:text-white">
+          <p class="text-sm font-medium text-heading">
             {{ tcCode(bug.linked_test_case_id) }}: {{ bug.linked_test_case_title }}
           </p>
           <div class="mt-3">
@@ -589,8 +587,8 @@ const timelineEntries = computed(() => {
               Steps
             </p>
             <div
-              class="mt-1 whitespace-pre-wrap rounded-md border border-black/10 bg-gray-50 p-3 text-sm
-                     text-gray-800 dark:border-white/10 dark:bg-white/5 dark:text-zinc-200"
+              class="mt-1 whitespace-pre-wrap rounded-md border border-border bg-background p-3 text-sm
+                     text-heading"
             >
               {{ bug.linked_test_case_steps || 'No steps recorded.' }}
             </div>
@@ -602,7 +600,7 @@ const timelineEntries = computed(() => {
              own section. an image or video's bucket is decided by
              uploaded_by_role, snapshotted on the attachment at upload
              time so a later role change never reshuffles old uploads -->
-        <div v-if="!isDeveloper" class="rounded-lg border border-black/10 bg-white p-5 dark:border-white/10 dark:bg-black">
+        <div v-if="!isDeveloper" class="rounded-lg border border-border bg-foreground p-5">
           <p class="mb-2 text-xs font-semibold uppercase tracking-wide text-gray-400 dark:text-zinc-500">
             QA Reproduction Proof
           </p>
@@ -615,7 +613,7 @@ const timelineEntries = computed(() => {
           />
         </div>
 
-        <div v-if="!isDeveloper" class="rounded-lg border border-black/10 bg-white p-5 dark:border-white/10 dark:bg-black">
+        <div v-if="!isDeveloper" class="rounded-lg border border-border bg-foreground p-5">
           <p class="mb-2 text-xs font-semibold uppercase tracking-wide text-gray-400 dark:text-zinc-500">
             Developer Fix / Verification Proof
           </p>
@@ -627,7 +625,7 @@ const timelineEntries = computed(() => {
           />
         </div>
 
-        <div v-if="isDeveloper" class="rounded-lg border border-black/10 bg-white p-5 dark:border-white/10 dark:bg-black">
+        <div v-if="isDeveloper" class="rounded-lg border border-border bg-foreground p-5">
           <p class="mb-2 text-xs font-semibold uppercase tracking-wide text-gray-400 dark:text-zinc-500">
             QA Reproduction Proof
           </p>
@@ -639,7 +637,7 @@ const timelineEntries = computed(() => {
           />
         </div>
 
-        <div v-if="isDeveloper" class="rounded-lg border border-black/10 bg-white p-5 dark:border-white/10 dark:bg-black">
+        <div v-if="isDeveloper" class="rounded-lg border border-border bg-foreground p-5">
           <p class="mb-2 text-xs font-semibold uppercase tracking-wide text-gray-400 dark:text-zinc-500">
             Developer Resolution Proof
           </p>
@@ -656,7 +654,7 @@ const timelineEntries = computed(() => {
              kept separate from steps to reproduce and actual result,
              which are QA-owned. QA can read it for context but can't
              edit it -- only the developer (or an admin) can -->
-        <div class="rounded-lg border border-black/10 bg-white p-5 dark:border-white/10 dark:bg-black">
+        <div class="rounded-lg border border-border bg-foreground p-5">
           <div class="mb-2 flex items-center justify-between">
             <p class="text-xs font-semibold uppercase tracking-wide text-gray-400 dark:text-zinc-500">
               Developer Notes & Blockers
@@ -670,7 +668,7 @@ const timelineEntries = computed(() => {
               Edit
             </button>
           </div>
-          <div v-if="!editingDevNotes" class="whitespace-pre-wrap text-sm text-gray-800 dark:text-zinc-200">
+          <div v-if="!editingDevNotes" class="whitespace-pre-wrap text-sm text-heading">
             {{ bug.dev_notes || 'No developer notes yet.' }}
           </div>
           <div v-else class="space-y-2">
@@ -678,15 +676,14 @@ const timelineEntries = computed(() => {
               v-model="devNotesDraft"
               rows="4"
               placeholder="Implementation notes, environment quirks, or why this status decision was made..."
-              class="w-full resize-y rounded-md border border-black/10 bg-transparent p-3 text-sm
-                     text-gray-900 outline-none placeholder:text-gray-400
-                     focus:border-[#245CB1] dark:focus:border-[#5B8FE0] focus:ring-1 focus:ring-[#245CB1] dark:focus:ring-[#5B8FE0]
-                     dark:border-white/10 dark:text-white dark:placeholder:text-white/40"
+              class="w-full resize-y rounded-md border border-border bg-transparent p-3 text-sm
+                     text-heading outline-none placeholder:text-gray-400
+                     focus:border-[#245CB1] dark:focus:border-[#5B8FE0] focus:ring-1 focus:ring-[#245CB1] dark:focus:ring-[#5B8FE0] dark:placeholder:text-white/40"
             />
             <div class="flex justify-end gap-2">
               <button
                 type="button"
-                class="rounded-md px-3 py-1.5 text-xs font-medium text-gray-600 hover:bg-black/5 dark:text-zinc-300 dark:hover:bg-white/5"
+                class="rounded-md px-3 py-1.5 text-xs font-medium text-body hover:bg-secondary"
                 @click="editingDevNotes = false"
               >
                 Cancel
@@ -704,7 +701,7 @@ const timelineEntries = computed(() => {
         </div>
 
         <!-- audit history -->
-        <div class="rounded-lg border border-black/10 bg-white p-5 dark:border-white/10 dark:bg-black">
+        <div class="rounded-lg border border-border bg-foreground p-5">
           <p class="mb-2 text-xs font-semibold uppercase tracking-wide text-gray-400 dark:text-zinc-500">
             Audit History
           </p>
@@ -714,7 +711,7 @@ const timelineEntries = computed(() => {
 
       <!-- right column -->
       <div class="space-y-4">
-        <div class="rounded-lg border border-black/10 bg-white p-5 dark:border-white/10 dark:bg-black">
+        <div class="rounded-lg border border-border bg-foreground p-5">
           <p class="mb-2 text-xs font-semibold uppercase tracking-wide text-gray-400 dark:text-zinc-500">
             Owner / Assignee
           </p>
@@ -727,7 +724,7 @@ const timelineEntries = computed(() => {
           <p v-if="reassigning" class="mt-2 text-xs text-gray-400 dark:text-zinc-500">Saving...</p>
         </div>
 
-        <div v-if="!isReadOnly" class="rounded-lg border border-black/10 bg-white p-5 dark:border-white/10 dark:bg-black">
+        <div v-if="!isReadOnly" class="rounded-lg border border-border bg-foreground p-5">
           <BaseButton
             label="Archive Bug"
             variant="dangerOutline"

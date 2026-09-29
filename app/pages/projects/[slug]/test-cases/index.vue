@@ -318,10 +318,10 @@ async function deleteTestCase(row: TestCaseRow) {
   <div class="space-y-6">
     <div class="flex flex-wrap items-start justify-between gap-4">
       <div>
-        <h1 class="text-xl font-semibold text-gray-900 dark:text-white">
+        <h1 class="text-xl font-semibold text-heading">
           Test Case Repository
         </h1>
-        <p class="mt-1 text-sm text-gray-500 dark:text-zinc-400">
+        <p class="mt-1 text-sm text-body">
           Author, organize, and link test cases to product requirements.
         </p>
       </div>
@@ -352,7 +352,7 @@ async function deleteTestCase(row: TestCaseRow) {
           placeholder="All Modules"
           class="w-44"
           :pt="dropdownPt"
-          panel-class="!bg-white dark:!bg-zinc-900 !text-gray-900 dark:!text-white !border !border-black/10 dark:!border-white/10"
+          panel-class="!bg-foreground !text-heading !border !border-border"
         />
         <Select
           v-model="selectedPriority"
@@ -362,7 +362,7 @@ async function deleteTestCase(row: TestCaseRow) {
           placeholder="All Priorities"
           class="w-40"
           :pt="dropdownPt"
-          panel-class="!bg-white dark:!bg-zinc-900 !text-gray-900 dark:!text-white !border !border-black/10 dark:!border-white/10"
+          panel-class="!bg-foreground !text-heading !border !border-border"
         />
         <Select
           v-model="selectedType"
@@ -372,7 +372,7 @@ async function deleteTestCase(row: TestCaseRow) {
           placeholder="All Types"
           class="w-36"
           :pt="dropdownPt"
-          panel-class="!bg-white dark:!bg-zinc-900 !text-gray-900 dark:!text-white !border !border-black/10 dark:!border-white/10"
+          panel-class="!bg-foreground !text-heading !border !border-border"
         />
         <Select
           v-model="selectedReleaseId"
@@ -382,7 +382,7 @@ async function deleteTestCase(row: TestCaseRow) {
           placeholder="All Versions"
           class="w-44"
           :pt="dropdownPt"
-          panel-class="!bg-white dark:!bg-zinc-900 !text-gray-900 dark:!text-white !border !border-black/10 dark:!border-white/10"
+          panel-class="!bg-foreground !text-heading !border !border-border"
         />
       </template>
 
@@ -397,10 +397,10 @@ async function deleteTestCase(row: TestCaseRow) {
 
       <template #cell-title="{ data: row }">
         <div class="max-w-sm" :title="stripFormatting(row.steps) || 'No steps recorded.'">
-          <p class="text-sm font-bold text-gray-900 dark:text-white">
+          <p class="text-sm font-bold text-heading">
             {{ row.title }}
           </p>
-          <p class="mt-0.5 truncate text-xs text-gray-500 dark:text-zinc-400">
+          <p class="mt-0.5 truncate text-xs text-body">
             {{ stripFormatting(row.steps) || 'No steps recorded.' }}
           </p>
         </div>
@@ -408,8 +408,7 @@ async function deleteTestCase(row: TestCaseRow) {
 
       <template #cell-module_name="{ data: row }">
         <span
-          class="rounded-full bg-gray-100 px-2 py-0.5 text-xs font-medium text-gray-600
-                 dark:bg-white/10 dark:text-zinc-300"
+          class="rounded-full bg-secondary px-2 py-0.5 text-xs font-medium text-body"
         >
           {{ row.module_name }}
         </span>
@@ -431,7 +430,7 @@ async function deleteTestCase(row: TestCaseRow) {
           class="inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-xs font-medium"
           :class="row.type === 'Automated'
             ? 'border-indigo-200 bg-indigo-100 text-indigo-700 dark:border-indigo-500/30 dark:bg-indigo-500/15 dark:text-indigo-300'
-            : 'border-zinc-200 bg-zinc-100 text-zinc-700 dark:border-white/10 dark:bg-white/10 dark:text-zinc-300'"
+            : 'border-border bg-secondary text-body'"
         >
           <i :class="row.type === 'Automated' ? 'pi pi-cog' : 'pi pi-user'" class="text-[10px]" />
           {{ row.type }}
@@ -484,12 +483,12 @@ async function deleteTestCase(row: TestCaseRow) {
       ref="popoverRef"
       :pt="{
         root: {
-          class: '!bg-white !border !border-gray-200 !text-gray-900 dark:!bg-zinc-900 dark:!border-zinc-700 dark:!text-white'
+          class: '!bg-foreground !border !border-border !text-heading'
         }
       }"
     >
       <div class="max-w-xs space-y-1.5 p-1">
-        <p class="text-xs font-semibold text-gray-500 dark:text-zinc-400">Linked Requirements</p>
+        <p class="text-xs font-semibold text-body">Linked Requirements</p>
         <ul v-if="activePopoverIds.length" class="space-y-1">
           <li v-for="reqId in activePopoverIds" :key="reqId" class="flex items-center gap-2 text-xs">
             <span
@@ -498,7 +497,7 @@ async function deleteTestCase(row: TestCaseRow) {
             >
               {{ reqCode(reqId) }}
             </span>
-            <span class="truncate text-gray-700 dark:text-zinc-300">{{ requirementTitle(reqId) }}</span>
+            <span class="truncate text-body">{{ requirementTitle(reqId) }}</span>
           </li>
         </ul>
         <p v-else class="text-xs text-gray-400 dark:text-zinc-500">No requirements linked.</p>
@@ -510,12 +509,12 @@ async function deleteTestCase(row: TestCaseRow) {
       ref="releasePopoverRef"
       :pt="{
         root: {
-          class: '!bg-white !border !border-gray-200 !text-gray-900 dark:!bg-zinc-900 dark:!border-zinc-700 dark:!text-white'
+          class: '!bg-foreground !border !border-border !text-heading'
         }
       }"
     >
       <div class="max-w-xs space-y-1.5 p-1">
-        <p class="text-xs font-semibold text-gray-500 dark:text-zinc-400">Assigned Versions</p>
+        <p class="text-xs font-semibold text-body">Assigned Versions</p>
         <ul v-if="activeReleasePopoverIds.length" class="space-y-1">
           <li v-for="releaseId in activeReleasePopoverIds" :key="releaseId" class="flex items-center gap-2 text-xs">
             <span
@@ -538,7 +537,7 @@ async function deleteTestCase(row: TestCaseRow) {
     >
       <div class="space-y-4">
         <div>
-          <label class="mb-1 block text-xs font-medium text-gray-600 dark:text-zinc-300">
+          <label class="mb-1 block text-xs font-medium text-body">
             Title
           </label>
           <InputText
@@ -553,7 +552,7 @@ async function deleteTestCase(row: TestCaseRow) {
         </div>
 
         <div>
-          <label class="mb-1 block text-xs font-medium text-gray-600 dark:text-zinc-300">
+          <label class="mb-1 block text-xs font-medium text-body">
             Module
           </label>
           <ModuleSelect v-model="form.moduleId" :invalid="!!moduleError" />
@@ -563,7 +562,7 @@ async function deleteTestCase(row: TestCaseRow) {
         </div>
 
         <div>
-          <label class="mb-1 block text-xs font-medium text-gray-600 dark:text-zinc-300">
+          <label class="mb-1 block text-xs font-medium text-body">
             Link Requirements
           </label>
           <MultiSelect
@@ -577,7 +576,7 @@ async function deleteTestCase(row: TestCaseRow) {
             :disabled="!form.moduleId"
             class="w-full"
             :pt="dropdownPt"
-            panel-class="!bg-white dark:!bg-zinc-900 !text-gray-900 dark:!text-white !border !border-black/10 dark:!border-white/10"
+            panel-class="!bg-foreground !text-heading !border !border-border"
           />
           <p v-if="form.moduleId && !modalRequirementOptions.length" class="mt-1 text-xs text-gray-400 dark:text-zinc-500">
             No active requirements exist for this module yet.
@@ -585,7 +584,7 @@ async function deleteTestCase(row: TestCaseRow) {
         </div>
 
         <div>
-          <label class="mb-1 block text-xs font-medium text-gray-600 dark:text-zinc-300">
+          <label class="mb-1 block text-xs font-medium text-body">
             Assign to Releases
           </label>
           <MultiSelect
@@ -598,7 +597,7 @@ async function deleteTestCase(row: TestCaseRow) {
             placeholder="Select releases..."
             class="w-full"
             :pt="dropdownPt"
-            panel-class="!bg-white dark:!bg-zinc-900 !text-gray-900 dark:!text-white !border !border-black/10 dark:!border-white/10"
+            panel-class="!bg-foreground !text-heading !border !border-border"
           />
           <p v-if="!releaseOptions.length" class="mt-1 text-xs text-gray-400 dark:text-zinc-500">
             No releases exist yet. Create one from Test Executions &amp; Releases first.
@@ -610,7 +609,7 @@ async function deleteTestCase(row: TestCaseRow) {
 
         <div class="grid grid-cols-2 gap-4">
           <div>
-            <label class="mb-1 block text-xs font-medium text-gray-600 dark:text-zinc-300">
+            <label class="mb-1 block text-xs font-medium text-body">
               Priority
             </label>
             <Select
@@ -618,12 +617,12 @@ async function deleteTestCase(row: TestCaseRow) {
               :options="PRIORITY_OPTIONS"
               class="w-full"
               :pt="dropdownPt"
-              panel-class="!bg-white dark:!bg-zinc-900 !text-gray-900 dark:!text-white !border !border-black/10 dark:!border-white/10"
+              panel-class="!bg-foreground !text-heading !border !border-border"
             />
           </div>
 
           <div>
-            <label class="mb-1 block text-xs font-medium text-gray-600 dark:text-zinc-300">
+            <label class="mb-1 block text-xs font-medium text-body">
               Type
             </label>
             <Select
@@ -631,13 +630,13 @@ async function deleteTestCase(row: TestCaseRow) {
               :options="TYPE_OPTIONS"
               class="w-full"
               :pt="dropdownPt"
-              panel-class="!bg-white dark:!bg-zinc-900 !text-gray-900 dark:!text-white !border !border-black/10 dark:!border-white/10"
+              panel-class="!bg-foreground !text-heading !border !border-border"
             />
           </div>
         </div>
 
         <div>
-          <label class="mb-1 block text-xs font-medium text-gray-600 dark:text-zinc-300">
+          <label class="mb-1 block text-xs font-medium text-body">
             Test Data
           </label>
           <RichTextEditor
@@ -648,7 +647,7 @@ async function deleteTestCase(row: TestCaseRow) {
         </div>
 
         <div>
-          <label class="mb-1 block text-xs font-medium text-gray-600 dark:text-zinc-300">
+          <label class="mb-1 block text-xs font-medium text-body">
             Expected Result
           </label>
           <RichTextEditor

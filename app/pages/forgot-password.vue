@@ -26,17 +26,16 @@ async function submit() {
 </script>
 
 <template>
-  <div class="flex min-h-screen items-center justify-center bg-gray-50 dark:bg-black">
+  <div class="flex min-h-screen items-center justify-center bg-background">
     <div
-      class="w-full max-w-sm rounded-lg border border-black/10 bg-white p-8 text-center
-             dark:border-white/20 dark:bg-black"
+      class="w-full max-w-sm rounded-lg border border-border bg-foreground p-8 text-center"
     >
-      <h1 class="mb-2 text-xl font-semibold text-gray-900 dark:text-white">
+      <h1 class="mb-2 text-xl font-semibold text-heading">
         Reset your password
       </h1>
 
       <template v-if="sent">
-        <p class="text-sm text-gray-600 dark:text-white/60">
+        <p class="text-sm text-body">
           If an account exists for {{ email }}, a password reset link is on its way. Check your inbox.
         </p>
         <NuxtLink
@@ -48,12 +47,12 @@ async function submit() {
       </template>
 
       <template v-else>
-        <p class="mb-6 text-sm text-gray-600 dark:text-white/60">
+        <p class="mb-6 text-sm text-body">
           Enter your email and we'll send you a link to reset your password.
         </p>
         <form class="space-y-3 text-left" @submit.prevent="submit">
           <div>
-            <label class="mb-1 block text-xs font-medium text-gray-600 dark:text-white/60">
+            <label class="mb-1 block text-xs font-medium text-body">
               Email
             </label>
             <InputText

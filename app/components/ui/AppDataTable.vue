@@ -87,11 +87,11 @@ function resolveSortField(col: AppDataTableColumn) {
 
 <template>
   <div
-    class="rounded-lg border border-black/10 bg-white dark:border-white/10 dark:bg-black"
+    class="rounded-lg border border-border bg-foreground"
   >
     <div
       v-if="searchable || $slots.toolbar"
-      class="flex flex-wrap items-center justify-between gap-3 border-b border-black/10 p-3 dark:border-white/10"
+      class="flex flex-wrap items-center justify-between gap-3 border-b border-border p-3"
     >
       <IconField v-if="searchable" icon-position="left" class="w-full max-w-xs">
         <InputIcon class="pi pi-search" />
@@ -123,13 +123,13 @@ function resolveSortField(col: AppDataTableColumn) {
         class="!bg-transparent"
         :pt="{
           table: { class: '!bg-transparent min-w-full' },
-          headerRow: { class: '!bg-gray-50 dark:!bg-white/5' },
+          headerRow: { class: '!bg-secondary' },
           bodyRow: { class: '!bg-transparent dark:!text-white' }
         }"
         @sort="onSort"
       >
         <template #empty>
-          <div class="p-8 text-center text-sm text-gray-500 dark:text-white/50">
+          <div class="p-8 text-center text-sm text-body">
             <slot name="empty">{{ emptyMessage }}</slot>
           </div>
         </template>

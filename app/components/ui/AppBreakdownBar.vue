@@ -49,7 +49,7 @@ const selectedPct = computed(() =>
   </div>
 
   <div v-else>
-    <div class="flex h-3 w-full overflow-hidden rounded-full bg-gray-100 dark:bg-white/5">
+    <div class="flex h-3 w-full overflow-hidden rounded-full bg-secondary">
       <button
         v-for="segment in segments.filter((s) => s.value > 0)"
         :key="segment.label"
@@ -62,8 +62,8 @@ const selectedPct = computed(() =>
       />
     </div>
 
-    <p v-if="selectedSegment" class="mt-2 text-xs text-gray-600 dark:text-zinc-300">
-      <span class="font-medium text-gray-900 dark:text-white">{{ selectedSegment.label }}</span>
+    <p v-if="selectedSegment" class="mt-2 text-xs text-body">
+      <span class="font-medium text-heading">{{ selectedSegment.label }}</span>
       : {{ selectedSegment.value }} ({{ selectedPct }}%)
     </p>
 
@@ -77,8 +77,8 @@ const selectedPct = computed(() =>
         @click="toggleSegment(segment.label)"
       >
         <span class="h-2 w-2 shrink-0 rounded-full" :class="segment.dotClass" />
-        <span class="text-gray-600 dark:text-zinc-400">{{ segment.label }}</span>
-        <span class="font-medium text-gray-900 dark:text-white">{{ segment.value }}</span>
+        <span class="text-body">{{ segment.label }}</span>
+        <span class="font-medium text-heading">{{ segment.value }}</span>
       </button>
     </div>
   </div>

@@ -62,7 +62,7 @@ const selectedPoint = computed(() =>
 
 <template>
   <div>
-    <div class="mb-3 flex items-center gap-4 text-xs text-gray-500 dark:text-zinc-400">
+    <div class="mb-3 flex items-center gap-4 text-xs text-body">
       <span class="flex items-center gap-1.5"><span class="h-2 w-2 rounded-full bg-emerald-500" /> Pass</span>
       <span class="flex items-center gap-1.5"><span class="h-2 w-2 rounded-full bg-red-500" /> Fail</span>
       <span class="flex items-center gap-1.5"><span class="h-2 w-2 rounded-full bg-[#245CB1] dark:bg-[#5B8FE0]" /> Blocked</span>
@@ -78,8 +78,8 @@ const selectedPoint = computed(() =>
           <div v-for="(point, index) in points" :key="point.day" class="flex h-full flex-1 flex-col items-center gap-1">
             <button
               type="button"
-              class="flex w-full max-w-[22px] flex-1 flex-col-reverse overflow-hidden rounded-sm bg-gray-100
-                     transition-[outline-color] focus:outline-none dark:bg-white/5"
+              class="flex w-full max-w-[22px] flex-1 flex-col-reverse overflow-hidden rounded-sm bg-secondary
+                     transition-[outline-color] focus:outline-none"
               :class="
                 selectedIndex === index
                   ? 'outline outline-2 outline-offset-1 outline-[#245CB1] dark:outline-[#5B8FE0]'
@@ -102,16 +102,16 @@ const selectedPoint = computed(() =>
 
       <div
         v-if="selectedPoint"
-        class="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1 rounded-md bg-gray-50 px-3 py-2 text-xs
-               text-gray-600 dark:bg-white/5 dark:text-zinc-300"
+        class="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1 rounded-md bg-background px-3 py-2 text-xs
+               text-body"
       >
-        <span class="font-medium text-gray-900 dark:text-white">{{ formatDay(selectedPoint.day) }}</span>
+        <span class="font-medium text-heading">{{ formatDay(selectedPoint.day) }}</span>
         <span class="flex items-center gap-1.5"><span class="h-2 w-2 rounded-full bg-emerald-500" /> {{ selectedPoint.pass }} pass</span>
         <span class="flex items-center gap-1.5"><span class="h-2 w-2 rounded-full bg-red-500" /> {{ selectedPoint.fail }} fail</span>
         <span class="flex items-center gap-1.5"><span class="h-2 w-2 rounded-full bg-[#245CB1] dark:bg-[#5B8FE0]" /> {{ selectedPoint.blocked }} blocked</span>
         <button
           type="button"
-          class="ml-auto text-gray-400 hover:text-gray-600 dark:text-zinc-500 dark:hover:text-zinc-300"
+          class="ml-auto text-gray-400 hover:text-heading dark:text-zinc-500"
           @click="selectedIndex = null"
         >
           <i class="pi pi-times text-[10px]" />

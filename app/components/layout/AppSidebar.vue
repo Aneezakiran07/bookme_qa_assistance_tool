@@ -98,21 +98,20 @@ async function handleLogout() {
 
 <template>
   <aside
-    class="flex h-screen shrink-0 flex-col border-r border-gray-200 bg-white
-           transition-[width] duration-200 ease-in-out
-           dark:border-zinc-800 dark:bg-black"
+    class="flex h-screen shrink-0 flex-col border-r border-border bg-foreground
+           transition-[width] duration-200 ease-in-out"
     :class="collapsed ? 'w-[4.5rem]' : 'w-64'"
   >
     <!-- brand + collapse toggle -->
     <div
-      class="flex h-16 items-center gap-2 border-b border-gray-200 px-3 dark:border-zinc-800"
+      class="flex h-16 items-center gap-2 border-b border-border px-3"
       :class="collapsed ? 'justify-center' : 'justify-between'"
     >
       <div v-if="!collapsed" class="flex items-center gap-2 overflow-hidden">
         <div class="flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-[#245CB1] dark:bg-[#5B8FE0] text-sm font-bold text-white">
           Q
         </div>
-        <span class="truncate text-base font-semibold text-gray-900 dark:text-white">
+        <span class="truncate text-base font-semibold text-heading">
           Bookme QA Tool
         </span>
       </div>
@@ -128,8 +127,8 @@ async function handleLogout() {
         type="button"
         aria-label="Collapse sidebar"
         class="shrink-0 rounded-md p-1.5 text-gray-400 transition-colors
-               hover:bg-gray-100 hover:text-gray-600
-               dark:text-zinc-500 dark:hover:bg-zinc-900 dark:hover:text-zinc-300"
+               hover:bg-secondary hover:text-heading
+               dark:text-zinc-500"
         @click="toggleSidebar"
       >
         <i class="pi pi-bars text-base" />
@@ -138,14 +137,14 @@ async function handleLogout() {
 
     <!-- collapsed state gets its own expand button under the logo, since
          there's no room next to it once the brand text is hidden -->
-    <div v-if="collapsed" class="flex justify-center border-b border-gray-200 py-2 dark:border-zinc-800">
+    <div v-if="collapsed" class="flex justify-center border-b border-border py-2">
       <button
         type="button"
         aria-label="Expand sidebar"
         title="Expand sidebar"
         class="rounded-md p-1.5 text-gray-400 transition-colors
-               hover:bg-gray-100 hover:text-gray-600
-               dark:text-zinc-500 dark:hover:bg-zinc-900 dark:hover:text-zinc-300"
+               hover:bg-secondary hover:text-heading
+               dark:text-zinc-500"
         @click="toggleSidebar"
       >
         <i class="pi pi-bars text-base" />
@@ -159,8 +158,8 @@ async function handleLogout() {
           <NuxtLink
             :to="link.to"
             :title="collapsed ? link.label : undefined"
-            class="flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium text-gray-600
-                   transition-colors hover:bg-gray-100 dark:text-zinc-400 dark:hover:bg-zinc-900"
+            class="flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium text-body
+                   transition-colors hover:bg-secondary"
             :class="collapsed ? 'justify-center' : ''"
             active-class="!bg-[#245CB1]/10 dark:!bg-[#5B8FE0]/10 !text-[#245CB1] dark:!text-[#5B8FE0]"
             exact-active-class="!bg-[#245CB1]/10 dark:!bg-[#5B8FE0]/10 !text-[#245CB1] dark:!text-[#5B8FE0]"
@@ -174,14 +173,14 @@ async function handleLogout() {
       <!-- global links, separated from the project links by a divider -->
       <ul
         class="space-y-1"
-        :class="projectSectionLinks.length ? 'mt-4 border-t border-gray-200 pt-4 dark:border-zinc-800' : ''"
+        :class="projectSectionLinks.length ? 'mt-4 border-t border-border pt-4' : ''"
       >
         <li v-for="link in globalLinks" :key="link.to">
           <NuxtLink
             :to="link.to"
             :title="collapsed ? link.label : undefined"
-            class="flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium text-gray-600
-                   transition-colors hover:bg-gray-100 dark:text-zinc-400 dark:hover:bg-zinc-900"
+            class="flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium text-body
+                   transition-colors hover:bg-secondary"
             :class="collapsed ? 'justify-center' : ''"
             active-class="!bg-[#245CB1]/10 dark:!bg-[#5B8FE0]/10 !text-[#245CB1] dark:!text-[#5B8FE0]"
             exact-active-class="!bg-[#245CB1]/10 dark:!bg-[#5B8FE0]/10 !text-[#245CB1] dark:!text-[#5B8FE0]"
@@ -194,16 +193,16 @@ async function handleLogout() {
     </nav>
 
     <!-- user profile -->
-    <div class="border-t border-gray-200 p-3 dark:border-zinc-800">
+    <div class="border-t border-border p-3">
       <NuxtLink
         to="/profile"
         :title="collapsed ? (currentUser?.email ?? 'Profile') : undefined"
-        class="flex items-center gap-3 rounded-md px-2 py-2 transition-colors hover:bg-gray-100 dark:hover:bg-zinc-900"
+        class="flex items-center gap-3 rounded-md px-2 py-2 transition-colors hover:bg-secondary"
         :class="collapsed ? 'justify-center' : ''"
       >
         <AppAvatar :avatar-id="profileData?.avatarId" size="sm" />
         <div v-if="!collapsed" class="min-w-0 flex-1">
-          <p class="truncate text-sm font-medium text-gray-900 dark:text-white">
+          <p class="truncate text-sm font-medium text-heading">
             {{ currentUser?.email ?? 'Unknown user' }}
           </p>
           <span
@@ -218,8 +217,8 @@ async function handleLogout() {
           type="button"
           aria-label="Log out"
           class="shrink-0 rounded-md p-1.5 text-gray-400 transition-colors
-                 hover:bg-gray-100 hover:text-gray-600
-                 dark:text-zinc-500 dark:hover:bg-zinc-900 dark:hover:text-zinc-300"
+                 hover:bg-secondary hover:text-heading
+                 dark:text-zinc-500"
           @click.prevent="handleLogout"
         >
           <i class="pi pi-sign-out text-sm" />
@@ -231,8 +230,8 @@ async function handleLogout() {
         aria-label="Log out"
         title="Log out"
         class="mt-1 flex w-full items-center justify-center rounded-md p-1.5 text-gray-400 transition-colors
-               hover:bg-gray-100 hover:text-gray-600
-               dark:text-zinc-500 dark:hover:bg-zinc-900 dark:hover:text-zinc-300"
+               hover:bg-secondary hover:text-heading
+               dark:text-zinc-500"
         @click="handleLogout"
       >
         <i class="pi pi-sign-out text-sm" />

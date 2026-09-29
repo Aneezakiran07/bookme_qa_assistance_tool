@@ -219,19 +219,19 @@ async function saveEdit() {
       <div class="flex items-center gap-3">
         <NuxtLink
           :to="projectPath('/releases')"
-          class="flex h-8 w-8 items-center justify-center rounded-md text-gray-500
-                 hover:bg-gray-100 dark:text-zinc-400 dark:hover:bg-white/5"
+          class="flex h-8 w-8 items-center justify-center rounded-md text-body
+                 hover:bg-secondary"
           aria-label="Back to releases"
         >
           <i class="pi pi-arrow-left text-sm" />
         </NuxtLink>
         <div>
           <div class="flex items-center gap-2">
-            <h1 class="text-lg font-semibold text-gray-900 dark:text-white">
+            <h1 class="text-lg font-semibold text-heading">
               {{ release?.version ?? '—' }}
             </h1>
           </div>
-          <p class="mt-0.5 text-xs text-gray-500 dark:text-zinc-400">
+          <p class="mt-0.5 text-xs text-body">
             Target date: {{ formatDate(release?.release_date ?? null) }}
           </p>
         </div>
@@ -273,14 +273,14 @@ async function saveEdit() {
             />
           </div>
 
-          <div class="rounded-lg border border-black/10 bg-white dark:border-white/10 dark:bg-black">
+          <div class="rounded-lg border border-border bg-foreground">
             <div
               v-if="filteredTestCases.length === 0"
-              class="p-8 text-center text-sm text-gray-500 dark:text-white/50"
+              class="p-8 text-center text-sm text-body"
             >
               No test cases match.
             </div>
-            <ul v-else class="divide-y divide-black/5 dark:divide-white/5">
+            <ul v-else class="divide-y divide-border">
               <li
                 v-for="tc in filteredTestCases"
                 :key="tc.id"
@@ -293,13 +293,12 @@ async function saveEdit() {
                   @update:model-value="toggleTestCase(tc.id)"
                 />
                 <div class="min-w-0 flex-1">
-                  <p class="truncate text-sm font-medium text-gray-900 dark:text-white">
+                  <p class="truncate text-sm font-medium text-heading">
                     {{ tc.title }}
                   </p>
                   <div class="mt-1 flex flex-wrap items-center gap-1.5">
                     <span
-                      class="rounded-full bg-gray-100 px-2 py-0.5 text-xs font-medium text-gray-600
-                             dark:bg-white/10 dark:text-zinc-300"
+                      class="rounded-full bg-secondary px-2 py-0.5 text-xs font-medium text-body"
                     >
                       {{ tc.module_name }}
                     </span>
@@ -324,10 +323,10 @@ async function saveEdit() {
           <div
             v-for="severity in SEVERITY_ORDER"
             :key="severity"
-            class="rounded-lg border border-black/10 bg-white dark:border-white/10 dark:bg-black"
+            class="rounded-lg border border-border bg-foreground"
           >
-            <div class="flex items-center justify-between border-b border-black/10 p-3 dark:border-white/10">
-              <span class="text-sm font-semibold text-gray-900 dark:text-white">{{ severity }}</span>
+            <div class="flex items-center justify-between border-b border-border p-3">
+              <span class="text-sm font-semibold text-heading">{{ severity }}</span>
               <span class="text-xs text-gray-400 dark:text-zinc-500">
                 {{ bugsBySeverity[severity].length }}
               </span>
@@ -335,9 +334,9 @@ async function saveEdit() {
             <div v-if="bugsBySeverity[severity].length === 0" class="p-4 text-center text-xs text-gray-400 dark:text-zinc-500">
               No bugs.
             </div>
-            <ul v-else class="divide-y divide-black/5 dark:divide-white/5">
+            <ul v-else class="divide-y divide-border">
               <li v-for="bug in bugsBySeverity[severity]" :key="bug.id" class="space-y-1.5 p-3">
-                <p class="text-sm font-medium text-gray-900 dark:text-white">{{ bug.title }}</p>
+                <p class="text-sm font-medium text-heading">{{ bug.title }}</p>
                 <div class="flex flex-wrap items-center gap-1.5">
                   <StatusBadge :status="bug.status" size="sm" />
                   <span class="text-xs text-gray-400 dark:text-zinc-500">{{ bug.module_name }}</span>
@@ -373,15 +372,15 @@ async function saveEdit() {
             />
           </template>
           <template #cell-executed_by_email="{ data: row }">
-            <span class="text-sm text-gray-600 dark:text-zinc-300">{{ row.executed_by_email ?? '—' }}</span>
+            <span class="text-sm text-body">{{ row.executed_by_email ?? '—' }}</span>
           </template>
           <template #cell-execution_date="{ data: row }">
-            <span class="text-sm text-gray-600 dark:text-zinc-300">
+            <span class="text-sm text-body">
               {{ new Date(row.execution_date).toLocaleString() }}
             </span>
           </template>
           <template #cell-actual_result="{ data: row }">
-            <span class="text-sm text-gray-600 dark:text-zinc-300">{{ row.actual_result || '—' }}</span>
+            <span class="text-sm text-body">{{ row.actual_result || '—' }}</span>
           </template>
         </AppDataTable>
       </template>
@@ -404,16 +403,15 @@ async function saveEdit() {
     <BaseModal v-model="editOpen" title="Edit Release" width="30rem">
       <div class="space-y-4">
         <div>
-          <label class="mb-1 block text-xs font-medium text-gray-600 dark:text-zinc-300">
+          <label class="mb-1 block text-xs font-medium text-body">
             Release Date
           </label>
           <input
             v-model="editForm.releaseDate"
             type="date"
-            class="w-full rounded-md border border-black/10 bg-transparent px-3 py-2 text-sm
-                   text-gray-900 outline-none transition-colors
-                   focus:border-[#245CB1] dark:focus:border-[#5B8FE0] focus:ring-1 focus:ring-[#245CB1] dark:focus:ring-[#5B8FE0]
-                   dark:border-white/10 dark:text-white dark:[color-scheme:dark]"
+            class="w-full rounded-md border border-border bg-transparent px-3 py-2 text-sm
+                   text-heading outline-none transition-colors
+                   focus:border-[#245CB1] dark:focus:border-[#5B8FE0] focus:ring-1 focus:ring-[#245CB1] dark:focus:ring-[#5B8FE0] dark:[color-scheme:dark]"
           />
         </div>
       </div>

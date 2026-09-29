@@ -216,14 +216,14 @@ async function selectAvatar(avatarId: string) {
 </script>
 
 <template>
-  <div v-if="loadingProfile" class="text-sm text-gray-500 dark:text-zinc-400">
+  <div v-if="loadingProfile" class="text-sm text-body">
     Loading profile...
   </div>
 
   <div v-else class="mx-auto max-w-2xl space-y-6">
     <!-- account info -->
     <section
-      class="rounded-lg border border-gray-200 bg-white p-6 dark:border-zinc-800 dark:bg-black"
+      class="rounded-lg border border-border bg-foreground p-6"
     >
       <div class="mb-5 flex items-center gap-4">
         <div class="relative shrink-0">
@@ -232,15 +232,15 @@ async function selectAvatar(avatarId: string) {
             type="button"
             title="Edit avatar"
             class="absolute -bottom-1 -right-1 flex h-6 w-6 items-center justify-center rounded-full
-                   border-2 border-white bg-[#245CB1] dark:bg-[#5B8FE0] text-white shadow-sm transition-colors
-                   hover:bg-[#1d4a8f] dark:hover:bg-[#3a72cd] dark:border-black"
+                   border-2 border-foreground bg-[#245CB1] dark:bg-[#5B8FE0] text-white shadow-sm transition-colors
+                   hover:bg-[#1d4a8f] dark:hover:bg-[#3a72cd]"
             @click="showAvatarModal = true"
           >
             <i class="pi pi-pencil text-[10px]" />
           </button>
         </div>
         <div class="min-w-0">
-          <h2 class="truncate text-base font-semibold text-gray-900 dark:text-white">
+          <h2 class="truncate text-base font-semibold text-heading">
             {{ displayName.trim() || data?.email }}
           </h2>
           <span
@@ -262,7 +262,7 @@ async function selectAvatar(avatarId: string) {
 
       <div class="space-y-4">
         <div>
-          <label class="mb-1 block text-xs font-medium text-gray-600 dark:text-zinc-300">
+          <label class="mb-1 block text-xs font-medium text-body">
             Display name
           </label>
           <InputText
@@ -276,7 +276,7 @@ async function selectAvatar(avatarId: string) {
         </div>
 
         <div>
-          <label class="mb-1 block text-xs font-medium text-gray-600 dark:text-zinc-300">
+          <label class="mb-1 block text-xs font-medium text-body">
             Email
           </label>
           <InputText
@@ -304,19 +304,19 @@ async function selectAvatar(avatarId: string) {
     <!-- digest preview: developers only -->
     <section
       v-if="isDeveloper"
-      class="rounded-lg border border-gray-200 bg-white p-6 dark:border-zinc-800 dark:bg-black"
+      class="rounded-lg border border-border bg-foreground p-6"
     >
       <div class="mb-1 flex items-center justify-between gap-4">
-        <h2 class="text-base font-semibold text-gray-900 dark:text-white">
+        <h2 class="text-base font-semibold text-heading">
           Your digest
         </h2>
-        <div class="flex shrink-0 rounded-md border border-gray-200 p-0.5 dark:border-zinc-800">
+        <div class="flex shrink-0 rounded-md border border-border p-0.5">
           <button
             type="button"
             class="rounded px-2.5 py-1 text-xs font-medium transition-colors"
             :class="activeRange === 'day'
               ? 'bg-[#245CB1] dark:bg-[#5B8FE0] text-white'
-              : 'text-gray-500 hover:text-gray-900 dark:text-zinc-400 dark:hover:text-white'"
+              : 'text-body hover:text-heading'"
             @click="activeRange = 'day'"
           >
             Today
@@ -326,7 +326,7 @@ async function selectAvatar(avatarId: string) {
             class="rounded px-2.5 py-1 text-xs font-medium transition-colors"
             :class="activeRange === 'week'
               ? 'bg-[#245CB1] dark:bg-[#5B8FE0] text-white'
-              : 'text-gray-500 hover:text-gray-900 dark:text-zinc-400 dark:hover:text-white'"
+              : 'text-body hover:text-heading'"
             @click="activeRange = 'week'"
           >
             This week
@@ -342,13 +342,13 @@ async function selectAvatar(avatarId: string) {
         </template>
       </p>
 
-      <div v-if="loadingDigest" class="text-sm text-gray-500 dark:text-zinc-400">
+      <div v-if="loadingDigest" class="text-sm text-body">
         Loading digest preview...
       </div>
 
       <template v-else-if="digest">
         <div class="mt-1">
-          <p class="mb-2 text-xs font-medium text-gray-600 dark:text-zinc-300">
+          <p class="mb-2 text-xs font-medium text-body">
             Your bugs ({{ digest.bugsTotalCount }})
           </p>
           <ul v-if="digest.bugs.length" class="space-y-2">
@@ -358,10 +358,10 @@ async function selectAvatar(avatarId: string) {
             >
               <NuxtLink
                 :to="`/projects/${bug.projectSlug}/bugs/${bug.id}`"
-                class="flex items-center justify-between gap-3 rounded-md border border-gray-200 px-3 py-2 transition-colors hover:border-[#245CB1]/40 hover:bg-[#245CB1]/5 dark:hover:bg-[#5B8FE0]/10 dark:border-zinc-800 dark:hover:border-[#5B8FE0]/40 dark:hover:bg-zinc-900"
+                class="flex items-center justify-between gap-3 rounded-md border border-border px-3 py-2 transition-colors hover:border-[#245CB1]/40 hover:bg-[#245CB1]/5 dark:hover:bg-[#5B8FE0]/10 dark:hover:border-[#5B8FE0]/40 dark:hover:bg-zinc-900"
               >
                 <div class="min-w-0">
-                  <p class="truncate text-sm text-gray-900 dark:text-white">
+                  <p class="truncate text-sm text-heading">
                     <span class="font-mono text-xs text-gray-400 dark:text-zinc-500">{{ bug.code }}</span>
                     {{ bug.title }}
                   </p>

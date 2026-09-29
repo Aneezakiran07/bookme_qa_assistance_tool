@@ -71,20 +71,19 @@ async function submit() {
 </script>
 
 <template>
-  <div class="flex min-h-screen items-center justify-center bg-gray-50 dark:bg-black">
+  <div class="flex min-h-screen items-center justify-center bg-background">
     <div
-      class="w-full max-w-sm rounded-lg border border-black/10 bg-white p-8 text-center
-             dark:border-white/20 dark:bg-black"
+      class="w-full max-w-sm rounded-lg border border-border bg-foreground p-8 text-center"
     >
       <template v-if="state === 'checking'">
-        <p class="text-sm text-gray-500 dark:text-white/60">Checking your link...</p>
+        <p class="text-sm text-body">Checking your link...</p>
       </template>
 
       <template v-else-if="state === 'invalid'">
-        <h1 class="mb-2 text-xl font-semibold text-gray-900 dark:text-white">
+        <h1 class="mb-2 text-xl font-semibold text-heading">
           Link not found
         </h1>
-        <p class="mb-6 text-sm text-gray-600 dark:text-white/60">
+        <p class="mb-6 text-sm text-body">
           This reset link is missing or invalid.
         </p>
         <NuxtLink to="/forgot-password" class="text-sm text-[#245CB1] hover:underline dark:text-[#5B8FE0]">
@@ -93,12 +92,12 @@ async function submit() {
       </template>
 
       <template v-else>
-        <h1 class="mb-2 text-xl font-semibold text-gray-900 dark:text-white">
+        <h1 class="mb-2 text-xl font-semibold text-heading">
           Choose a new password
         </h1>
         <form class="space-y-3 text-left" @submit.prevent="submit">
           <div>
-            <label class="mb-1 block text-xs font-medium text-gray-600 dark:text-white/60">
+            <label class="mb-1 block text-xs font-medium text-body">
               New password
             </label>
             <Password
@@ -112,7 +111,7 @@ async function submit() {
             />
           </div>
           <div>
-            <label class="mb-1 block text-xs font-medium text-gray-600 dark:text-white/60">
+            <label class="mb-1 block text-xs font-medium text-body">
               Confirm new password
             </label>
             <Password

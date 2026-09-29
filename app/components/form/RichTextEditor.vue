@@ -65,8 +65,8 @@ const previewHtml = computed(() =>
 </script>
 
 <template>
-  <div class="rounded-md border border-black/10 dark:border-white/10">
-    <div class="flex items-center gap-1 border-b border-black/10 p-1.5 dark:border-white/10">
+  <div class="rounded-md border border-border">
+    <div class="flex items-center gap-1 border-b border-border p-1.5">
       <button type="button" class="toolbar-btn" title="Bold" @click="wrapSelection('**')">
         <i class="pi pi-bold text-xs" />
       </button>
@@ -93,14 +93,14 @@ const previewHtml = computed(() =>
       :value="modelValue"
       :placeholder="placeholder"
       :rows="rows"
-      class="w-full resize-y border-0 bg-transparent p-3 text-sm text-gray-900
-             placeholder:text-gray-400 dark:text-white dark:placeholder:text-white/40
+      class="w-full resize-y border-0 bg-transparent p-3 text-sm text-heading
+             placeholder:text-gray-400 dark:placeholder:text-white/40
              focus:outline-none focus:ring-2 focus:ring-inset focus:ring-[#245CB1] dark:focus:ring-[#5B8FE0]"
       @input="$emit('update:modelValue', ($event.target as HTMLTextAreaElement).value)"
     />
     <div
       v-else
-      class="min-h-[6rem] p-3 text-sm text-gray-800 dark:text-white/80"
+      class="min-h-[6rem] p-3 text-sm text-body"
       v-html="previewHtml"
     />
   </div>
@@ -108,8 +108,8 @@ const previewHtml = computed(() =>
 
 <style scoped>
 .toolbar-btn {
-  @apply flex h-7 w-7 items-center justify-center rounded text-gray-500
-    hover:bg-gray-100 dark:text-white/60 dark:hover:bg-white/10
+  @apply flex h-7 w-7 items-center justify-center rounded text-body
+    hover:bg-secondary
     focus:outline-none focus-visible:ring-2 focus-visible:ring-[#245CB1] dark:focus-visible:ring-[#5B8FE0];
 }
 </style>

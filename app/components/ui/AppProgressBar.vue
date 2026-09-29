@@ -44,11 +44,11 @@ const heightClass = computed(() => (props.size === 'sm' ? 'h-1.5' : 'h-2.5'))
 <template>
   <div>
     <div v-if="label" class="mb-1 flex items-center justify-between text-xs">
-      <span class="text-gray-600 dark:text-zinc-400">{{ label }}</span>
-      <span class="font-medium text-gray-900 dark:text-white">{{ Math.round(pct) }}%</span>
+      <span class="text-body">{{ label }}</span>
+      <span class="font-medium text-heading">{{ Math.round(pct) }}%</span>
     </div>
     <div
-      class="w-full overflow-hidden rounded-full bg-gray-200 dark:bg-white/10"
+      class="w-full overflow-hidden rounded-full bg-secondary"
       :class="heightClass"
       role="progressbar"
       :aria-valuenow="pct"

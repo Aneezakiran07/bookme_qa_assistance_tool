@@ -10,35 +10,35 @@
 export function useDropdownPt() {
   return {
     root: {
-      class: '!bg-white !border !border-black/15 !text-gray-900 hover:!border-[#245CB1] dark:!bg-black dark:!border-white/15 dark:!text-white dark:hover:!border-[#5B8FE0]',
+      class: '!bg-foreground !border !border-black/15 !text-heading hover:!border-[#245CB1] dark:!border-white/15 dark:hover:!border-[#5B8FE0]',
     },
     overlay: {
-      class: '!bg-white !border !border-gray-200 !text-gray-900 dark:!bg-zinc-900 dark:!border-zinc-700 dark:!text-white',
+      class: '!bg-foreground !border !border-border !text-heading',
     },
     listContainer: {
-      class: '!bg-white dark:!bg-zinc-900',
+      class: '!bg-foreground',
     },
     list: {
-      class: '!bg-white dark:!bg-zinc-900',
+      class: '!bg-foreground',
     },
     option: {
       class:
-        '!text-gray-900 dark:!text-white hover:!bg-gray-100 dark:hover:!bg-white/10 aria-selected:!bg-[#245CB1]/10 aria-selected:!text-[#245CB1] dark:aria-selected:!bg-[#5B8FE0]/15 dark:aria-selected:!text-[#5B8FE0]',
+        '!text-heading hover:!bg-secondary aria-selected:!bg-[#245CB1]/10 aria-selected:!text-[#245CB1] dark:aria-selected:!bg-[#5B8FE0]/15 dark:aria-selected:!text-[#5B8FE0]',
     },
     optionGroup: {
-      class: '!bg-white !text-gray-500 dark:!bg-zinc-900 dark:!text-zinc-400',
+      class: '!bg-foreground !text-body',
     },
     emptyMessage: {
-      class: '!bg-white !text-gray-500 dark:!bg-zinc-900 dark:!text-zinc-400',
+      class: '!bg-foreground !text-body',
     },
     header: {
-      class: '!bg-white !border-gray-200 dark:!bg-zinc-900 dark:!border-zinc-700',
+      class: '!bg-foreground !border-border',
     },
     footer: {
-      class: '!bg-white !border-gray-200 dark:!bg-zinc-900 dark:!border-zinc-700',
+      class: '!bg-foreground !border-border',
     },
     pcFilter: {
-      class: '!bg-white !text-gray-900 dark:!bg-black dark:!text-white',
+      class: '!bg-foreground !text-heading',
     },
   }
 }
@@ -47,16 +47,16 @@ export function useDropdownPt() {
 export function useDialogPt() {
   return {
     root: {
-      class: '!bg-white !text-gray-900 dark:!bg-black dark:!text-white !border !border-gray-200 dark:!border-zinc-800',
+      class: '!bg-foreground !text-heading !border !border-border',
     },
     header: {
-      class: '!bg-white !text-gray-900 dark:!bg-black dark:!text-white !border-b !border-gray-200 dark:!border-zinc-800',
+      class: '!bg-foreground !text-heading !border-b !border-border',
     },
     content: {
-      class: '!bg-white !text-gray-900 dark:!bg-black dark:!text-white',
+      class: '!bg-foreground !text-heading',
     },
     footer: {
-      class: '!bg-white dark:!bg-black !border-t !border-gray-200 dark:!border-zinc-800',
+      class: '!bg-foreground !border-t !border-border',
     },
     mask: {
       class: 'backdrop-blur-sm !bg-black/40',
@@ -71,10 +71,10 @@ export function useDialogPt() {
 export function usePopoverPt() {
   return {
     root: {
-      class: '!bg-white !border !border-gray-200 !text-gray-900 dark:!bg-zinc-900 dark:!border-zinc-700 dark:!text-white',
+      class: '!bg-foreground !border !border-border !text-heading',
     },
     content: {
-      class: '!bg-white dark:!bg-zinc-900',
+      class: '!bg-foreground',
     },
   }
 }
@@ -103,7 +103,7 @@ export function useToastPt() {
     root: { class: 'z-[9999]' },
     message: ({ props }: { props: { message?: { severity?: string } } }) => ({
       class: [
-        '!bg-white !text-gray-900 !border !border-gray-200 dark:!bg-black dark:!text-white dark:!border-white/10',
+        '!bg-foreground !text-heading !border !border-border',
         'border-l-4',
         SEVERITY_ACCENT[props.message?.severity ?? 'info'] ?? SEVERITY_ACCENT.info
       ]
@@ -112,13 +112,13 @@ export function useToastPt() {
       class: SEVERITY_ICON[props.message?.severity ?? 'info'] ?? SEVERITY_ICON.info
     }),
     messageContent: {
-      class: '!bg-transparent !text-gray-900 dark:!text-white',
+      class: '!bg-transparent !text-heading',
     },
     summary: {
-      class: '!text-gray-900 dark:!text-white',
+      class: '!text-heading',
     },
     detail: {
-      class: '!text-gray-600 dark:!text-zinc-400',
+      class: '!text-body',
     },
   }
 }

@@ -84,10 +84,10 @@ async function setArchived(project: ProjectSummary, archived: boolean, successTe
   <div class="space-y-6">
     <div class="flex flex-wrap items-start justify-between gap-4">
       <div>
-        <h1 class="text-xl font-semibold text-gray-900 dark:text-white">
+        <h1 class="text-xl font-semibold text-heading">
           Projects
         </h1>
-        <p class="mt-1 text-sm text-gray-500 dark:text-zinc-400">
+        <p class="mt-1 text-sm text-body">
           Every project keeps its own requirements, test cases, releases, and bugs.
         </p>
       </div>
@@ -104,8 +104,7 @@ async function setArchived(project: ProjectSummary, archived: boolean, successTe
     <!-- empty state -->
     <div
       v-if="activeProjects.length === 0"
-      class="rounded-lg border border-dashed border-gray-300 bg-white px-6 py-12 text-center
-             dark:border-zinc-700 dark:bg-black"
+      class="rounded-lg border border-dashed border-border bg-foreground px-6 py-12 text-center"
     >
       <div
         class="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full
@@ -113,10 +112,10 @@ async function setArchived(project: ProjectSummary, archived: boolean, successTe
       >
         <i class="pi pi-folder-open text-xl" />
       </div>
-      <p class="text-base font-semibold text-gray-900 dark:text-white">
+      <p class="text-base font-semibold text-heading">
         {{ canManage ? 'Create your first project' : 'Ask your QA Lead to add a project' }}
       </p>
-      <p class="mt-1 text-sm text-gray-500 dark:text-zinc-400">
+      <p class="mt-1 text-sm text-body">
         {{
           canManage
             ? 'Projects keep each product or team workspace separate.'
@@ -138,19 +137,18 @@ async function setArchived(project: ProjectSummary, archived: boolean, successTe
       <div
         v-for="project in activeProjects"
         :key="project.id"
-        class="flex flex-col rounded-lg border border-black/10 bg-white p-5 dark:border-white/10 dark:bg-black"
+        class="flex flex-col rounded-lg border border-border bg-foreground p-5"
       >
         <NuxtLink :to="`/projects/${project.slug}`" class="group block min-w-0 flex-1">
           <div class="flex items-center gap-2">
             <i class="pi pi-folder text-[#245CB1] dark:text-[#5B8FE0]" />
             <h2
-              class="truncate text-base font-semibold text-gray-900 group-hover:text-[#245CB1]
-                     dark:text-white dark:group-hover:text-[#5B8FE0]"
+              class="truncate text-base font-semibold text-heading group-hover:text-[#245CB1] dark:group-hover:text-[#5B8FE0]"
             >
               {{ project.name }}
             </h2>
           </div>
-          <p class="mt-2 line-clamp-2 text-sm text-gray-500 dark:text-zinc-400">
+          <p class="mt-2 line-clamp-2 text-sm text-body">
             {{ project.description || 'No description yet.' }}
           </p>
           <p class="mt-3 text-xs text-gray-400 dark:text-zinc-500">
@@ -175,8 +173,8 @@ async function setArchived(project: ProjectSummary, archived: boolean, successTe
     <div v-if="archivedProjects.length > 0" class="space-y-3">
       <button
         type="button"
-        class="flex items-center gap-2 text-sm font-medium text-gray-600 transition-colors
-               hover:text-gray-900 dark:text-zinc-400 dark:hover:text-white"
+        class="flex items-center gap-2 text-sm font-medium text-body transition-colors
+               hover:text-heading"
         :aria-expanded="archivedOpen"
         @click="archivedOpen = !archivedOpen"
       >
@@ -186,8 +184,7 @@ async function setArchived(project: ProjectSummary, archived: boolean, successTe
 
       <ul
         v-if="archivedOpen"
-        class="divide-y divide-gray-200 rounded-lg border border-black/10 bg-white
-               dark:divide-zinc-800 dark:border-white/10 dark:bg-black"
+        class="divide-y divide-border rounded-lg border border-border bg-foreground"
       >
         <li
           v-for="project in archivedProjects"
@@ -195,7 +192,7 @@ async function setArchived(project: ProjectSummary, archived: boolean, successTe
           class="flex flex-wrap items-center justify-between gap-3 px-4 py-3"
         >
           <NuxtLink :to="`/projects/${project.slug}`" class="min-w-0 flex-1">
-            <p class="truncate text-sm font-medium text-gray-700 dark:text-zinc-300">
+            <p class="truncate text-sm font-medium text-body">
               {{ project.name }}
             </p>
             <p class="truncate text-xs text-gray-400 dark:text-zinc-500">
