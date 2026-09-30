@@ -10,17 +10,14 @@ const { user } = useUserSession()
 const currentUser = computed(() => user.value as { role?: string } | null)
 const canManage = computed(() => ['Admin', 'QA Lead'].includes(currentUser.value?.role ?? ''))
 
-// the cross project numbers are only for Admin and QA Lead, everyone else never triggers the request
-const canSeeKpis = computed(() => ['Admin', 'QA Lead'].includes(currentUser.value?.role ?? ''))
-
+// the cross project numbers are basic info, so every signed in user gets them
 const { data: kpis } = await useFetch<{
   activeProjects: number
   openBugs: number
   criticalHighOpen: number
   passRate: number | null
 }>('/api/projects/kpis', {
-  key: 'projects-fleet-kpis',
-  immediate: canSeeKpis.value
+  key: 'projects-fleet-kpis'
 })
 
 const { activeProjects, archivedProjects, refreshProjects } = useCurrentProject()
@@ -114,8 +111,8 @@ async function setArchived(project: ProjectSummary, archived: boolean, successTe
       />
     </div>
 
-    <!-- cross project numbers, Admin and QA Lead only -->
-    <div v-if="canSeeKpis" class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+    <!-- cross project numbers, shown to every signed in user -->
+    <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
       <MetricCard label="Active Projects" :value="kpis?.activeProjects ?? 0" icon="pi pi-briefcase" />
       <MetricCard label="Open Bugs" :value="kpis?.openBugs ?? 0" icon="pi pi-bug" />
       <MetricCard

@@ -1,9 +1,8 @@
 import { projectRepository } from '~~/server/repositories/projectRepository'
-import { requireRole } from '~~/server/utils/authorize'
 
 // cross project numbers for the top of the projects page
-// only Admin and QA Lead can read them, the page never calls this for anyone else
-export default defineEventHandler(async (event) => {
-  requireRole(event, ['Admin', 'QA Lead'])
+// these are basic counts, so any signed in and active user can read them
+// the global api middleware already rejects everyone else before this runs
+export default defineEventHandler(async () => {
   return projectRepository.getFleetKpis()
 })
