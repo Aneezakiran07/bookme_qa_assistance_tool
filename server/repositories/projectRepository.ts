@@ -10,6 +10,14 @@ export interface ProjectRecord {
   created_at: string
 }
 
+export interface FleetKpis {
+  activeProjects: number
+  openBugs: number
+  criticalHighOpen: number
+  // 0 to 100 with one decimal, or null when no executions exist
+  passRate: number | null
+}
+
 // turns a project name into a url friendly slug, an empty result falls back to a generic word
 export function slugify(name: string): string {
   const base = name
@@ -91,5 +99,37 @@ export const projectRepository = {
       returning *
     `
     return (rows[0] as ProjectRecord) ?? null
+  },
+
+  // four counts across every project for the projects page, all counted inside the database in one round trip
+  // pass rate is null when there are no executions yet so the page can show a dash instead of zero percent
+  // count and round results are cast in sql because the driver returns bigint and numeric values as strings
+  async getFleetKpis(): Promise<FleetKpis> {
+    const sql = useDb()
+    const rows = await sql`
+      select
+        (select count(*) from projects where archived = false)::int as active_projects,
+        (select count(*) from bugs where status <> 'Closed' and archived = false)::int as open_bugs,
+        (
+          select count(*) from bugs
+          where status <> 'Closed' and archived = false and severity in ('Critical', 'High')
+        )::int as critical_high_open,
+        (
+          select round(100.0 * count(*) filter (where result = 'Pass') / nullif(count(*), 0), 1)
+          from test_executions
+        )::float8 as pass_rate
+    `
+    const row = rows[0] as {
+      active_projects: number
+      open_bugs: number
+      critical_high_open: number
+      pass_rate: number | null
+    }
+    return {
+      activeProjects: row.active_projects,
+      openBugs: row.open_bugs,
+      criticalHighOpen: row.critical_high_open,
+      passRate: row.pass_rate
+    }
   }
 }
