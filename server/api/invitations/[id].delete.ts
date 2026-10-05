@@ -1,9 +1,7 @@
 import { requireRole } from '~~/server/utils/authorize'
 import { invitationRepository } from '~~/server/repositories/invitationRepository'
 
-// revokes the invitation row only -- does not delete the Firebase user,
-// since deciding what to do with an orphaned Firebase account is a
-// separate concern from "this invite is no longer valid"
+// revokes the invitation row only, the invite link stops working right away
 export default defineEventHandler(async (event) => {
   requireRole(event, ['Admin', 'QA Lead'])
 

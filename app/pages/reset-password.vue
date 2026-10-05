@@ -1,47 +1,38 @@
 <script setup lang="ts">
-import { confirmPasswordReset } from 'firebase/auth'
-
 definePageMeta({ layout: 'auth' })
 
-const { $firebaseAuth } = useNuxtApp()
 const route = useRoute()
 const toast = useToast()
 
-const oobCode = computed(() => (typeof route.query.oobCode === 'string' ? route.query.oobCode : ''))
+const token = computed(() => (typeof route.query.token === 'string' ? route.query.token : ''))
 
 const state = ref<'checking' | 'invalid' | 'ready'>('checking')
+const email = ref('')
 const password = ref('')
 const confirmPasswordValue = ref('')
 const errorMessage = ref('')
 const saving = ref(false)
 
-// Firebase forwards our own continueUrl (built in the invitations invite
-// route) back to this page as a query param when it hands control to the
-// app, an invite link carries mode=invite and our own token in there, this
-// is not a genuine password reset so it belongs on the accept-invite page
-// instead
-function redirectIfInviteLink(): boolean {
-  const continueUrlRaw = route.query.continueUrl
-  const continueUrl = typeof continueUrlRaw === 'string' ? continueUrlRaw : ''
-  if (!continueUrl) return false
-
-  try {
-    const parsed = new URL(continueUrl)
-    if (parsed.searchParams.get('mode') === 'invite') {
-      const inviteToken = parsed.searchParams.get('token') ?? ''
-      navigateTo({ path: '/accept-invite', query: { token: inviteToken, mode: 'invite' } })
-      return true
-    }
-  } catch (error) {
-    console.error('[reset-password] could not parse continueUrl:', error)
+// the emailed link carries a token, the server confirms it is still valid
+// before the form is shown
+async function checkLink() {
+  if (!token.value) {
+    state.value = 'invalid'
+    return
   }
-  return false
+  try {
+    const result = await $fetch<{ email: string }>('/api/auth/reset-password', {
+      query: { token: token.value }
+    })
+    email.value = result.email
+    state.value = 'ready'
+  } catch (error) {
+    console.error('[reset-password] link check failed:', error)
+    state.value = 'invalid'
+  }
 }
 
-onMounted(() => {
-  if (redirectIfInviteLink()) return
-  state.value = oobCode.value ? 'ready' : 'invalid'
-})
+await checkLink()
 
 async function submit() {
   errorMessage.value = ''
@@ -57,13 +48,16 @@ async function submit() {
 
   saving.value = true
   try {
-    await confirmPasswordReset($firebaseAuth, oobCode.value, password.value)
+    await $fetch('/api/auth/reset-password', {
+      method: 'POST',
+      body: { token: token.value, password: password.value }
+    })
     toast.add({ severity: 'success', summary: 'Password updated, please sign in', life: 3000 })
     await navigateTo('/login')
   } catch (error) {
-    console.error('[reset-password] confirmPasswordReset failed:', error)
+    console.error('[reset-password] reset failed:', error)
     errorMessage.value =
-      (error as any)?.message ?? 'This reset link is invalid or has expired.'
+      (error as any)?.data?.statusMessage ?? 'This reset link is invalid or has expired.'
   } finally {
     saving.value = false
   }
@@ -84,7 +78,7 @@ async function submit() {
           Link not found
         </h1>
         <p class="mb-6 text-sm text-body">
-          This reset link is missing or invalid.
+          This reset link is missing, invalid, expired, or has already been used.
         </p>
         <NuxtLink to="/forgot-password" class="text-sm text-[#245CB1] hover:underline dark:text-[#5B8FE0]">
           Request a new link
@@ -95,6 +89,9 @@ async function submit() {
         <h1 class="mb-2 text-xl font-semibold text-heading">
           Choose a new password
         </h1>
+        <p class="mb-6 text-sm text-body">
+          for {{ email }}
+        </p>
         <form class="space-y-3 text-left" @submit.prevent="submit">
           <div>
             <label class="mb-1 block text-xs font-medium text-body">

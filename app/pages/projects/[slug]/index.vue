@@ -5,8 +5,7 @@
 // extracted unchanged from what used to live directly in this file).
 //
 // the role check reads from the signed-in session (nuxt-auth-utils'
-// useUserSession), not straight from Firebase -- Firebase Auth only
-// gets the person logged in, the session is what actually carries the
+// useUserSession), the session is what actually carries the
 // app role, and it's kept in sync with the users table by
 // server/middleware/00-syncSession.ts on every request.
 definePageMeta({ layout: 'default', title: 'Dashboard' })

@@ -1,50 +1,48 @@
+import { userRepository } from '~~/server/repositories/userRepository'
+import { verifyPassword, DUMMY_PASSWORD_HASH } from '~~/server/utils/password'
 
-import { useFirebaseAuth } from '~~/server/utils/firebaseAdmin'
-import { onboardingService } from '~~/server/services/onboardingService'
-
-
-// the frontend signs the user in with Firebase, gets an ID token, and posts
-// it here, this route is the only one allowed to trust that token
+// signs a person in with email and password and sets the session cookie
+// this is the only route that checks a password for login
 export default defineEventHandler(async (event) => {
-  const body = await readBody<{ idToken: string }>(event)
-  if (!body?.idToken) {
-    throw createError({ statusCode: 400, statusMessage: 'Missing idToken' })
+  const body = await readBody<{ email?: string; password?: string }>(event)
+  const email = typeof body?.email === 'string' ? body.email.trim().toLowerCase() : ''
+  const password = typeof body?.password === 'string' ? body.password : ''
+
+  if (!email || !password) {
+    throw createError({ statusCode: 400, statusMessage: 'Email and password are required' })
   }
 
-  let decoded
-  try {
-    decoded = await useFirebaseAuth().verifyIdToken(body.idToken)
-  } catch (error) {
-    console.error('[auth/session] Firebase token verification failed:', error)
-    throw createError({ statusCode: 401, statusMessage: 'Invalid Firebase token' })
+  const authUser = await userRepository.findAuthByEmail(email)
+
+  // an unknown email or an account with no password yet still pays for a
+  // bcrypt compare, so response time does not reveal whether the email exists
+  if (!authUser || !authUser.password_hash) {
+    await verifyPassword(password, DUMMY_PASSWORD_HASH)
+    throw createError({ statusCode: 401, statusMessage: 'Invalid email or password' })
   }
 
-  if (!decoded.email) {
-    throw createError({ statusCode: 400, statusMessage: 'This account has no email address' })
+  // this slightly reveals that the account exists, which is an accepted trade off
+  if (authUser.locked_until && new Date(authUser.locked_until).getTime() > Date.now()) {
+    throw createError({ statusCode: 429, statusMessage: 'Too many attempts. Try again later.' })
   }
 
-  let appUser
-  try {
-    appUser = await onboardingService.resolveLogin(decoded.uid, decoded.email, decoded.email_verified === true)
-  } catch (error) {
-    // logging the real database or firebase error here instead of letting
-    // it bubble up as a bare 500 is what lets us see the actual cause
-    console.error('[auth/session] onboardingService.resolveLogin failed:', error)
-    // expected refusals such as not invited keep their own status and
-    // message so the login page can show the real reason
-    const status = (error as any)?.statusCode
-    if (typeof status === 'number' && status >= 400 && status < 500) {
-      throw error
-    }
-    throw createError({ statusCode: 500, statusMessage: 'Failed to resolve user account' })
+  const passwordOk = await verifyPassword(password, authUser.password_hash)
+  if (!passwordOk) {
+    await userRepository.recordLoginFailure(authUser.id)
+    throw createError({ statusCode: 401, statusMessage: 'Invalid email or password' })
   }
 
   // a deactivated account never gets a session cookie
-  if (!appUser.active) {
+  if (!authUser.active) {
     throw createError({
       statusCode: 403,
       statusMessage: 'Your account has been deactivated. Please contact an admin.'
     })
+  }
+
+  const appUser = await userRepository.recordLoginSuccess(authUser.id)
+  if (!appUser) {
+    throw createError({ statusCode: 401, statusMessage: 'Invalid email or password' })
   }
 
   try {

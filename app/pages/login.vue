@@ -1,17 +1,13 @@
 <script setup lang="ts">
-import { GoogleAuthProvider, signInWithPopup, signInWithEmailAndPassword } from 'firebase/auth'
-
 definePageMeta({ layout: 'auth' })
 
-const { $firebaseAuth } = useNuxtApp()
 const { fetch: refreshSession } = useUserSession()
 const route = useRoute()
 const errorMessage = ref('')
-const loading = ref(false)
 
 const email = ref('')
 const password = ref('')
-const passwordLoading = ref(false)
+const loading = ref(false)
 
 // the auth middleware sends people here with ?reason=auth&redirect=/wherever
 // when they tried to open a page while signed out, instead of just
@@ -22,79 +18,31 @@ const redirectTarget = computed(() => {
   return typeof target === 'string' && target.startsWith('/') ? target : '/'
 })
 
-// invite-only onboarding means every account that can reach /api/auth/session
-// successfully is already active, there is no more pending state to branch
-// on, so a successful call always sends the person straight to where they
-// were headed
-async function finishSignIn(idToken: string) {
-  await $fetch('/api/auth/session', {
-    method: 'POST',
-    body: { idToken },
-  })
-
-  // the session cookie is set now, but useUserSession()'s reactive state
-  // (used by the global auth middleware) doesn't know that yet, refresh
-  // it before navigating or the middleware won't see us as logged in
-  await refreshSession()
-
-  await navigateTo(redirectTarget.value)
-}
-
-// firebase client errors come back as long technical strings, so the
-// common ones become something a person can act on. errors from this
-// app's own api already carry a readable statusMessage
+// errors from this app's own api already carry a readable statusMessage
 function readableError(error: unknown, fallback: string): string {
-  const apiMessage = (error as any)?.data?.statusMessage
-  if (apiMessage) return apiMessage
-
-  const code = (error as any)?.code as string | undefined
-  if (
-    code === 'auth/invalid-credential' ||
-    code === 'auth/wrong-password' ||
-    code === 'auth/user-not-found' ||
-    code === 'auth/invalid-email'
-  ) {
-    return 'Incorrect email or password.'
-  }
-  if (code === 'auth/too-many-requests') {
-    return 'Too many attempts, please wait a few minutes and try again.'
-  }
-  // closing the google popup is not an error worth showing
-  if (code === 'auth/popup-closed-by-user' || code === 'auth/cancelled-popup-request') {
-    return ''
-  }
-  return fallback
+  return (error as any)?.data?.statusMessage || fallback
 }
 
 async function signIn() {
   errorMessage.value = ''
   loading.value = true
   try {
-    const provider = new GoogleAuthProvider()
-    provider.setCustomParameters({ prompt: 'select_account' })
-    const result = await signInWithPopup($firebaseAuth, provider)
-    const idToken = await result.user.getIdToken()
-    await finishSignIn(idToken)
-  } catch (error) {
-    console.error('[login]', error)
-    errorMessage.value = readableError(error, 'Sign in failed, please try again.')
-  } finally {
-    loading.value = false
-  }
-}
+    await $fetch('/api/auth/session', {
+      method: 'POST',
+      body: { email: email.value, password: password.value },
+    })
 
-async function signInWithPassword() {
-  errorMessage.value = ''
-  passwordLoading.value = true
-  try {
-    const result = await signInWithEmailAndPassword($firebaseAuth, email.value, password.value)
-    const idToken = await result.user.getIdToken()
-    await finishSignIn(idToken)
+    // the session cookie is set now, but useUserSession()'s reactive state
+    // (used by the global auth middleware) doesn't know that yet, refresh
+    // it before navigating or the middleware won't see us as logged in
+    await refreshSession()
+
+    await navigateTo(redirectTarget.value)
   } catch (error) {
     console.error('[login]', error)
     errorMessage.value = readableError(error, 'Sign in failed, please check your email and password.')
   } finally {
-    passwordLoading.value = false
+    loading.value = false
   }
 }
 </script>
@@ -116,24 +64,10 @@ async function signInWithPassword() {
         Please log in to continue.
       </p>
       <p v-else class="mb-6 text-sm text-body">
-        Sign in with the account you were invited with.
+        Sign in with the email you were invited with.
       </p>
 
-      <Button
-        label="Continue with Google"
-        class="w-full"
-        :loading="loading"
-        :disabled="passwordLoading"
-        @click="signIn"
-      />
-
-      <div class="my-5 flex items-center gap-3">
-        <div class="h-px flex-1 bg-secondary" />
-        <span class="text-xs uppercase tracking-wide text-gray-400 dark:text-white/40">or</span>
-        <div class="h-px flex-1 bg-secondary" />
-      </div>
-
-      <form class="space-y-3 text-left" @submit.prevent="signInWithPassword">
+      <form class="space-y-3 text-left" @submit.prevent="signIn">
         <div>
           <label class="mb-1 block text-xs font-medium text-body">
             Email
@@ -164,13 +98,12 @@ async function signInWithPassword() {
         </div>
 
         <Button
-        type="submit"
-        label="Sign in"
-        class="w-full"
-        severity="primary"
-        :loading="passwordLoading"
-        :disabled="loading"
-      />
+          type="submit"
+          label="Sign in"
+          class="w-full"
+          severity="primary"
+          :loading="loading"
+        />
       </form>
 
       <NuxtLink

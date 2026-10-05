@@ -69,6 +69,30 @@ export const invitationRepository = {
     return rows as OutstandingInvitationRecord[]
   },
 
+  async findById(id: number): Promise<InvitationRecord | null> {
+    const sql = useDb()
+    const rows = await sql`select * from invitations where id = ${id}`
+    return (rows[0] as InvitationRecord) ?? null
+  },
+
+  // marks the invite accepted only if nobody else got there first, so two
+  // simultaneous requests can never both succeed. returns null for the loser
+  async markAcceptedIfOpen(id: number): Promise<InvitationRecord | null> {
+    const sql = useDb()
+    const rows = await sql`
+      update invitations set accepted_at = now()
+      where id = ${id} and accepted_at is null and revoked_at is null and expires_at > now()
+      returning *
+    `
+    return (rows[0] as InvitationRecord) ?? null
+  },
+
+  // puts an accepted mark back when creating the user row fails afterward
+  async reopen(id: number): Promise<void> {
+    const sql = useDb()
+    await sql`update invitations set accepted_at = null where id = ${id}`
+  },
+
   async markAccepted(id: number): Promise<InvitationRecord> {
     const sql = useDb()
     const rows = await sql`
@@ -87,9 +111,7 @@ export const invitationRepository = {
     return (rows[0] as InvitationRecord) ?? null
   },
 
-  // used to roll back an invitation row when a later step in invite
-  // creation (currently sendOobCode) fails, so the email is not left
-  // blocked by a row that never actually got an email sent
+  // removes an invitation row outright, kept for cleanup tasks
   async deleteById(id: number): Promise<void> {
     const sql = useDb()
     await sql`delete from invitations where id = ${id}`

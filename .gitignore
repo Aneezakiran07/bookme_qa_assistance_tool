@@ -14,10 +14,6 @@ dist
 .env.local
 .env.*.local
 
-# Secrets — the Firebase service account JSON
-*-firebase-adminsdk-*.json
-firebase-adminsdk-*.json
-
 # Logs
 *.log
 npm-debug.log*
@@ -28,7 +24,6 @@ logs
 # Deploy caches
 .vercel
 .netlify
-.firebase
 
 # Editor / OS
 .vscode/*

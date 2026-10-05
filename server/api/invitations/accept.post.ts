@@ -1,58 +1,60 @@
-import { useFirebaseAuth } from '~~/server/utils/firebaseAdmin'
-import { invitationRepository, type InvitationRecord } from '~~/server/repositories/invitationRepository'
+import { invitationRepository } from '~~/server/repositories/invitationRepository'
 import { userRepository } from '~~/server/repositories/userRepository'
+import { assertPasswordRules, hashPassword } from '~~/server/utils/password'
 
-function isUsable(invitation: InvitationRecord | null): invitation is InvitationRecord {
-  return (
-    !!invitation &&
-    !invitation.accepted_at &&
-    !invitation.revoked_at &&
-    new Date(invitation.expires_at).getTime() > Date.now()
-  )
-}
-
-// public -- invitee sets a password to accept the invite
+// public. the invitee sets a password to accept the invite, the account is
+// created and the person is signed in straight away
 export default defineEventHandler(async (event) => {
   const body = await readBody<{ token?: string; password?: string }>(event)
 
-  if (!body?.token) {
+  if (!body?.token || typeof body.token !== 'string') {
     throw createError({ statusCode: 400, statusMessage: 'Missing token' })
   }
-  if (!body?.password || body.password.length < 8) {
-    throw createError({ statusCode: 400, statusMessage: 'Password must be at least 8 characters' })
-  }
+  assertPasswordRules(body.password)
 
   const invitation = await invitationRepository.findByToken(body.token)
-  if (!isUsable(invitation)) {
+  const isUsable =
+    invitation &&
+    !invitation.accepted_at &&
+    !invitation.revoked_at &&
+    new Date(invitation.expires_at).getTime() > Date.now()
+
+  if (!invitation || !isUsable) {
     throw createError({ statusCode: 404, statusMessage: 'Invitation not found or no longer valid' })
   }
 
-  const firebaseAuth = useFirebaseAuth()
-
-  let firebaseUser
-  try {
-    firebaseUser = await firebaseAuth.getUserByEmail(invitation.email)
-  } catch (error) {
-    console.error('[invitations/accept] getUserByEmail failed:', error)
-    throw createError({ statusCode: 500, statusMessage: 'Could not find the invited Firebase account' })
+  const existing = await userRepository.findByEmail(invitation.email)
+  if (existing) {
+    throw createError({ statusCode: 409, statusMessage: 'This email already has an account' })
   }
 
-  try {
-    await firebaseAuth.updateUser(firebaseUser.uid, { password: body.password })
-  } catch (error) {
-    console.error('[invitations/accept] updateUser failed:', error)
-    throw createError({ statusCode: 500, statusMessage: 'Failed to set password' })
+  const passwordHash = await hashPassword(body.password)
+
+  // the conditional update means two requests at the same moment cannot both accept
+  const claimed = await invitationRepository.markAcceptedIfOpen(invitation.id)
+  if (!claimed) {
+    throw createError({ statusCode: 404, statusMessage: 'Invitation not found or no longer valid' })
   }
 
-  const user = await userRepository.createFromInvitation({
-    firebaseUid: firebaseUser.uid,
-    email: invitation.email,
-    role: invitation.role,
-    invitedBy: invitation.invited_by,
-    invitedAt: invitation.created_at
+  let user
+  try {
+    user = await userRepository.createFromInvitation({
+      email: invitation.email,
+      role: invitation.role,
+      invitedBy: invitation.invited_by,
+      invitedAt: invitation.created_at,
+      passwordHash
+    })
+  } catch (error) {
+    // the row could not be created, so the invite goes back to being usable
+    console.error('[invitations/accept] could not create the user:', error)
+    await invitationRepository.reopen(invitation.id)
+    throw createError({ statusCode: 409, statusMessage: 'This email already has an account' })
+  }
+
+  await setUserSession(event, {
+    user: { id: user.id, email: user.email, role: user.role, active: user.active }
   })
-
-  await invitationRepository.markAccepted(invitation.id)
 
   return user
 })

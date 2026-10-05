@@ -20,10 +20,10 @@ A web app for the Bookme QA team. It tracks requirements, test cases, test runs,
 | Framework | Nuxt 4 (Vue 3, TypeScript) |
 | UI | PrimeVue 4, Tailwind CSS |
 | Database | Neon (serverless Postgres) |
-| Sign-in | Firebase Auth (Google and email/password) |
+| Sign-in | Email and password, checked on the server with bcrypt |
 | App session | `nuxt-auth-utils` (encrypted cookie) |
 | File storage | Cloudinary |
-| Email | OneSignal |
+| Email | AWS SES |
 | Hosting and cron | Vercel |
 
 ## Roles
@@ -71,15 +71,13 @@ npm install
 
 The schema file is always the full, current schema. Use it for a fresh database.
 
-### 3. Set up Firebase
+### 3. Session secret
 
-1. Create a project at https://console.firebase.google.com.
-2. Turn on the Google provider and the Email/Password provider.
-3. Do not limit Google to one Workspace domain. The app limits access by invite instead.
-4. Add your deployed domain under Authentication > Settings > Authorized domains.
-5. Add a Web app in Project Settings. Copy its config into the `NUXT_PUBLIC_FIREBASE_*` variables.
-6. In Service Accounts, generate a private key. Copy `project_id`, `client_email` and `private_key` into the `FIREBASE_*` variables. Keep the `\n` characters in the key as they are.
-7. Make a random secret for `NUXT_SESSION_PASSWORD`. It must be 32 characters or more. For example: `openssl rand -hex 32`.
+Make a random secret for `NUXT_SESSION_PASSWORD`. It must be 32 characters or more. For example: `openssl rand -hex 32`.
+
+If you are upgrading from the Firebase version, run `migrations/2026-10-02_email_password_auth.sql` in the Neon SQL editor first. It is safe to run twice.
+
+To start with a clean database and one Admin, edit and run `migrations/2026-10-03_wipe_data_and_seed_admin.sql`. It deletes all data.
 
 ### 4. Set up Cloudinary
 
@@ -89,13 +87,15 @@ The schema file is always the full, current schema. Use it for a fresh database.
 
 Nothing else is needed. Uploads go through the server, so the secret never reaches the browser.
 
-### 5. Set up OneSignal
+### 5. Set up AWS SES
 
-1. Create an app at https://onesignal.com with the email channel on.
-2. Put the App ID in `ONESIGNAL_APP_ID`.
-3. Put the REST API key in `ONESIGNAL_REST_API_KEY`.
+1. Verify the sender address or domain in AWS SES.
+2. Put the AWS region in `SES_AWS_REGION`.
+3. Put the access key pair in `SES_AWS_ACCESS_KEY_ID` and `SES_AWS_SECRET_ACCESS_KEY`.
 
-OneSignal sends the "bug assigned to you" email and the daily digest. Check the payload in `server/utils/email.ts` against the current OneSignal docs before you rely on it in production.
+AWS SES sends invite emails, password reset emails, the "bug assigned to you" email and the daily digest.
+
+Set `SES_AWS_REGION`, `SES_AWS_ACCESS_KEY_ID`, `SES_AWS_SECRET_ACCESS_KEY`, `SES_FROM_EMAIL` and `SES_FROM_NAME`. The sender address or its domain must be verified in SES. New SES accounts start in sandbox mode, where mail only reaches verified recipients until AWS grants production access. Until `SES_AWS_ACCESS_KEY_ID` is set, emails are printed to the server console when not in production.
 
 ### 6. Fill in the other variables
 
@@ -111,7 +111,13 @@ insert into users (email, role, active)
 values ('you@example.com', 'Admin', true);
 ```
 
-Then open the app and sign in with Google using that email. The app links your Firebase account to the row on first login.
+Then give that account a password. This needs `DATABASE_URL` in your environment:
+
+```
+node scripts/set-password.mjs you@example.com
+```
+
+The script asks for the password without showing it. Then sign in with email and password.
 
 ### 8. Run it
 
@@ -135,54 +141,41 @@ Other scripts:
 | `APP_URL` | Public URL of the site. |
 | `CRON_SECRET` | Secret for the cron route. |
 | `NUXT_SESSION_PASSWORD` | Encrypts the session cookie. |
-| `ONESIGNAL_APP_ID` | OneSignal app id. |
-| `ONESIGNAL_REST_API_KEY` | OneSignal REST key. |
-| `FIREBASE_PROJECT_ID` | Firebase Admin project id. Read at build time. |
-| `FIREBASE_CLIENT_EMAIL` | Firebase Admin client email. Read at build time. |
-| `FIREBASE_PRIVATE_KEY` | Firebase Admin private key. Read at build time. |
-| `NUXT_FIREBASE_ADMIN_PROJECT_ID` | Same as above. Use on Vercel. |
-| `NUXT_FIREBASE_ADMIN_CLIENT_EMAIL` | Same as above. Use on Vercel. |
-| `NUXT_FIREBASE_ADMIN_PRIVATE_KEY` | Same as above. Use on Vercel. |
-| `NUXT_PUBLIC_FIREBASE_API_KEY` | Firebase web config. Safe in the browser. |
-| `NUXT_PUBLIC_FIREBASE_AUTH_DOMAIN` | Firebase web config. |
-| `NUXT_PUBLIC_FIREBASE_PROJECT_ID` | Firebase web config. |
-| `NUXT_PUBLIC_FIREBASE_APP_ID` | Firebase web config. |
+| `SES_AWS_REGION` | AWS region of your SES setup. |
+| `SES_AWS_ACCESS_KEY_ID` | AWS access key for sending. |
+| `SES_AWS_SECRET_ACCESS_KEY` | AWS secret key for sending. |
+| `SES_FROM_EMAIL` | Verified sender address. |
+| `SES_FROM_NAME` | Sender display name. |
 | `CLOUDINARY_CLOUD_NAME` | Cloudinary account name. |
 | `CLOUDINARY_API_KEY` | Cloudinary key. |
 | `CLOUDINARY_API_SECRET` | Cloudinary secret. |
 
-On Vercel, set the `NUXT_FIREBASE_ADMIN_*` versions. Nuxt reads them on every request. You do not need to rebuild after changing them.
-
 ## How sign-in works
 
-1. The browser signs the user in with Firebase.
-2. Firebase gives the browser an ID token.
-3. The browser posts the token to `POST /api/auth/session`.
-4. The server checks the token with `firebase-admin`.
-5. The server looks the person up in the `users` table.
-6. If all is well, the server sets its own session cookie.
+1. The person enters email and password on `/login`.
+2. The browser posts them to `POST /api/auth/session`.
+3. The server looks the user up and checks the password with bcrypt.
+4. If all is well, the server sets its own session cookie.
 
-The login is refused with a 403 when:
+Sign-in fails when the email or password is wrong (401, same message for both), the account is locked (429), or the account is deactivated (403). After 5 wrong passwords in a row the account is locked for 15 minutes.
 
-- The email has no `users` row and no live invitation.
-- The account is deactivated.
-- The Firebase email is not verified.
-- The row is already linked to a different Firebase account.
+On every request the server re-reads the user. If the user was deactivated or deleted, the cookie is cleared. If the role changed, the cookie is updated. So role changes apply without a new login. A password reset does not end sessions that already exist.
 
-On every request the server re-reads the user. If the user was deactivated or deleted, the cookie is cleared. If the role changed, the cookie is updated. So role changes apply without a new login.
+## Forgot password
+
+1. The person asks for a reset on `/forgot-password`. The answer is always the same, whether or not the email has an account.
+2. If an active user exists, the server stores a hashed one time token in `password_resets` and emails a link. The link lasts 1 hour. At most 3 resets are made per user per hour.
+3. The link opens `/reset-password`, where the person sets a new password. The link works once.
 
 ## How invites work
 
 1. An Admin or QA Lead opens **Team & Invites** (`/admin/users`).
 2. They enter an email and a role.
-3. The server creates a Firebase user with no password.
-4. The server saves an `invitations` row. The token lasts 7 days.
-5. Firebase emails the invitee a password-setup link.
-6. The invitee sets a password, then signs in with it or with Google.
-7. On the first verified login, the app creates the `users` row.
-8. The Continue button on Firebase's page opens `/accept-invite`. It finishes the same setup, but it is optional.
+3. The server saves an `invitations` row. The token lasts 7 days.
+4. The server emails the invitee a link to `/accept-invite`. If the email cannot be sent, the invite is kept and can be resent from the Team page.
+5. The invitee sets a password. The app creates the `users` row, signs them in, and marks the invite accepted.
 
-An invite can be revoked. A revoked invite blocks login for that email. The same email cannot have two live invites.
+An invite can be revoked. The same email cannot have two live invites.
 
 ## Projects
 
@@ -291,7 +284,7 @@ The main tables:
 
 | Table | What it holds |
 | --- | --- |
-| `users` | People, roles, Firebase uid, preferences. |
+| `users` | People, roles, password hash, login tracking, preferences. |
 | `invitations` | Invites, with token, expiry, accepted and revoked times. |
 | `projects` | Projects and their slugs. |
 | `modules` | Modules per project. |
@@ -325,7 +318,7 @@ app/
   layouts/      default and auth layouts
   middleware/   auth, project context, role and redirect guards
   pages/        routes (projects/[slug]/... holds the main pages)
-  plugins/      Firebase, PrimeVue services, x-project-id header
+  plugins/      PrimeVue services, x-project-id header
   utils/        small client helpers
 server/
   api/          API routes, one folder per feature
@@ -364,9 +357,8 @@ These routes are public:
 ## Deploying to Vercel
 
 1. Push the repo and import it in Vercel.
-2. Add all environment variables. Use the `NUXT_FIREBASE_ADMIN_*` names for Firebase Admin.
+2. Add all environment variables. Include `SES_FROM_EMAIL` and `SES_FROM_NAME`.
 3. Set `APP_URL` to the live URL.
-4. Add the live domain to Firebase Authorized domains.
 5. Deploy. Vercel picks up the cron job from `vercel.json`.
 
 ## Known gaps

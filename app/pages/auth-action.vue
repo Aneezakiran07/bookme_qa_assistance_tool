@@ -9,7 +9,7 @@ const route = useRoute()
 
 // firebase appends these query params itself once the custom action url
 // is set in the firebase console. continueUrl is whatever this app sent
-// as continueUrl when it called sendOobCode, which still carries the
+// as continueUrl when it created the password link, which still carries the
 // invite token so this page knows which invitation to finish setting up
 const oobCode = computed(() => (typeof route.query.oobCode === 'string' ? route.query.oobCode : ''))
 const mode = computed(() => (typeof route.query.mode === 'string' ? route.query.mode : ''))

@@ -19,7 +19,7 @@
 
 import { userRepository } from '~~/server/repositories/userRepository'
 import { dashboardRepository } from '~~/server/repositories/dashboardRepository'
-import { sendEmail } from '~~/server/utils/email'
+import { sendDailyDigestEmail } from '~~/server/utils/email'
 import { requireCronSecret } from '~~/server/utils/cronAuth'
 
 // project names are typed by people, so they are escaped before going into the email html
@@ -67,8 +67,7 @@ export default defineEventHandler(async (event) => {
         })
         .join('')
 
-      await sendEmail({
-        to: dev.email,
+      const delivered = await sendDailyDigestEmail(dev.email, {
         subject: `Your daily bug digest: ${summary.my_open_bugs} open`,
         html: `
           <p>Here's where your bugs stand today.</p>
@@ -81,7 +80,8 @@ export default defineEventHandler(async (event) => {
           ${bugListHtml ? `<p>Your open bugs:</p><ul>${bugListHtml}</ul>` : ''}
         `
       })
-      sent += 1
+      if (delivered) sent += 1
+      else failed += 1
     } catch (err) {
       failed += 1
       console.error(`Failed to send daily digest to developer ${dev.id} (${dev.email})`, err)
@@ -110,8 +110,7 @@ export default defineEventHandler(async (event) => {
         })
         .join('')
 
-      await sendEmail({
-        to: lead.email,
+      const delivered = await sendDailyDigestEmail(lead.email, {
         subject: `Project daily digest: ${metrics.open_bugs} open bugs`,
         html: `
           <p>Project summary for today.</p>
@@ -123,7 +122,8 @@ export default defineEventHandler(async (event) => {
           ${bugListHtml ? `<p>Your assigned bugs with activity today:</p><ul>${bugListHtml}</ul>` : ''}
         `
       })
-      sent += 1
+      if (delivered) sent += 1
+      else failed += 1
     } catch (err) {
       failed += 1
       console.error(`Failed to send daily digest to lead ${lead.id} (${lead.email})`, err)

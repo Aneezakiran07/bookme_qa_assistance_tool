@@ -14,7 +14,7 @@
 const ONLY_FOR_SIGNED_OUT = ['/login']
 // pages a signed out person must be able to open, the invite page is reached
 // from an emailed link before the person has any session at all
-const PUBLIC_WHEN_SIGNED_OUT = ['/login', '/accept-invite', '/forgot-password']
+const PUBLIC_WHEN_SIGNED_OUT = ['/login', '/accept-invite', '/forgot-password', '/reset-password']
 
 export default defineNuxtRouteMiddleware((to) => {
   const { loggedIn, user } = useUserSession()

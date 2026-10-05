@@ -1,9 +1,5 @@
 <script setup lang="ts">
-import { sendPasswordResetEmail } from 'firebase/auth'
-
 definePageMeta({ layout: 'auth' })
-
-const { $firebaseAuth } = useNuxtApp()
 
 const email = ref('')
 const loading = ref(false)
@@ -15,7 +11,10 @@ const sent = ref(false)
 async function submit() {
   loading.value = true
   try {
-    await sendPasswordResetEmail($firebaseAuth, email.value)
+    await $fetch('/api/auth/forgot-password', {
+      method: 'POST',
+      body: { email: email.value },
+    })
   } catch (error) {
     console.error('[forgot-password]', error)
   } finally {

@@ -125,29 +125,18 @@ export default defineNuxtConfig({
       apiKey: process.env.CLOUDINARY_API_KEY,
       apiSecret: process.env.CLOUDINARY_API_SECRET,
     },
-    firebaseAdmin: {
-      // these fall back to build time values but get overridden at runtime
-      // by NUXT_FIREBASE_ADMIN_PROJECT_ID, NUXT_FIREBASE_ADMIN_CLIENT_EMAIL,
-      // and NUXT_FIREBASE_ADMIN_PRIVATE_KEY if those are set on the server
-      projectId: process.env.FIREBASE_PROJECT_ID,
-      clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
-      privateKey: process.env.FIREBASE_PRIVATE_KEY,
-    },
-    oneSignal: {
-      appId: process.env.ONESIGNAL_APP_ID,
-      apiKey: process.env.ONESIGNAL_REST_API_KEY,
+    ses: {
+      region: process.env.SES_AWS_REGION,
+      accessKeyId: process.env.SES_AWS_ACCESS_KEY_ID,
+      secretAccessKey: process.env.SES_AWS_SECRET_ACCESS_KEY,
+      fromEmail: process.env.SES_FROM_EMAIL,
+      fromName: process.env.SES_FROM_NAME,
     },
     session: {
       password: process.env.NUXT_SESSION_PASSWORD ?? '',
     },
     public: {
       appUrl: process.env.APP_URL,
-      firebase: {
-        apiKey: process.env.NUXT_PUBLIC_FIREBASE_API_KEY,
-        authDomain: process.env.NUXT_PUBLIC_FIREBASE_AUTH_DOMAIN,
-        projectId: process.env.NUXT_PUBLIC_FIREBASE_PROJECT_ID,
-        appId: process.env.NUXT_PUBLIC_FIREBASE_APP_ID,
-      },
     },
   },
 })

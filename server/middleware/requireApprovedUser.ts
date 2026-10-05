@@ -6,8 +6,9 @@ const publicPaths = [
   '/api/_auth/session',
   '/api/me',
   '/api/invitations/validate',
-  '/api/invitations/accept-google',
-  '/api/invitations/finalize',
+  '/api/invitations/accept',
+  '/api/auth/forgot-password',
+  '/api/auth/reset-password',
   // cron calls carry no session, each cron route checks the cron secret itself
   '/api/cron/'
 ]

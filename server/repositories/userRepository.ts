@@ -1,8 +1,17 @@
 import { useDb } from '../db/client'
 
+// the public user shape never includes password_hash, failed_login_attempts
+// or locked_until, so a query that returns users to the browser can never
+// leak them. every query in this file uses this one column list
+const PUBLIC_COLUMNS = `
+  id, firebase_uid, email, role, active, created_at, display_name,
+  email_notifications, daily_digest_enabled, avatar_id, invited_by,
+  invited_at, last_login_at
+`
+
 export interface UserRecord {
   id: number
-  firebase_uid: string
+  firebase_uid: string | null
   email: string
   role: 'Admin' | 'QA Lead' | 'Tester' | 'Developer'
   active: boolean
@@ -13,56 +22,111 @@ export interface UserRecord {
   avatar_id: string
   invited_by: number | null
   invited_at: string | null
+  last_login_at: string | null
 }
+
+// what the login route needs and nothing more
+export interface UserAuthRecord {
+  id: number
+  email: string
+  role: 'Admin' | 'QA Lead' | 'Tester' | 'Developer'
+  active: boolean
+  password_hash: string | null
+  failed_login_attempts: number
+  locked_until: string | null
+}
+
+const MAX_FAILED_ATTEMPTS = 5
+const LOCK_MINUTES = 15
 
 // this file is the only place that talks to the users table directly
 // every other layer goes through these functions instead of writing SQL
 export const userRepository = {
-  async findByFirebaseUid(firebaseUid: string): Promise<UserRecord | null> {
-    const sql = useDb()
-    const rows = await sql`select * from users where firebase_uid = ${firebaseUid}`
-    return (rows[0] as UserRecord) ?? null
-  },
-
   async findByEmail(email: string): Promise<UserRecord | null> {
     const sql = useDb()
-    const rows = await sql`select * from users where lower(email) = lower(${email})`
+    const rows = await sql(`select ${PUBLIC_COLUMNS} from users where lower(email) = lower($1)`, [email])
     return (rows[0] as UserRecord) ?? null
   },
 
-  // creates the app side users row from an invitation, used by login when
-  // it finds a live invite, by the finalize route, and by accept google
+  // the only query that reads the password hash, used by login alone
+  async findAuthByEmail(email: string): Promise<UserAuthRecord | null> {
+    const sql = useDb()
+    const rows = await sql(
+      `select id, email, role, active, password_hash, failed_login_attempts, locked_until
+       from users where lower(email) = lower($1)`,
+      [email]
+    )
+    return (rows[0] as UserAuthRecord) ?? null
+  },
+
+  // creates the app side users row when an invitee accepts and sets a password
   async createFromInvitation(fields: {
-    firebaseUid: string
     email: string
     role: string
     invitedBy: number | null
     invitedAt: string
+    passwordHash: string
   }): Promise<UserRecord> {
     const sql = useDb()
-    const rows = await sql`
-      insert into users (firebase_uid, email, role, active, invited_by, invited_at)
-      values (${fields.firebaseUid}, lower(${fields.email}), ${fields.role}, true, ${fields.invitedBy}, ${fields.invitedAt})
-      returning *
-    `
+    const rows = await sql(
+      `insert into users (email, role, active, invited_by, invited_at, password_hash)
+       values (lower($1), $2, true, $3, $4, $5)
+       returning ${PUBLIC_COLUMNS}`,
+      [fields.email, fields.role, fields.invitedBy, fields.invitedAt, fields.passwordHash]
+    )
     return rows[0] as UserRecord
+  },
+
+  // sets a new password and clears any lockout, used by the password reset
+  async setPasswordHash(userId: number, hash: string): Promise<void> {
+    const sql = useDb()
+    await sql(
+      `update users set password_hash = $1, failed_login_attempts = 0, locked_until = null
+       where id = $2`,
+      [hash, userId]
+    )
+  },
+
+  async recordLoginSuccess(userId: number): Promise<UserRecord | null> {
+    const sql = useDb()
+    const rows = await sql(
+      `update users set failed_login_attempts = 0, locked_until = null, last_login_at = now()
+       where id = $1
+       returning ${PUBLIC_COLUMNS}`,
+      [userId]
+    )
+    return (rows[0] as UserRecord) ?? null
+  },
+
+  // counts the failure and locks the account after five in a row
+  async recordLoginFailure(userId: number): Promise<void> {
+    const sql = useDb()
+    await sql(
+      `update users set
+         failed_login_attempts = case when failed_login_attempts + 1 >= $2 then 0 else failed_login_attempts + 1 end,
+         locked_until = case when failed_login_attempts + 1 >= $2
+                             then now() + ($3 || ' minutes')::interval
+                             else locked_until end
+       where id = $1`,
+      [userId, MAX_FAILED_ATTEMPTS, String(LOCK_MINUTES)]
+    )
   },
 
   async approve(userId: number, role: string): Promise<UserRecord | null> {
     const sql = useDb()
-    const rows = await sql`
-      update users set role = ${role}, active = true where id = ${userId}
-      returning *
-    `
+    const rows = await sql(
+      `update users set role = $1, active = true where id = $2 returning ${PUBLIC_COLUMNS}`,
+      [role, userId]
+    )
     return (rows[0] as UserRecord) ?? null
   },
 
   async setRole(userId: number, role: string): Promise<UserRecord | null> {
     const sql = useDb()
-    const rows = await sql`
-      update users set role = ${role} where id = ${userId}
-      returning *
-    `
+    const rows = await sql(
+      `update users set role = $1 where id = $2 returning ${PUBLIC_COLUMNS}`,
+      [role, userId]
+    )
     return (rows[0] as UserRecord) ?? null
   },
 
@@ -80,13 +144,13 @@ export const userRepository = {
 
   async findById(userId: number): Promise<UserRecord | null> {
     const sql = useDb()
-    const rows = await sql`select * from users where id = ${userId}`
+    const rows = await sql(`select ${PUBLIC_COLUMNS} from users where id = $1`, [userId])
     return (rows[0] as UserRecord) ?? null
   },
 
   async listActive(): Promise<UserRecord[]> {
     const sql = useDb()
-    const rows = await sql`select * from users where active = true order by email asc`
+    const rows = await sql(`select ${PUBLIC_COLUMNS} from users where active = true order by email asc`)
     return rows as UserRecord[]
   },
 
@@ -97,16 +161,16 @@ export const userRepository = {
   // join.
   async listAll(): Promise<UserRecord[]> {
     const sql = useDb()
-    const rows = await sql`select * from users order by created_at asc`
+    const rows = await sql(`select ${PUBLIC_COLUMNS} from users order by created_at asc`)
     return rows as UserRecord[]
   },
 
   async setActive(userId: number, active: boolean): Promise<UserRecord> {
     const sql = useDb()
-    const rows = await sql`
-      update users set active = ${active} where id = ${userId}
-      returning *
-    `
+    const rows = await sql(
+      `update users set active = $1 where id = $2 returning ${PUBLIC_COLUMNS}`,
+      [active, userId]
+    )
     return rows[0] as UserRecord
   },
 
@@ -121,13 +185,10 @@ export const userRepository = {
     fields: { displayName: string | null; avatarId: string }
   ): Promise<UserRecord | null> {
     const sql = useDb()
-    const rows = await sql`
-      update users set
-        display_name = ${fields.displayName},
-        avatar_id = ${fields.avatarId}
-      where id = ${userId}
-      returning *
-    `
+    const rows = await sql(
+      `update users set display_name = $1, avatar_id = $2 where id = $3 returning ${PUBLIC_COLUMNS}`,
+      [fields.displayName, fields.avatarId, userId]
+    )
     return (rows[0] as UserRecord) ?? null
   }
 }

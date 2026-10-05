@@ -1,24 +1,19 @@
 <script setup lang="ts">
-import { GoogleAuthProvider, signInWithPopup } from 'firebase/auth'
-
 definePageMeta({ layout: 'auth' })
 
-const { $firebaseAuth } = useNuxtApp()
-const { loggedIn } = useUserSession()
+const { loggedIn, fetch: refreshSession } = useUserSession()
 const route = useRoute()
 
 const token = computed(() => (typeof route.query.token === 'string' ? route.query.token : ''))
 
-const state = ref<'loading' | 'invalid' | 'finishing' | 'done' | 'failed'>('loading')
+const state = ref<'loading' | 'invalid' | 'ready' | 'saving'>('loading')
 const invite = ref<{ email: string; role: string } | null>(null)
+const password = ref('')
+const confirmPasswordValue = ref('')
 const errorMessage = ref('')
-const googleLoading = ref(false)
 
-// the invitee already set their password on firebase's own reset page
-// before landing here, firebase sent them here through the continueUrl
-// this app set when the invite was created. this page does not ask for
-// a password again, it only finishes creating the row in this app's own
-// users table so the person can log in normally afterward
+// the invitee lands here from the emailed link. the token is checked first,
+// then they choose a password, which creates the account and signs them in
 async function run() {
   // someone who is already signed in has nothing left to do on this page
   if (loggedIn.value) {
@@ -35,68 +30,41 @@ async function run() {
     invite.value = await $fetch<{ email: string; role: string }>('/api/invitations/validate', {
       query: { token: token.value }
     })
+    state.value = 'ready'
   } catch (error) {
     console.error('[accept-invite] validate failed:', error)
     state.value = 'invalid'
-    return
-  }
-
-  state.value = 'finishing'
-  try {
-    await $fetch('/api/invitations/finalize', {
-      method: 'POST',
-      body: { token: token.value }
-    })
-    state.value = 'done'
-  } catch (error) {
-    console.error('[accept-invite] finalize failed:', error)
-    // a 404 here almost always means this invite was already finished,
-    // for example the person opened the same email link twice, in which
-    // case the account already exists and this should not look like a
-    // failure to them
-    if ((error as any)?.statusCode === 404 || (error as any)?.response?.status === 404) {
-      state.value = 'done'
-      return
-    }
-    errorMessage.value =
-      (error as any)?.data?.statusMessage
-      ?? (error as any)?.message
-      ?? 'Could not finish setting up your account.'
-    state.value = 'failed'
   }
 }
 
 await run()
 
-// kept as an alternative for someone who would rather sign in with
-// google than set a password at all, this does not depend on the
-// password step above
-async function acceptWithGoogle() {
+async function submit() {
   errorMessage.value = ''
-  googleLoading.value = true
+
+  if (password.value.length < 8) {
+    errorMessage.value = 'Password must be at least 8 characters.'
+    return
+  }
+  if (password.value !== confirmPasswordValue.value) {
+    errorMessage.value = 'Passwords do not match.'
+    return
+  }
+
+  state.value = 'saving'
   try {
-    const provider = new GoogleAuthProvider()
-    provider.setCustomParameters({ prompt: 'select_account', login_hint: invite.value?.email ?? '' })
-    const result = await signInWithPopup($firebaseAuth, provider)
-    const idToken = await result.user.getIdToken()
-
-    await $fetch('/api/invitations/accept-google', {
+    await $fetch('/api/invitations/accept', {
       method: 'POST',
-      body: { token: token.value, idToken }
+      body: { token: token.value, password: password.value }
     })
-
-    const { fetch: refreshSession } = useUserSession()
-    await $fetch('/api/auth/session', { method: 'POST', body: { idToken } })
+    // the server signed the person in, so pull the fresh session before moving on
     await refreshSession()
     await navigateTo('/')
   } catch (error) {
-    console.error('[accept-invite] google accept failed:', error)
+    console.error('[accept-invite] accept failed:', error)
     errorMessage.value =
-      (error as any)?.data?.statusMessage
-      ?? (error as any)?.message
-      ?? 'Could not accept this invite with Google, please try again.'
-  } finally {
-    googleLoading.value = false
+      (error as any)?.data?.statusMessage ?? 'Could not finish setting up your account.'
+    state.value = 'ready'
   }
 }
 </script>
@@ -106,8 +74,8 @@ async function acceptWithGoogle() {
     <div
       class="w-full max-w-sm rounded-lg border border-border bg-foreground p-8 text-center"
     >
-      <template v-if="state === 'loading' || state === 'finishing'">
-        <p class="text-sm text-body">Setting up your account...</p>
+      <template v-if="state === 'loading'">
+        <p class="text-sm text-body">Checking your invite...</p>
       </template>
 
       <template v-else-if="state === 'invalid'">
@@ -122,42 +90,65 @@ async function acceptWithGoogle() {
         </NuxtLink>
       </template>
 
-      <template v-else-if="state === 'done'">
+      <template v-else>
         <h1 class="mb-2 text-xl font-semibold text-heading">
-          You're all set
+          Set your password
         </h1>
         <p class="mb-6 text-sm text-body">
-          Your account has been created for {{ invite?.email }}. You can now log in with the
-          password you just set.
+          Choose a password to finish joining the team.
         </p>
-        <NuxtLink to="/login" class="text-sm text-[#245CB1] hover:underline dark:text-[#5B8FE0]">
-          Go to login
-        </NuxtLink>
-      </template>
 
-      <template v-else-if="state === 'failed'">
-        <h1 class="mb-2 text-xl font-semibold text-heading">
-          Something went wrong
-        </h1>
-        <p class="mb-2 text-sm text-body">
+        <form class="space-y-3 text-left" @submit.prevent="submit">
+          <div>
+            <label class="mb-1 block text-xs font-medium text-body">
+              Email
+            </label>
+            <InputText
+              :model-value="invite?.email"
+              type="email"
+              class="w-full"
+              readonly
+            />
+          </div>
+          <div>
+            <label class="mb-1 block text-xs font-medium text-body">
+              Password
+            </label>
+            <Password
+              v-model="password"
+              placeholder="At least 8 characters"
+              class="w-full"
+              input-class="w-full"
+              toggle-mask
+              autocomplete="new-password"
+              required
+            />
+          </div>
+          <div>
+            <label class="mb-1 block text-xs font-medium text-body">
+              Confirm password
+            </label>
+            <Password
+              v-model="confirmPasswordValue"
+              placeholder="Repeat your password"
+              class="w-full"
+              input-class="w-full"
+              :feedback="false"
+              toggle-mask
+              autocomplete="new-password"
+              required
+            />
+          </div>
+          <Button
+            type="submit"
+            label="Create account"
+            class="w-full"
+            :loading="state === 'saving'"
+          />
+        </form>
+
+        <p v-if="errorMessage" class="mt-3 text-sm text-red-500">
           {{ errorMessage }}
-        </p>
-        <p class="mb-6 text-sm text-body">
-          If you already set a password, try logging in directly. Otherwise you can also
-          continue with Google below.
-        </p>
-
-        <Button
-          label="Continue with Google"
-          class="w-full"
-          :loading="googleLoading"
-          @click="acceptWithGoogle"
-        />
-
-        <p class="mt-4">
-          <NuxtLink to="/login" class="text-sm text-[#245CB1] hover:underline dark:text-[#5B8FE0]">
-            Back to login
-          </NuxtLink>
         </p>
       </template>
     </div>

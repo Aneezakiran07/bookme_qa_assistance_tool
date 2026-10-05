@@ -95,11 +95,20 @@ async function sendInvite() {
 
   sendingInvite.value = true
   try {
-    await $fetch('/api/invitations', {
+    const result = await $fetch<{ emailSent: boolean }>('/api/invitations', {
       method: 'POST',
       body: { email, role: inviteRole.value },
     })
-    toast.add({ severity: 'success', summary: 'Invite sent', life: 3000 })
+    if (result.emailSent) {
+      toast.add({ severity: 'success', summary: 'Invite sent', life: 3000 })
+    } else {
+      toast.add({
+        severity: 'warn',
+        summary: 'Invite created, but the email could not be sent',
+        detail: 'You can resend it from the Outstanding Invites table.',
+        life: 5000,
+      })
+    }
     inviteModalOpen.value = false
     await refresh()
   } catch (error) {
@@ -111,6 +120,32 @@ async function sendInvite() {
     })
   } finally {
     sendingInvite.value = false
+  }
+}
+
+// -- resend invite --
+const resendingId = ref<number | null>(null)
+
+async function resendInvite(invite: OutstandingInviteRow) {
+  resendingId.value = invite.id
+  try {
+    const result = await $fetch<{ emailSent: boolean }>(`/api/invitations/${invite.id}/resend`, {
+      method: 'POST',
+    })
+    if (result.emailSent) {
+      toast.add({ severity: 'success', summary: 'Invite sent again', life: 3000 })
+    } else {
+      toast.add({ severity: 'warn', summary: 'The email could not be sent', life: 4000 })
+    }
+  } catch (error) {
+    toast.add({
+      severity: 'error',
+      summary: 'Could not resend this invite',
+      detail: (error as any)?.data?.statusMessage ?? 'Please try again.',
+      life: 4000,
+    })
+  } finally {
+    resendingId.value = null
   }
 }
 
@@ -396,6 +431,15 @@ async function deactivate(user: ActiveUserRow) {
         </template>
 
         <template #actions="{ data: row }">
+          <div class="flex justify-end gap-2">
+          <BaseButton
+            label="Resend"
+            variant="secondary"
+            size="sm"
+            icon="pi pi-send"
+            :loading="resendingId === row.id"
+            @click="resendInvite(row)"
+          />
           <BaseButton
             label="Revoke"
             variant="dangerOutline"
@@ -403,6 +447,7 @@ async function deactivate(user: ActiveUserRow) {
             icon="pi pi-times"
             @click="revokeInvite(row)"
           />
+          </div>
         </template>
       </AppDataTable>
     </div>

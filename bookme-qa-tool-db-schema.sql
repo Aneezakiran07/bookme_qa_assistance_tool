@@ -15,7 +15,11 @@ create table users (
   daily_digest_enabled boolean not null default true,
   avatar_id text not null default 'cat',
   invited_by integer references users(id),
-  invited_at timestamptz
+  invited_at timestamptz,
+  password_hash text,
+  last_login_at timestamptz,
+  failed_login_attempts integer not null default 0,
+  locked_until timestamptz
 );
 -- there is no Pending role anymore, people join through an invitation with a role already set
 -- new users land here as role='Pending', active=false on first Google login
@@ -385,3 +389,16 @@ create index idx_requirements_project on requirements (project_id, module_id) wh
 create index idx_test_cases_project   on test_cases (project_id, module_id) where archived = false;
 create index idx_bugs_project_status  on bugs (project_id, status) where archived = false;
 create index idx_bugs_project_release on bugs (project_id, release_id);
+
+create index idx_users_last_login_at on users (last_login_at);
+
+-- password reset requests, kept separate from invitations on purpose
+create table password_resets (
+  id serial primary key,
+  user_id integer not null references users(id) on delete cascade,
+  token_hash text not null unique,
+  created_at timestamptz not null default now(),
+  expires_at timestamptz not null,
+  used_at timestamptz
+);
+create index idx_password_resets_user on password_resets (user_id);
