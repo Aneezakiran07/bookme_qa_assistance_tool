@@ -5,7 +5,9 @@ import { sendPasswordResetEmail } from '~~/server/utils/email'
 
 const RESET_EXPIRY_MINUTES = 60
 const MAX_RESETS_PER_HOUR = 3
-
+// every answer takes at least this long, so a reply cannot reveal
+// whether the email has an account
+const MIN_RESPONSE_MS = 1500
 // public. always answers the same way with the same timing, whether or not
 // the email has an account, so it cannot be used to find out who is a user
 // all the real work runs after the response goes out
@@ -35,13 +37,21 @@ async function createAndSendReset(email: string): Promise<void> {
   }
 }
 
+
 export default defineEventHandler(async (event) => {
+  const startedAt = Date.now()
   const body = await readBody<{ email?: string }>(event)
   const email = typeof body?.email === 'string' ? body.email.trim().toLowerCase() : ''
 
   if (email) {
-    // waitUntil keeps the work alive on serverless after the response is sent
-    event.waitUntil(createAndSendReset(email))
+    // the work now finishes before the response goes out, since serverless
+    // functions can be paused as soon as a response is sent
+    await createAndSendReset(email)
+  }
+
+  const remaining = MIN_RESPONSE_MS - (Date.now() - startedAt)
+  if (remaining > 0) {
+    await new Promise((resolve) => setTimeout(resolve, remaining))
   }
 
   return { success: true }
