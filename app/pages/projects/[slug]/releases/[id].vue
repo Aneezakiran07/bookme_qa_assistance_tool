@@ -41,6 +41,7 @@ interface BugRow {
   severity: 'Critical' | 'High' | 'Medium' | 'Low'
   status: string
   owner_email: string | null
+  owner_avatar_id: string | null
   module_name: string
 }
 
@@ -50,6 +51,7 @@ interface ExecutionHistoryRow {
   test_case_title_snapshot: string | null
   result: 'Pass' | 'Fail' | 'Blocked' | 'Not Run'
   executed_by_email: string | null
+  executed_by_avatar_id: string | null
   execution_date: string
   actual_result: string | null
 }
@@ -341,8 +343,10 @@ async function saveEdit() {
                   <StatusBadge :status="bug.status" size="sm" />
                   <span class="text-xs text-gray-400 dark:text-zinc-500">{{ bug.module_name }}</span>
                 </div>
-                <p v-if="bug.owner_email" class="text-xs text-gray-400 dark:text-zinc-500">
-                  Owner: {{ bug.owner_email }}
+                <p v-if="bug.owner_email" class="flex items-center gap-1.5 text-xs text-gray-400 dark:text-zinc-500">
+                  Owner:
+                  <AppAvatar :avatar-id="bug.owner_avatar_id" size="xs" />
+                  {{ bug.owner_email }}
                 </p>
               </li>
             </ul>
@@ -372,7 +376,11 @@ async function saveEdit() {
             />
           </template>
           <template #cell-executed_by_email="{ data: row }">
-            <span class="text-sm text-body">{{ row.executed_by_email ?? '—' }}</span>
+            <div v-if="row.executed_by_email" class="flex items-center gap-2">
+              <AppAvatar :avatar-id="row.executed_by_avatar_id" size="xs" />
+              <span class="text-sm text-body">{{ row.executed_by_email }}</span>
+            </div>
+            <span v-else class="text-sm text-body">—</span>
           </template>
           <template #cell-execution_date="{ data: row }">
             <span class="text-sm text-body">

@@ -23,7 +23,8 @@ export const bugStatusHistoryRepository = {
     const rows = await sql`
       select
         h.*,
-        u.email as changed_by_email
+        u.email as changed_by_email,
+        u.avatar_id as changed_by_avatar_id
       from bug_status_history h
       left join users u on u.id = h.changed_by
       where h.bug_id = ${bugId}

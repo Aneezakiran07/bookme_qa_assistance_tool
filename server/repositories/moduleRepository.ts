@@ -15,6 +15,7 @@ export interface ModuleRecord {
 // delete-block check never need a second round trip.
 export interface ModuleWithMeta extends ModuleRecord {
   created_by_email: string | null
+  created_by_avatar_id: string | null
   requirements_count: number
   test_cases_count: number
 }
@@ -29,6 +30,7 @@ export const moduleRepository = {
       select
         m.*,
         u.email as created_by_email,
+        u.avatar_id as created_by_avatar_id,
         coalesce(r.cnt, 0)::int as requirements_count,
         coalesce(t.cnt, 0)::int as test_cases_count
       from modules m

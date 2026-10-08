@@ -14,6 +14,7 @@ interface ActiveUserRow {
   role: 'Admin' | 'QA Lead' | 'Tester' | 'Developer'
   active: boolean
   created_at: string
+  avatar_id: string | null
 }
 
 interface OutstandingInviteRow {
@@ -21,6 +22,7 @@ interface OutstandingInviteRow {
   email: string
   role: 'Admin' | 'QA Lead' | 'Tester' | 'Developer'
   invited_by_email: string | null
+  invited_by_avatar_id: string | null
   created_at: string
   expires_at: string
 }
@@ -40,15 +42,8 @@ const activeUsers = computed(() => data.value?.active ?? [])
 const inactiveUsers = computed(() => data.value?.inactive ?? [])
 const outstandingInvites = computed(() => data.value?.invitations ?? [])
 
-// -- avatar helpers, schema has no display name column so initials and a
-// readable label are both derived from the email's local part --
-function initials(email: string) {
-  const name = email.split('@')[0] ?? ''
-  const parts = name.split(/[.\-_]/).filter(Boolean)
-  if (parts.length >= 2) return ((parts[0]?.[0] ?? '') + (parts[1]?.[0] ?? '')).toUpperCase()
-  return name.slice(0, 2).toUpperCase() || '??'
-}
-
+// -- display name helper, schema has no display name column so a readable label
+// is derived from the email local part --
 function displayName(email: string) {
   const name = email.split('@')[0] ?? email
   return name
@@ -373,13 +368,7 @@ async function deactivate(user: ActiveUserRow) {
       >
         <template #cell-email="{ data: row }">
           <div class="flex items-center gap-3">
-            <span
-              class="flex h-8 w-8 shrink-0 items-center justify-center rounded-full
-                     bg-[#245CB1]/10 text-xs font-semibold text-heading
-                     dark:bg-[#5B8FE0]/15"
-            >
-              {{ initials(row.email) }}
-            </span>
+            <AppAvatar :avatar-id="row.avatar_id" size="sm" />
             <div class="min-w-0">
               <p class="flex items-center gap-1.5 truncate text-sm font-medium text-heading">
                 {{ displayName(row.email) }}
@@ -512,9 +501,11 @@ async function deactivate(user: ActiveUserRow) {
         </template>
 
         <template #cell-invited_by_email="{ data: row }">
-          <span class="text-sm text-body">
-            {{ row.invited_by_email ?? '--' }}
-          </span>
+          <div v-if="row.invited_by_email" class="flex items-center gap-2">
+            <AppAvatar :avatar-id="row.invited_by_avatar_id" size="xs" />
+            <span class="text-sm text-body">{{ row.invited_by_email }}</span>
+          </div>
+          <span v-else class="text-sm text-body">--</span>
         </template>
 
         <template #cell-expires_at="{ data: row }">

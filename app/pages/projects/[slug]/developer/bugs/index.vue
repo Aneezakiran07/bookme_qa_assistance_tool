@@ -20,6 +20,7 @@ interface DeveloperBugRow {
   owner_email: string | null
   reported_by: number | null
   reported_by_email: string | null
+  reported_by_avatar_id: string | null
   reported_at: string
 }
 
@@ -305,7 +306,10 @@ function viewBug(bug: DeveloperBugRow) {
       </template>
 
       <template #cell-reported_by_email="{ data: row }">
-        <span class="text-sm text-body">{{ row.reported_by_email ?? 'Unknown' }}</span>
+        <div class="flex items-center gap-2">
+          <AppAvatar v-if="row.reported_by_email" :avatar-id="row.reported_by_avatar_id" size="xs" />
+          <span class="text-sm text-body">{{ row.reported_by_email ?? 'Unknown' }}</span>
+        </div>
       </template>
 
       <template #cell-created_on="{ data: row }">

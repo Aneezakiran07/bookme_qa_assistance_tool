@@ -20,6 +20,7 @@ interface TestCaseState {
   latest_result: string | null
   last_executed_at: string | null
   last_executed_by_email: string | null
+  last_executed_by_avatar_id: string | null
   latest_actual_result: string | null
   executions_count: number
 }
@@ -365,8 +366,10 @@ function statusKey(latest: string | null): string {
               class="text-xs text-gray-400 dark:text-zinc-500"
             >
               Last executed {{ new Date(selectedTestCase.last_executed_at).toLocaleString() }}
-              <span v-if="selectedTestCase.last_executed_by_email">
-                by {{ selectedTestCase.last_executed_by_email }}
+              <span v-if="selectedTestCase.last_executed_by_email" class="inline-flex items-center gap-1 align-middle">
+                by
+                <AppAvatar :avatar-id="selectedTestCase.last_executed_by_avatar_id" size="xs" />
+                {{ selectedTestCase.last_executed_by_email }}
               </span>
               · {{ selectedTestCase.executions_count }} run{{ selectedTestCase.executions_count === 1 ? '' : 's' }} total
             </div>

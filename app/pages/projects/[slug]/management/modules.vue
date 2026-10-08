@@ -15,6 +15,7 @@ interface ModuleRow {
   created_by: number | null
   created_at: string
   created_by_email: string | null
+  created_by_avatar_id: string | null
   requirements_count: number
   test_cases_count: number
 }
@@ -39,16 +40,8 @@ const columns = [
   { field: 'linked_items', header: 'Linked Items' }
 ]
 
-// -- avatar helpers, schema has no display name column so initials and a
-// readable label are both derived from the email's local part (same
-// convention as admin/users.vue) --
-function initials(email: string) {
-  const name = email.split('@')[0] ?? ''
-  const parts = name.split(/[.\-_]/).filter(Boolean)
-  if (parts.length >= 2) return ((parts[0]?.[0] ?? '') + (parts[1]?.[0] ?? '')).toUpperCase()
-  return name.slice(0, 2).toUpperCase() || '??'
-}
-
+// -- display name helper, schema has no display name column so a readable label
+// is derived from the email local part --
 function displayName(email: string) {
   const name = email.split('@')[0] ?? email
   return name
@@ -196,13 +189,7 @@ async function deleteModule(row: ModuleRow) {
 
       <template #cell-created_by_email="{ data: row }">
         <div v-if="row.created_by_email" class="flex items-center gap-2">
-          <span
-            class="flex h-7 w-7 shrink-0 items-center justify-center rounded-full
-                   bg-[#245CB1]/10 text-xs font-semibold text-heading
-                   dark:bg-[#5B8FE0]/15"
-          >
-            {{ initials(row.created_by_email) }}
-          </span>
+          <AppAvatar :avatar-id="row.created_by_avatar_id" size="sm" />
           <span class="truncate text-sm text-body">
             {{ displayName(row.created_by_email) }}
           </span>

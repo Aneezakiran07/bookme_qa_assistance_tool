@@ -25,6 +25,7 @@ export interface TestCaseExecutionState {
   latest_result: string | null
   last_executed_at: string | null
   last_executed_by_email: string | null
+  last_executed_by_avatar_id: string | null
   latest_actual_result: string | null
   executions_count: number
 }
@@ -68,6 +69,7 @@ export const executionRepository = {
         l.execution_date as last_executed_at,
         l.actual_result as latest_actual_result,
         u.email as last_executed_by_email,
+        u.avatar_id as last_executed_by_avatar_id,
         coalesce(c.cnt, 0) as executions_count
       from test_case_release_links trl
       join test_cases tc on tc.id = trl.test_case_id and tc.archived = false

@@ -24,7 +24,9 @@ export const bugAssignmentLogRepository = {
       select
         l.*,
         assignee.email as assigned_to_email,
-        assigner.email as assigned_by_email
+        assignee.avatar_id as assigned_to_avatar_id,
+        assigner.email as assigned_by_email,
+        assigner.avatar_id as assigned_by_avatar_id
       from bug_assignment_log l
       left join users assignee on assignee.id = l.assigned_to
       left join users assigner on assigner.id = l.assigned_by

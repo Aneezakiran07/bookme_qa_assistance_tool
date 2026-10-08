@@ -58,6 +58,7 @@ interface DashboardResponse {
     test_case_title: string
     module_name: string
     executed_by_email: string
+    executed_by_avatar_id: string | null
     release_version: string
   }[]
 }
@@ -195,10 +196,6 @@ const requirementsSegments = computed(() => {
     dotClass: REQ_STATUS_CLASSES[status]!.dot
   }))
 })
-
-function initials(email: string) {
-  return (email.split('@')[0] ?? '').slice(0, 2).toUpperCase()
-}
 
 function bugCode(bugNumber: number) {
   return `BUG-${bugNumber.toString().padStart(3, '0')}`
@@ -425,12 +422,7 @@ function executionStatusKey(result: string): string {
           class="flex items-center justify-between gap-3 border-b border-border p-3 last:border-b-0"
         >
           <div class="flex min-w-0 items-center gap-2.5">
-            <span
-              class="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[#245CB1]/10 text-xs font-semibold
-                     text-heading dark:bg-[#5B8FE0]/15"
-            >
-              {{ initials(run.executed_by_email) }}
-            </span>
+            <AppAvatar :avatar-id="run.executed_by_avatar_id" size="sm" />
             <div class="min-w-0">
               <p class="truncate text-sm font-medium text-heading">{{ run.test_case_title }}</p>
               <p class="text-xs text-gray-400 dark:text-zinc-500">

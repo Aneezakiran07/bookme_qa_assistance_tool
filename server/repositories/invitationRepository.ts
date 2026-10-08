@@ -14,6 +14,7 @@ export interface InvitationRecord {
 
 export interface OutstandingInvitationRecord extends InvitationRecord {
   invited_by_email: string | null
+  invited_by_avatar_id: string | null
 }
 
 // this file is the only place that talks to the invitations table
@@ -60,7 +61,7 @@ export const invitationRepository = {
   async listOutstanding(): Promise<OutstandingInvitationRecord[]> {
     const sql = useDb()
     const rows = await sql`
-      select invitations.*, inviter.email as invited_by_email
+      select invitations.*, inviter.email as invited_by_email, inviter.avatar_id as invited_by_avatar_id
       from invitations
       left join users inviter on inviter.id = invitations.invited_by
       where invitations.accepted_at is null and invitations.revoked_at is null

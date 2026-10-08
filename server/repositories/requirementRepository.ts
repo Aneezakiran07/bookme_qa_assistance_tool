@@ -19,6 +19,7 @@ export interface RequirementRecord {
 export interface RequirementWithMeta extends RequirementRecord {
   module_name: string
   created_by_email: string | null
+  created_by_avatar_id: string | null
   linked_test_cases_count: number
 }
 
@@ -34,6 +35,7 @@ export const requirementRepository = {
             r.*,
             m.name as module_name,
             u.email as created_by_email,
+            u.avatar_id as created_by_avatar_id,
             coalesce(l.cnt, 0)::int as linked_test_cases_count
           from requirements r
           join modules m on m.id = r.module_id
@@ -53,6 +55,7 @@ export const requirementRepository = {
             r.*,
             m.name as module_name,
             u.email as created_by_email,
+            u.avatar_id as created_by_avatar_id,
             coalesce(l.cnt, 0)::int as linked_test_cases_count
           from requirements r
           join modules m on m.id = r.module_id

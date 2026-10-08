@@ -265,6 +265,7 @@ export const dashboardRepository = {
         tc.title as test_case_title,
         m.name as module_name,
         u.email as executed_by_email,
+        u.avatar_id as executed_by_avatar_id,
         r.version as release_version
       from test_executions te
       join test_cases tc on tc.id = te.test_case_id

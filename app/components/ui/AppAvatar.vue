@@ -5,7 +5,7 @@
 const props = withDefaults(
   defineProps<{
     avatarId: string | null | undefined
-    size?: 'sm' | 'md' | 'lg'
+    size?: 'xs' | 'sm' | 'md' | 'lg'
   }>(),
   { size: 'md' }
 )
@@ -13,6 +13,7 @@ const props = withDefaults(
 const avatar = computed(() => getAvatarById(props.avatarId))
 
 const SIZE_CLASSES: Record<string, string> = {
+  xs: 'h-6 w-6',
   sm: 'h-8 w-8',
   md: 'h-14 w-14',
   lg: 'h-20 w-20'

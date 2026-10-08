@@ -1,10 +1,11 @@
 <script setup lang="ts">
-// assignee picker showing each user as an initials avatar plus a role
+// assignee picker showing each user with their chosen avatar plus a role
 // badge (Dev, QA Lead, Tester, Admin), backed by GET /api/users.
 interface UserOption {
   id: number
   email: string
   role: string
+  avatar_id: string | null
 }
 
 const props = withDefaults(
@@ -21,11 +22,6 @@ defineEmits<{ 'update:modelValue': [number | null] }>()
 const dropdownPt = useDropdownPt()
 
 const { data: users } = await useFetch<UserOption[]>('/api/users')
-
-function initials(email: string) {
-  const name = email.split('@')[0]
-  return (name ?? '').slice(0, 2).toUpperCase()
-}
 
 // short label so the badge fits next to an avatar in a tight dropdown row
 const ROLE_SHORT: Record<string, string> = {
@@ -53,12 +49,7 @@ const ROLE_SHORT: Record<string, string> = {
     <template #value="{ value }">
       <div v-if="value && users" class="flex items-center gap-2">
         <template v-for="u in users.filter((u) => u.id === value)" :key="u.id">
-          <span
-            class="flex h-6 w-6 items-center justify-center rounded-full bg-[#245CB1]/10
-                   text-xs font-semibold text-heading dark:bg-[#5B8FE0]/15"
-          >
-            {{ initials(u.email) }}
-          </span>
+          <AppAvatar :avatar-id="u.avatar_id" size="xs" />
           <span>{{ u.email }}</span>
         </template>
       </div>
@@ -66,12 +57,7 @@ const ROLE_SHORT: Record<string, string> = {
 
     <template #option="{ option }">
       <div class="flex w-full items-center gap-2">
-        <span
-          class="flex h-6 w-6 items-center justify-center rounded-full bg-[#245CB1]/10
-                 text-xs font-semibold text-heading dark:bg-[#5B8FE0]/15"
-        >
-          {{ initials(option.email) }}
-        </span>
+        <AppAvatar :avatar-id="option.avatar_id" size="xs" />
         <span class="flex-1 truncate">{{ option.email }}</span>
         <span
           class="rounded-full bg-secondary px-2 py-0.5 text-[10px] font-medium text-body"

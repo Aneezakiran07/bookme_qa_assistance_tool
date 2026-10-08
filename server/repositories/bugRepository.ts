@@ -28,7 +28,9 @@ export interface BugWithMeta extends BugRecord {
   bug_code?: string
   module_name: string
   owner_email: string | null
+  owner_avatar_id: string | null
   reported_by_email: string | null
+  reported_by_avatar_id: string | null
   release_version: string | null
   linked_test_case_title: string | null
   linked_test_case_steps: string | null
@@ -72,7 +74,9 @@ export const bugRepository = {
         b.*,
         m.name as module_name,
         owner.email as owner_email,
+        owner.avatar_id as owner_avatar_id,
         reporter.email as reported_by_email,
+        reporter.avatar_id as reported_by_avatar_id,
         r.version as release_version,
         tc.title as linked_test_case_title
       from bugs b
@@ -102,7 +106,9 @@ export const bugRepository = {
         b.*,
         m.name as module_name,
         owner.email as owner_email,
+        owner.avatar_id as owner_avatar_id,
         reporter.email as reported_by_email,
+        reporter.avatar_id as reported_by_avatar_id,
         r.version as release_version,
         tc.title as linked_test_case_title,
         tc.steps as linked_test_case_steps
@@ -179,7 +185,9 @@ export const bugRepository = {
         'BUG-' || lpad(b.bug_number::text, 3, '0') as bug_code,
         m.name as module_name,
         owner.email as owner_email,
+        owner.avatar_id as owner_avatar_id,
         reporter.email as reported_by_email,
+        reporter.avatar_id as reported_by_avatar_id,
         r.version as release_version,
         tc.title as linked_test_case_title,
         tc.steps as linked_test_case_steps,
@@ -215,7 +223,9 @@ export const bugRepository = {
         b.*,
         m.name as module_name,
         owner.email as owner_email,
+        owner.avatar_id as owner_avatar_id,
         reporter.email as reported_by_email,
+        reporter.avatar_id as reported_by_avatar_id,
         r.version as release_version,
         tc.title as linked_test_case_title
       from bugs b

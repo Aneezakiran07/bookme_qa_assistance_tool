@@ -39,6 +39,7 @@ export interface ReleaseExecutionHistoryRow {
   test_case_title_snapshot: string | null
   result: 'Pass' | 'Fail' | 'Blocked' | 'Not Run'
   executed_by_email: string | null
+  executed_by_avatar_id: string | null
   execution_date: string
   actual_result: string | null
 }
@@ -170,6 +171,7 @@ export const releaseRepository = {
         te.test_case_title_snapshot,
         te.result,
         u.email as executed_by_email,
+        u.avatar_id as executed_by_avatar_id,
         te.execution_date,
         te.actual_result
       from test_executions te

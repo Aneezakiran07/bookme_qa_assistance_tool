@@ -17,6 +17,7 @@ interface BugDetail {
   status: string
   owner_id: number | null
   owner_email: string | null
+  owner_avatar_id: string | null
   environment_build: string | null
   linked_test_case_id: number | null
   linked_test_case_title: string | null
@@ -26,6 +27,7 @@ interface BugDetail {
   release_version: string | null
   reported_by: number | null
   reported_by_email: string | null
+  reported_by_avatar_id: string | null
   reported_at: string
   last_status_change_at: string
   steps_to_reproduce: string | null
@@ -51,8 +53,10 @@ interface AssignmentLogRow {
   id: number
   assigned_to: number
   assigned_to_email: string | null
+  assigned_to_avatar_id: string | null
   assigned_by: number | null
   assigned_by_email: string | null
+  assigned_by_avatar_id: string | null
   assigned_at: string
   severity_at_assignment: string | null
 }
@@ -63,6 +67,7 @@ interface StatusHistoryRow {
   new_status: string
   changed_by: number | null
   changed_by_email: string | null
+  changed_by_avatar_id: string | null
   changed_at: string
 }
 
@@ -374,6 +379,7 @@ const timelineEntries = computed(() => {
     iconClass: 'text-[#245CB1] dark:text-[#5B8FE0]',
     title: h.old_status ? `${h.old_status} \u2192 ${h.new_status}` : `Reported as ${h.new_status}`,
     detail: h.changed_by_email ? `by ${h.changed_by_email}` : undefined,
+    detailAvatarId: h.changed_by_email ? h.changed_by_avatar_id : null,
     timestamp: h.changed_at
   }))
   const assignmentEntries = assignmentLog.value.map((a) => ({
@@ -381,7 +387,9 @@ const timelineEntries = computed(() => {
     icon: 'pi pi-user',
     iconClass: 'text-sky-600 dark:text-sky-400',
     title: `Assigned to ${a.assigned_to_email ?? 'a user'}`,
+    titleAvatarId: a.assigned_to_email ? a.assigned_to_avatar_id : null,
     detail: a.assigned_by_email ? `by ${a.assigned_by_email}` : undefined,
+    detailAvatarId: a.assigned_by_email ? a.assigned_by_avatar_id : null,
     timestamp: a.assigned_at
   }))
   return [...statusEntries, ...assignmentEntries].sort(
@@ -484,8 +492,10 @@ const timelineEntries = computed(() => {
             </span>
           </div>
 
-          <p class="mt-3 text-xs text-gray-400 dark:text-zinc-500">
-            Reported by {{ bug.reported_by_email ?? 'unknown' }}
+          <p class="mt-3 flex flex-wrap items-center gap-1.5 text-xs text-gray-400 dark:text-zinc-500">
+            Reported by
+            <AppAvatar v-if="bug.reported_by_email" :avatar-id="bug.reported_by_avatar_id" size="xs" />
+            {{ bug.reported_by_email ?? 'unknown' }}
             on {{ new Date(bug.reported_at).toLocaleString() }}
           </p>
         </div>
