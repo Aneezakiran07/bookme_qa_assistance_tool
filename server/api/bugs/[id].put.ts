@@ -190,7 +190,7 @@ export default defineEventHandler(async (event) => {
 
     // the send is awaited, because serverless functions can stop right after the response and drop it
     // a failed email should never turn a successful reassignment into a 500
-    // only Critical and High bugs that are not Closed or Fixed send an assignment email
+    // only Critical and High bugs that are Open or in Retest send an assignment email
     if (shouldSendAssignmentEmail(severity, status)) {
       await sendBugAssignmentEmail({
         to: newOwner.email,
