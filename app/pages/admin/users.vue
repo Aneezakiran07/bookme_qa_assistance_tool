@@ -32,10 +32,12 @@ const dropdownPt = useDropdownPt()
 
 const { data, refresh, pending: loadingUsers } = await useFetch<{
   active: ActiveUserRow[]
+  inactive: ActiveUserRow[]
   invitations: OutstandingInviteRow[]
 }>('/api/admin/users')
 
 const activeUsers = computed(() => data.value?.active ?? [])
+const inactiveUsers = computed(() => data.value?.inactive ?? [])
 const outstandingInvites = computed(() => data.value?.invitations ?? [])
 
 // -- avatar helpers, schema has no display name column so initials and a
@@ -65,6 +67,12 @@ function formatDate(value: string) {
 }
 
 const activeColumns = [
+  { field: 'email', header: 'User' },
+  { field: 'role', header: 'Role' },
+  { field: 'created_at', header: 'Joined', sortable: true },
+]
+
+const inactiveColumns = [
   { field: 'email', header: 'User' },
   { field: 'role', header: 'Role' },
   { field: 'created_at', header: 'Joined', sortable: true },
@@ -182,6 +190,35 @@ async function revokeInvite(invite: OutstandingInviteRow) {
 // there is no one left signed in on this page to undo it afterward
 const { user: sessionUser, fetch: refreshSession } = useUserSession()
 
+// -- activate again --
+const activatingId = ref<number | null>(null)
+
+async function activate(user: ActiveUserRow) {
+  const confirmed = await confirmDialogRef.value?.open({
+    title: 'Activate this account?',
+    message: `${user.email} will be able to sign in again right away, with the same password and the ${user.role} role.`,
+    confirmLabel: 'Activate',
+    danger: false,
+  })
+  if (!confirmed) return
+
+  activatingId.value = user.id
+  try {
+    await $fetch('/api/admin/activate-user', { method: 'POST', body: { userId: user.id } })
+    toast.add({ severity: 'success', summary: 'User access activated', life: 3000 })
+    await refresh()
+  } catch (error) {
+    toast.add({
+      severity: 'error',
+      summary: 'Could not activate this user',
+      detail: (error as any)?.data?.statusMessage ?? 'Please try again.',
+      life: 4000,
+    })
+  } finally {
+    activatingId.value = null
+  }
+}
+
 // -- change role --
 // the dropdown in the table stays bound to the saved role, so if the request
 // fails or the person cancels, it simply keeps showing the old role
@@ -244,7 +281,7 @@ async function deactivate(user: ActiveUserRow) {
         }
       : {
           title: 'Deactivate access?',
-          message: `${user.email} will lose access immediately. You can invite them again later from this page.`,
+          message: `${user.email} will lose access immediately. You can activate them again later from the Deactivated Team Members list.`,
           confirmLabel: 'Deactivate',
           danger: true,
         }
@@ -304,11 +341,16 @@ async function deactivate(user: ActiveUserRow) {
     </div>
 
     <!-- summary metrics -->
-    <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+    <div class="grid grid-cols-1 gap-4 sm:grid-cols-3">
       <MetricCard
         label="Active Team Members"
         :value="activeUsers.length"
         icon="pi pi-users"
+      />
+      <MetricCard
+        label="Deactivated"
+        :value="inactiveUsers.length"
+        icon="pi pi-ban"
       />
       <MetricCard
         label="Outstanding Invites"
@@ -381,6 +423,57 @@ async function deactivate(user: ActiveUserRow) {
             size="sm"
             icon="pi pi-ban"
             @click="deactivate(row)"
+          />
+        </template>
+      </AppDataTable>
+    </div>
+
+    <!-- deactivated team members, shown only when there are some -->
+    <div v-if="inactiveUsers.length">
+      <h2 class="mb-3 text-sm font-semibold text-body">
+        Deactivated Team Members
+      </h2>
+      <AppDataTable
+        :value="inactiveUsers"
+        :columns="inactiveColumns"
+        :loading="loadingUsers"
+        search-placeholder="Search deactivated users..."
+        empty-message="No deactivated users."
+      >
+        <template #cell-email="{ data: row }">
+          <div class="min-w-0">
+            <p class="flex items-center gap-1.5 truncate text-sm font-medium text-heading">
+              {{ displayName(row.email) }}
+              <span class="shrink-0 rounded-full bg-red-500/10 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-red-500">
+                Deactivated
+              </span>
+            </p>
+            <p class="truncate text-xs text-body">
+              {{ row.email }}
+            </p>
+          </div>
+        </template>
+
+        <template #cell-role="{ data: row }">
+          <span class="rounded-full bg-[#245CB1]/10 dark:bg-[#5B8FE0]/10 px-2.5 py-1 text-xs font-medium text-heading">
+            {{ row.role }}
+          </span>
+        </template>
+
+        <template #cell-created_at="{ data: row }">
+          <span class="text-sm text-body">
+            {{ formatDate(row.created_at) }}
+          </span>
+        </template>
+
+        <template #actions="{ data: row }">
+          <BaseButton
+            label="Activate"
+            variant="secondary"
+            size="sm"
+            icon="pi pi-check"
+            :loading="activatingId === row.id"
+            @click="activate(row)"
           />
         </template>
       </AppDataTable>

@@ -1,3 +1,4 @@
+import { requireRole, QA_WORKSPACE_ROLES } from '~~/server/utils/authorize'
 import { releaseRepository } from '~~/server/repositories/releaseRepository'
 import { testCaseRepository } from '~~/server/repositories/testCaseRepository'
 import { bugRepository } from '~~/server/repositories/bugRepository'
@@ -10,6 +11,7 @@ import { requireProject } from '~~/server/utils/requireProject'
 // round trip), the release's bugs (for the bug board, grouped client
 // side by severity), and its append-only execution history.
 export default defineEventHandler(async (event) => {
+  requireRole(event, QA_WORKSPACE_ROLES)
   const project = await requireProject(event)
   const id = Number(getRouterParam(event, 'id'))
   if (!id || Number.isNaN(id)) {

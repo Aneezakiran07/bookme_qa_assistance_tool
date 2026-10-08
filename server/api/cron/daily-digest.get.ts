@@ -1,4 +1,5 @@
-// end of day digest, one email per active user, sent once a day by Vercel Cron
+// end of day digest, sent once a day by Vercel Cron, and only about Critical and High bugs
+// a person with no open Critical or High bug gets no email at all
 // it reads live data through the same repository methods the dashboards already use
 //
 // Developers get their own open/blocker/pending/resolved numbers plus a
@@ -52,32 +53,34 @@ export default defineEventHandler(async (event) => {
   for (const dev of developers) {
     try {
       const summary = await dashboardRepository.getDeveloperSummary(null, dev.id)
-      const hasActivity = summary.my_open_bugs > 0 || summary.resolved_today > 0
+      // only Critical and High bugs are worth an email
+      const hasActivity = summary.critical_high_open > 0
 
       if (!hasActivity) {
         skipped += 1
         continue
       }
 
-      const { bugs } = await dashboardRepository.getDeveloperBugs(null, dev.id, 10, { mode: 'open' })
+      const { bugs: openBugs } = await dashboardRepository.getDeveloperBugs(null, dev.id, 50, { mode: 'open' })
+      const bugs = openBugs.filter((b) => b.severity === 'Critical' || b.severity === 'High').slice(0, 10)
       const bugListHtml = bugs
         .map((b) => {
-          const bugCode = `BUG-${String(b.id).padStart(3, '0')}`
+          const bugCode = `BUG-${String(b.bug_number).padStart(3, '0')}`
           return `<li>[${escapeHtml(b.project_name)}] <a href="${appUrl}/bugs/${b.id}">${bugCode}</a> &mdash; ${b.title} (${b.severity}, ${b.status})</li>`
         })
         .join('')
 
       const delivered = await sendDailyDigestEmail(dev.email, {
-        subject: `Your daily bug digest: ${summary.my_open_bugs} open`,
+        subject: `Your daily bug digest: ${summary.critical_high_open} Critical or High open`,
         html: `
-          <p>Here's where your bugs stand today.</p>
+          <p>These are your open Critical and High bugs.</p>
           <ul>
             <li>Open bugs: ${summary.my_open_bugs}</li>
             <li>Critical/High open: ${summary.critical_high_open}</li>
             <li>Pending verification: ${summary.pending_retest}</li>
             <li>Resolved today: ${summary.resolved_today}</li>
           </ul>
-          ${bugListHtml ? `<p>Your open bugs:</p><ul>${bugListHtml}</ul>` : ''}
+          ${bugListHtml ? `<p>Open Critical and High bugs:</p><ul>${bugListHtml}</ul>` : ''}
         `
       })
       if (delivered) sent += 1
@@ -92,7 +95,7 @@ export default defineEventHandler(async (event) => {
     try {
       const metrics = await dashboardRepository.getSnapshotMetrics(null, null, null)
       const passRate = await dashboardRepository.getPassRate(null, today, today, null, null)
-      const hasActivity = metrics.open_bugs > 0 || passRate.total_executions > 0
+      const hasActivity = metrics.open_critical_high > 0
 
       if (!hasActivity) {
         skipped += 1
@@ -102,16 +105,17 @@ export default defineEventHandler(async (event) => {
       // same "bugs assigned to me" scoping as the profile page's live
       // preview and the developer email above -- via owner_id, now
       // that module assignment is gone.
-      const { bugs } = await dashboardRepository.getDeveloperBugsForPeriod(null, lead.id, today, today, 10)
+      const { bugs: todayBugs } = await dashboardRepository.getDeveloperBugsForPeriod(null, lead.id, today, today, 50)
+      const bugs = todayBugs.filter((b) => b.severity === 'Critical' || b.severity === 'High').slice(0, 10)
       const bugListHtml = bugs
         .map((b) => {
-          const bugCode = `BUG-${String(b.id).padStart(3, '0')}`
+          const bugCode = `BUG-${String(b.bug_number).padStart(3, '0')}`
           return `<li>[${escapeHtml(b.project_name)}] <a href="${appUrl}/bugs/${b.id}">${bugCode}</a> &mdash; ${b.title} (${b.severity}, ${b.status})</li>`
         })
         .join('')
 
       const delivered = await sendDailyDigestEmail(lead.email, {
-        subject: `Project daily digest: ${metrics.open_bugs} open bugs`,
+        subject: `Project daily digest: ${metrics.open_critical_high} Critical or High open`,
         html: `
           <p>Project summary for today.</p>
           <ul>
@@ -119,7 +123,7 @@ export default defineEventHandler(async (event) => {
             <li>Open Critical/High: ${metrics.open_critical_high}</li>
             <li>Today's pass rate: ${passRate.pass_rate}% (${passRate.passed_executions}/${passRate.total_executions})</li>
           </ul>
-          ${bugListHtml ? `<p>Your assigned bugs with activity today:</p><ul>${bugListHtml}</ul>` : ''}
+          ${bugListHtml ? `<p>Your assigned Critical and High bugs with activity today:</p><ul>${bugListHtml}</ul>` : ''}
         `
       })
       if (delivered) sent += 1

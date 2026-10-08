@@ -1,3 +1,4 @@
+import { requireRole, QA_WORKSPACE_ROLES } from '~~/server/utils/authorize'
 import { testCaseRepository } from '~~/server/repositories/testCaseRepository'
 import { moduleRepository } from '~~/server/repositories/moduleRepository'
 import { requirementRepository } from '~~/server/repositories/requirementRepository'
@@ -10,6 +11,7 @@ const VALID_TYPES = ['Manual', 'Automated']
 // updates test case fields and re-syncs its linked requirement set.
 // open to every active team member per the non-restrictive access model.
 export default defineEventHandler(async (event) => {
+  requireRole(event, QA_WORKSPACE_ROLES)
   const currentUser = event.context.currentUser
   const project = await requireProject(event, { write: true })
   const id = Number(getRouterParam(event, 'id'))

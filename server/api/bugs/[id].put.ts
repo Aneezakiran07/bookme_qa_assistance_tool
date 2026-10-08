@@ -45,6 +45,7 @@ export default defineEventHandler(async (event) => {
     actualResult?: string | null
     expectedResult?: string | null
     devNotes?: string | null
+    qaComments?: string | null
   }>(event)
 
   const fields: Record<string, unknown> = {}
@@ -96,6 +97,15 @@ export default defineEventHandler(async (event) => {
       throw createError({ statusCode: 403, statusMessage: 'Only QA can edit the expected result' })
     }
     fields.expected_result = body.expectedResult || null
+  }
+
+  // qa comments are the QA side notes. Admin, QA Lead and Tester can edit
+  // them, a Developer can only read them
+  if (body.qaComments !== undefined) {
+    if (!isQaRole) {
+      throw createError({ statusCode: 403, statusMessage: 'Only QA can edit the QA comments' })
+    }
+    fields.qa_comments = body.qaComments?.trim() || null
   }
 
   if (body.devNotes !== undefined) {
@@ -169,15 +179,16 @@ export default defineEventHandler(async (event) => {
   await bugRepository.update(project.id, bugId, fields as any)
 
   if (newOwner) {
-    const bugCode = `BUG-${String(bugId).padStart(3, '0')}`
+    const bugCode = `BUG-${String(existing.bug_number).padStart(3, '0')}`
     const config = useRuntimeConfig()
     const bugUrl = `${config.public.appUrl}/bugs/${bugId}`
     const title = (fields.title as string) ?? existing.title
     const severity = (fields.severity as string) ?? existing.severity
 
-    // fire and forget: a failed email should never turn a successful
+    // the send is awaited, because serverless functions can stop right after the response and drop it. a failed email should never turn a successful
     // reassignment into a 500 for the person doing the assigning
-    sendEmail({
+    // only Critical and High bugs send an assignment email
+    if (severity === 'Critical' || severity === 'High') await sendEmail({
       to: newOwner.email,
       subject: `${bugCode} assigned to you: ${title}`,
       html: `

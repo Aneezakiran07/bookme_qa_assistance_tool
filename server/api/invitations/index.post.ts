@@ -25,7 +25,12 @@ export default defineEventHandler(async (event) => {
 
   const existingUser = await userRepository.findByEmail(email)
   if (existingUser) {
-    throw createError({ statusCode: 409, statusMessage: 'This email already has an account' })
+    throw createError({
+      statusCode: 409,
+      statusMessage: existingUser.active
+        ? 'This email already has an account'
+        : 'This email belongs to a deactivated account. Activate it from the Team page instead'
+    })
   }
 
   const existingInvite = await invitationRepository.findActiveByEmail(email)

@@ -119,12 +119,13 @@ export default defineEventHandler(async (event) => {
       severityAtAssignment: created.severity
     })
 
-    const bugCode = `BUG-${String(created.id).padStart(3, '0')}`
+    const bugCode = `BUG-${String(created.bug_number).padStart(3, '0')}`
     const config = useRuntimeConfig()
     const bugUrl = `${config.public.appUrl}/bugs/${created.id}`
 
-    // fire and forget so a failed email never turns a logged bug into a 500
-    sendEmail({
+    // the send is awaited, because serverless functions can stop right after the response and drop it. a failed email never turns a logged bug into a 500
+    // only Critical and High bugs send an assignment email
+    if (created.severity === 'Critical' || created.severity === 'High') await sendEmail({
       to: owner.email,
       subject: `${bugCode} assigned to you: ${title}`,
       html: `

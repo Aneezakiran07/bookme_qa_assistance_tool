@@ -9,10 +9,15 @@ import { invitationRepository } from '~~/server/repositories/invitationRepositor
 export default defineEventHandler(async (event) => {
   requireRole(event, ['Admin', 'QA Lead'])
 
-  const [active, invitations] = await Promise.all([
-    userRepository.listActive(),
+  const [all, invitations] = await Promise.all([
+    userRepository.listAll(),
     invitationRepository.listOutstanding()
   ])
 
-  return { active, invitations }
+  // deactivated people are returned separately so they can be activated again
+  return {
+    active: all.filter((u) => u.active),
+    inactive: all.filter((u) => !u.active),
+    invitations
+  }
 })

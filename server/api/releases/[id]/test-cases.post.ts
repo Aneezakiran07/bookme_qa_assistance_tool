@@ -1,3 +1,4 @@
+import { requireRole, QA_WORKSPACE_ROLES } from '~~/server/utils/authorize'
 import { releaseRepository } from '~~/server/repositories/releaseRepository'
 import { testCaseRepository } from '~~/server/repositories/testCaseRepository'
 import { requireProject } from '~~/server/utils/requireProject'
@@ -6,6 +7,7 @@ import { requireProject } from '~~/server/utils/requireProject'
 // set of test cases linked to this release with whatever ids the client
 // sends, in one call, rather than issuing an add/remove request per row.
 export default defineEventHandler(async (event) => {
+  requireRole(event, QA_WORKSPACE_ROLES)
   const project = await requireProject(event, { write: true })
   const id = Number(getRouterParam(event, 'id'))
   if (!id || Number.isNaN(id)) {

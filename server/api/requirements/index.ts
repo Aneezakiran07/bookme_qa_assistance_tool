@@ -1,3 +1,4 @@
+import { requireRole, QA_WORKSPACE_ROLES } from '~~/server/utils/authorize'
 import { requirementRepository } from '~~/server/repositories/requirementRepository'
 import { moduleRepository } from '~~/server/repositories/moduleRepository'
 import { requireProject } from '~~/server/utils/requireProject'
@@ -6,10 +7,11 @@ const VALID_STATUSES = ['Draft', 'Approved', 'In Testing', 'Done']
 
 // non-restrictive access model: every active team member (QA Lead,
 // Tester, Developer, Admin) can list and create requirements across all
-// modules, so unlike server/api/modules/* there is no requireRole call
+// modules, only Admin, QA Lead and Tester get in, a Developer is refused
 // here. requireApprovedUser middleware already guarantees the caller is
 // signed in and active before this handler ever runs.
 export default defineEventHandler(async (event) => {
+  requireRole(event, QA_WORKSPACE_ROLES)
   const currentUser = event.context.currentUser
   const project = await requireProject(event, { write: event.method !== 'GET' })
 

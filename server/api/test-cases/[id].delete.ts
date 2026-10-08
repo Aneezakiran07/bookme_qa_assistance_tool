@@ -1,3 +1,4 @@
+import { requireRole, QA_WORKSPACE_ROLES } from '~~/server/utils/authorize'
 import { testCaseRepository } from '~~/server/repositories/testCaseRepository'
 import { requireProject } from '~~/server/utils/requireProject'
 
@@ -7,6 +8,7 @@ import { requireProject } from '~~/server/utils/requireProject'
 // keeps that history (and any requirement/release links) intact, same
 // pattern as requirements' delete.
 export default defineEventHandler(async (event) => {
+  requireRole(event, QA_WORKSPACE_ROLES)
   const project = await requireProject(event, { write: true })
   const id = Number(getRouterParam(event, 'id'))
   if (!id) {

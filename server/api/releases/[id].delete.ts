@@ -1,3 +1,4 @@
+import { requireRole } from '~~/server/utils/authorize'
 import { releaseRepository } from '~~/server/repositories/releaseRepository'
 import { requireProject } from '~~/server/utils/requireProject'
 
@@ -9,6 +10,7 @@ import { requireProject } from '~~/server/utils/requireProject'
 // a raw DB error, since a release with execution or bug history isn't
 // meant to just disappear.
 export default defineEventHandler(async (event) => {
+  requireRole(event, ['Admin', 'QA Lead'])
   const project = await requireProject(event, { write: true })
   const id = Number(getRouterParam(event, 'id'))
   if (!id || Number.isNaN(id)) {

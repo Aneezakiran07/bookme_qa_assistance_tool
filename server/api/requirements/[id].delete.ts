@@ -1,3 +1,4 @@
+import { requireRole, QA_WORKSPACE_ROLES } from '~~/server/utils/authorize'
 import { requirementRepository } from '~~/server/repositories/requirementRepository'
 import { requireProject } from '~~/server/utils/requireProject'
 
@@ -5,6 +6,7 @@ import { requireProject } from '~~/server/utils/requireProject'
 // so linked test cases and history stay intact. open to every active
 // team member per the non-restrictive access model for this pilot.
 export default defineEventHandler(async (event) => {
+  requireRole(event, QA_WORKSPACE_ROLES)
   const project = await requireProject(event, { write: true })
   const id = Number(getRouterParam(event, 'id'))
   if (!id) {

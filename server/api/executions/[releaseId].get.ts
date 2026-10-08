@@ -1,8 +1,10 @@
+import { requireRole, QA_WORKSPACE_ROLES } from '~~/server/utils/authorize'
 import { releaseRepository } from '~~/server/repositories/releaseRepository'
 import { executionRepository } from '~~/server/repositories/executionRepository'
 import { requireProject } from '~~/server/utils/requireProject'
 
 export default defineEventHandler(async (event) => {
+  requireRole(event, QA_WORKSPACE_ROLES)
   const project = await requireProject(event)
   const releaseId = Number(getRouterParam(event, 'releaseId'))
   if (!releaseId || Number.isNaN(releaseId)) {

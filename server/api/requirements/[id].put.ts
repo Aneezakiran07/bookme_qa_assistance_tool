@@ -1,3 +1,4 @@
+import { requireRole, QA_WORKSPACE_ROLES } from '~~/server/utils/authorize'
 import { requirementRepository } from '~~/server/repositories/requirementRepository'
 import { moduleRepository } from '~~/server/repositories/moduleRepository'
 import { requireProject } from '~~/server/utils/requireProject'
@@ -6,8 +7,9 @@ const VALID_STATUSES = ['Draft', 'Approved', 'In Testing', 'Done']
 
 // updates requirement details or moves it through a status transition.
 // open to every active team member per the non-restrictive access model
-// for this pilot, so no requireRole call here.
+// for this pilot, only Admin, QA Lead and Tester can use it.
 export default defineEventHandler(async (event) => {
+  requireRole(event, QA_WORKSPACE_ROLES)
   const project = await requireProject(event, { write: true })
   const id = Number(getRouterParam(event, 'id'))
   if (!id) {

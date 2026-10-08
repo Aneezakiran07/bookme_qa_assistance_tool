@@ -264,6 +264,38 @@ async function saveDevNotes() {
   }
 }
 
+// -- qa comments, read/edit toggle --
+// Admin, QA Lead and Tester can edit them, a Developer can only read
+const editingQaComments = ref(false)
+const qaCommentsDraft = ref('')
+const savingQaComments = ref(false)
+
+function startEditQaComments() {
+  qaCommentsDraft.value = bug.value?.qa_comments ?? ''
+  editingQaComments.value = true
+}
+
+async function saveQaComments() {
+  savingQaComments.value = true
+  try {
+    await $fetch(`/api/bugs/${bugId}`, {
+      method: 'PUT',
+      body: { qaComments: qaCommentsDraft.value || null }
+    })
+    editingQaComments.value = false
+    await refresh()
+  } catch (error) {
+    toast.add({
+      severity: 'error',
+      summary: 'Could not save QA comments',
+      detail: (error as any)?.data?.statusMessage ?? 'Please try again.',
+      life: 5000
+    })
+  } finally {
+    savingQaComments.value = false
+  }
+}
+
 // -- status --
 const changingStatus = ref(false)
 
@@ -652,14 +684,51 @@ const timelineEntries = computed(() => {
           />
         </div>
 
-        <!-- qa comments: read only for now, filled by the Excel import with
-             the video file name, remarks and the resolution text -->
-        <div v-if="bug.qa_comments" class="rounded-lg border border-border bg-foreground p-5">
-          <p class="mb-2 text-xs font-semibold uppercase tracking-wide text-gray-400 dark:text-zinc-500">
-            QA Comments
-          </p>
-          <div class="whitespace-pre-wrap text-sm text-heading">
-            {{ bug.qa_comments }}
+        <!-- qa comments: Admin, QA Lead and Tester can edit, a Developer can read.
+             a Developer only sees the box when there is something in it -->
+        <div v-if="isQa || bug.qa_comments" class="rounded-lg border border-border bg-foreground p-5">
+          <div class="mb-2 flex items-center justify-between">
+            <p class="text-xs font-semibold uppercase tracking-wide text-gray-400 dark:text-zinc-500">
+              QA Comments
+            </p>
+            <button
+              v-if="isQa && !isReadOnly && !editingQaComments"
+              type="button"
+              class="text-xs font-medium text-[#245CB1] hover:underline dark:text-[#5B8FE0]"
+              @click="startEditQaComments"
+            >
+              Edit
+            </button>
+          </div>
+          <div v-if="!editingQaComments" class="whitespace-pre-wrap text-sm text-heading">
+            {{ bug.qa_comments || 'No QA comments yet.' }}
+          </div>
+          <div v-else class="space-y-2">
+            <textarea
+              v-model="qaCommentsDraft"
+              rows="5"
+              placeholder="Video links, remarks, retest notes..."
+              class="w-full resize-y rounded-md border border-border bg-transparent p-3 text-sm
+                     text-heading outline-none placeholder:text-gray-400
+                     focus:border-[#245CB1] dark:focus:border-[#5B8FE0] focus:ring-1 focus:ring-[#245CB1] dark:focus:ring-[#5B8FE0] dark:placeholder:text-white/40"
+            />
+            <div class="flex justify-end gap-2">
+              <button
+                type="button"
+                class="rounded-md px-3 py-1.5 text-xs font-medium text-body hover:bg-secondary"
+                @click="editingQaComments = false"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                :disabled="savingQaComments"
+                class="rounded-md bg-[#245CB1] dark:bg-[#5B8FE0] px-3 py-1.5 text-xs font-medium text-white hover:bg-[#1d4a8f] dark:hover:bg-[#3a72cd] disabled:opacity-50"
+                @click="saveQaComments"
+              >
+                Save
+              </button>
+            </div>
           </div>
         </div>
 

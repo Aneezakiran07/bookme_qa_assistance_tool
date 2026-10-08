@@ -37,6 +37,7 @@ export interface DeveloperSummary {
 
 export interface DeveloperBugRow {
   id: number
+  bug_number: number
   project_id: number
   project_name: string
   project_slug: string

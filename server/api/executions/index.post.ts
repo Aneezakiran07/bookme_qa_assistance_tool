@@ -1,3 +1,4 @@
+import { requireRole, QA_WORKSPACE_ROLES } from '~~/server/utils/authorize'
 import { releaseRepository } from '~~/server/repositories/releaseRepository'
 import { testCaseRepository } from '~~/server/repositories/testCaseRepository'
 import { executionRepository } from '~~/server/repositories/executionRepository'
@@ -6,6 +7,7 @@ import { requireProject } from '~~/server/utils/requireProject'
 const VALID_RESULTS = ['Pass', 'Fail', 'Blocked', 'Not Run'] as const
 
 export default defineEventHandler(async (event) => {
+  requireRole(event, QA_WORKSPACE_ROLES)
   const currentUser = event.context.currentUser
   const project = await requireProject(event, { write: true })
 

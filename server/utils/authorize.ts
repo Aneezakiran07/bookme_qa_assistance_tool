@@ -9,3 +9,8 @@ export function requireRole(event: H3Event, allowedRoles: string[]) {
   }
   return currentUser
 }
+
+// the QA workspace is requirements, test cases, executions and releases
+// a Developer works from the dashboard and the bug queue only, so every
+// route in that workspace uses this list on the server too, not just the menu
+export const QA_WORKSPACE_ROLES = ['Admin', 'QA Lead', 'Tester']

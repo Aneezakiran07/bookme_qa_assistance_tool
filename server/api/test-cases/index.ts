@@ -1,3 +1,4 @@
+import { requireRole, QA_WORKSPACE_ROLES } from '~~/server/utils/authorize'
 import { testCaseRepository } from '~~/server/repositories/testCaseRepository'
 import { moduleRepository } from '~~/server/repositories/moduleRepository'
 import { requirementRepository } from '~~/server/repositories/requirementRepository'
@@ -10,8 +11,9 @@ const VALID_TYPES = ['Manual', 'Automated']
 // Step 4 of the workflow: authoring structured test cases against a
 // module and (optionally) against one or more requirements. non-restrictive
 // access model matching requirements/index.vue: every active team member
-// can list and create test cases, so no requireRole call here.
+// can list and create test cases, only Admin, QA Lead and Tester can use it.
 export default defineEventHandler(async (event) => {
+  requireRole(event, QA_WORKSPACE_ROLES)
   const currentUser = event.context.currentUser
   const project = await requireProject(event, { write: event.method !== 'GET' })
 
