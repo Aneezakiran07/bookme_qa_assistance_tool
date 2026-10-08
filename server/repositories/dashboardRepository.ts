@@ -49,6 +49,24 @@ export interface DeveloperBugRow {
   last_status_change_at: string
 }
 
+// how many assigned bugs the daily digest (email and profile preview) lists
+export const DIGEST_ASSIGNED_LIMIT = 25
+
+export interface DigestProjectCount {
+  project_id: number
+  project_name: string
+  opened_today: number
+}
+
+export interface DigestBugRow {
+  id: number
+  bug_number: number
+  project_name: string
+  title: string
+  severity: 'Critical' | 'High' | 'Medium' | 'Low'
+  status: string
+}
+
 export interface DeveloperHotspot {
   module_id: number
   module_name: string
@@ -421,6 +439,72 @@ export const dashboardRepository = {
       limit ${limit}
     `
     return { bugs: rows as DeveloperBugRow[], totalCount }
+  },
+
+  // -- daily digest helpers. "day" is a Karachi calendar date (yyyy-mm-dd) and
+  // every timestamp is converted to Asia/Karachi before it is compared, so
+  // the digest day does not depend on the database or server time zone.
+
+  // bugs opened (reported) on the given day, one row per project, across
+  // every active project. projects with nothing new are left out.
+  async getDigestNewBugsByProject(day: string): Promise<DigestProjectCount[]> {
+    const sql = useDb()
+    const rows = await sql`
+      select p.id as project_id, p.name as project_name, count(*)::int as opened_today
+      from bugs b
+      join projects p on p.id = b.project_id
+      where b.archived = false
+        and p.archived = false
+        and (b.reported_at at time zone 'Asia/Karachi')::date = ${day}::date
+      group by p.id, p.name
+      order by count(*) desc, lower(p.name) asc
+    `
+    return rows as DigestProjectCount[]
+  },
+
+  // bugs currently on this developer's plate: assigned to them and not yet
+  // Fixed or Closed. most severe first, then oldest first.
+  async getDigestAssignedBugs(userId: number, limit = 25): Promise<{ bugs: DigestBugRow[]; totalCount: number }> {
+    const sql = useDb()
+    const countRows = await sql`
+      select count(*)::int as total
+      from bugs
+      where archived = false and owner_id = ${userId} and status not in ('Fixed', 'Closed')
+    `
+    const rows = await sql`
+      select b.id, b.bug_number, p.name as project_name, b.title, b.severity, b.status
+      from bugs b
+      join projects p on p.id = b.project_id
+      where b.archived = false and b.owner_id = ${userId} and b.status not in ('Fixed', 'Closed')
+      order by
+        case b.severity when 'Critical' then 1 when 'High' then 2 when 'Medium' then 3 else 4 end,
+        b.reported_at asc, b.id asc
+      limit ${limit}
+    `
+    return { bugs: rows as DigestBugRow[], totalCount: (countRows[0] as any).total as number }
+  },
+
+  // bugs this developer resolved on the given day. same definition as the
+  // weekly recap: a move to Fixed or Closed in bug_status_history, so a bug
+  // that was fixed and then reopened or archived still counts.
+  async getDigestResolvedBugs(userId: number, day: string): Promise<DigestBugRow[]> {
+    const sql = useDb()
+    const rows = await sql`
+      select b.id, b.bug_number, p.name as project_name, b.title, b.severity, b.status
+      from bugs b
+      join projects p on p.id = b.project_id
+      where b.owner_id = ${userId}
+        and exists (
+          select 1 from bug_status_history h
+          where h.bug_id = b.id
+            and h.new_status in ('Fixed', 'Closed')
+            and (h.changed_at at time zone 'Asia/Karachi')::date = ${day}::date
+        )
+      order by
+        case b.severity when 'Critical' then 1 when 'High' then 2 when 'Medium' then 3 else 4 end,
+        b.id asc
+    `
+    return rows as DigestBugRow[]
   },
 
   // this week's recap for a developer: how many bugs were newly assigned

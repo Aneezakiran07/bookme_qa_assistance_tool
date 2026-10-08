@@ -1,29 +1,34 @@
-// end of day digest, sent once a day by Vercel Cron, and only about Critical and High bugs
-// a person with no open Critical or High bug gets no email at all
-// it reads live data through the same repository methods the dashboards already use
+// end of day digest, sent once a day by Vercel Cron at 18:30 Karachi time
+// (13:30 UTC, see vercel.json). Developers only for now.
 //
-// Developers get their own open/blocker/pending/resolved numbers plus a
-// short list of what's still open. QA Leads, Admins, and Testers get a
-// shorter project-wide summary instead (open bug counts and today's
-// pass rate), plus a short list of bugs assigned to them with activity
-// today -- the same owner_id-based "my bugs" scoping the developer
-// email above uses, same idea as the profile page's live digest
-// preview. anyone with nothing open and nothing that happened today is
-// skipped so people don't get an empty "nothing happened" email every
-// night.
+// each developer gets, in this order:
+//   1. the bugs assigned to them that are still open (on top, most severe first)
+//   2. how many bugs they resolved today, with the list
+//   3. how many new bugs were opened today in each project
+//
+// a developer with nothing assigned, nothing resolved today and no new bugs
+// anywhere is skipped, so nobody gets an empty email.
 //
 // the digest is not tied to one project, so it reads across every project
-// and each bug row in the email shows the name of the project it belongs to
+// and each bug row shows the name of the project it belongs to.
+//
+// "today" is the Asia/Karachi calendar day, not the server's day.
 //
 // the CRON_SECRET check lives in requireCronSecret so every cron route
 // shares one validation path instead of duplicating it
 
 import { userRepository } from '~~/server/repositories/userRepository'
-import { dashboardRepository } from '~~/server/repositories/dashboardRepository'
+import {
+  dashboardRepository,
+  DIGEST_ASSIGNED_LIMIT,
+  type DigestBugRow,
+  type DigestProjectCount
+} from '~~/server/repositories/dashboardRepository'
 import { sendDailyDigestEmail } from '~~/server/utils/email'
 import { requireCronSecret } from '~~/server/utils/cronAuth'
+import { karachiToday } from '~~/server/utils/karachiDate'
 
-// project names are typed by people, so they are escaped before going into the email html
+// bug titles and project names are typed by people, so they are escaped before going into the email html
 function escapeHtml(value: string): string {
   return value
     .replace(/&/g, '&amp;')
@@ -32,19 +37,49 @@ function escapeHtml(value: string): string {
     .replace(/"/g, '&quot;')
 }
 
+const SEVERITY_COLORS: Record<string, string> = {
+  Critical: '#b91c1c',
+  High: '#c2410c',
+  Medium: '#a16207',
+  Low: '#4b5563'
+}
+
+function bugRowsHtml(bugs: DigestBugRow[], appUrl: string): string {
+  return bugs
+    .map((b) => {
+      const bugCode = `BUG-${String(b.bug_number).padStart(3, '0')}`
+      const color = SEVERITY_COLORS[b.severity] ?? '#4b5563'
+      return `<li style="margin: 0 0 6px;">[${escapeHtml(b.project_name)}] <a href="${appUrl}/bugs/${b.id}">${bugCode}</a> &mdash; ${escapeHtml(b.title)} (<strong style="color: ${color};">${escapeHtml(b.severity)}</strong>, ${escapeHtml(b.status)})</li>`
+    })
+    .join('')
+}
+
+function sectionHeading(text: string): string {
+  return `<h3 style="font-size: 15px; margin: 22px 0 8px;">${text}</h3>`
+}
+
+function projectCountsHtml(projects: DigestProjectCount[]): string {
+  if (!projects.length) return '<p style="margin: 0; color: #6b7280;">No new bugs were opened today.</p>'
+  const total = projects.reduce((sum, p) => sum + p.opened_today, 0)
+  const items = projects
+    .map((p) => `<li style="margin: 0 0 4px;">${escapeHtml(p.project_name)}: <strong>${p.opened_today}</strong></li>`)
+    .join('')
+  return `<p style="margin: 0 0 6px;">${total} new ${total === 1 ? 'bug' : 'bugs'} opened today across ${projects.length} ${projects.length === 1 ? 'project' : 'projects'}.</p><ul style="margin: 0; padding-left: 20px;">${items}</ul>`
+}
+
 export default defineEventHandler(async (event) => {
   requireCronSecret(event)
 
   const config = useRuntimeConfig()
   const appUrl = config.public.appUrl
-  const today = new Date().toISOString().slice(0, 10)
+  const today = karachiToday()
 
   const users = await userRepository.listActive()
+  // Developers only for now. Admin, QA Lead and Tester get no digest.
   const developers = users.filter((u) => u.role === 'Developer')
-  // QA Lead and Tester no longer receive the daily digest email at all --
-  // only Admin still gets the project-wide summary below. Developers are
-  // unaffected and keep getting their own bug digest above.
-  const leads = users.filter((u) => u.role === 'Admin')
+
+  // the per project count is the same for everyone, so it is read once
+  const newBugsByProject = await dashboardRepository.getDigestNewBugsByProject(today)
 
   let sent = 0
   let skipped = 0
@@ -52,85 +87,49 @@ export default defineEventHandler(async (event) => {
 
   for (const dev of developers) {
     try {
-      const summary = await dashboardRepository.getDeveloperSummary(null, dev.id)
-      // only Critical and High bugs are worth an email
-      const hasActivity = summary.critical_high_open > 0
+      const { bugs: assigned, totalCount: assignedTotal } = await dashboardRepository.getDigestAssignedBugs(
+        dev.id,
+        DIGEST_ASSIGNED_LIMIT
+      )
+      const resolved = await dashboardRepository.getDigestResolvedBugs(dev.id, today)
 
-      if (!hasActivity) {
+      if (assignedTotal === 0 && resolved.length === 0 && newBugsByProject.length === 0) {
         skipped += 1
         continue
       }
 
-      const { bugs: openBugs } = await dashboardRepository.getDeveloperBugs(null, dev.id, 50, { mode: 'open' })
-      const bugs = openBugs.filter((b) => b.severity === 'Critical' || b.severity === 'High').slice(0, 10)
-      const bugListHtml = bugs
-        .map((b) => {
-          const bugCode = `BUG-${String(b.bug_number).padStart(3, '0')}`
-          return `<li>[${escapeHtml(b.project_name)}] <a href="${appUrl}/bugs/${b.id}">${bugCode}</a> &mdash; ${b.title} (${b.severity}, ${b.status})</li>`
-        })
-        .join('')
+      const moreAssigned = assignedTotal - assigned.length
+      const assignedHtml = assigned.length
+        ? `<ul style="margin: 0; padding-left: 20px;">${bugRowsHtml(assigned, appUrl)}</ul>${
+            moreAssigned > 0 ? `<p style="margin: 6px 0 0; color: #6b7280;">and ${moreAssigned} more in the app.</p>` : ''
+          }`
+        : '<p style="margin: 0; color: #6b7280;">You have no open bugs assigned to you.</p>'
+
+      const resolvedHtml = resolved.length
+        ? `<ul style="margin: 0; padding-left: 20px;">${bugRowsHtml(resolved, appUrl)}</ul>`
+        : '<p style="margin: 0; color: #6b7280;">You have not resolved any bugs today.</p>'
+
+      const html = `
+        <div style="font-family: Arial, sans-serif; font-size: 14px; color: #1f2937; max-width: 640px;">
+          <h2 style="font-size: 18px; margin: 0 0 4px;">Your daily bug digest</h2>
+          ${sectionHeading(`Assigned to you (${assignedTotal})`)}
+          ${assignedHtml}
+          ${sectionHeading(`Resolved by you today (${resolved.length})`)}
+          ${resolvedHtml}
+          ${sectionHeading('New bugs opened today, by project')}
+          ${projectCountsHtml(newBugsByProject)}
+        </div>
+      `
 
       const delivered = await sendDailyDigestEmail(dev.email, {
-        subject: `Your daily bug digest: ${summary.critical_high_open} Critical or High open`,
-        html: `
-          <p>These are your open Critical and High bugs.</p>
-          <ul>
-            <li>Open bugs: ${summary.my_open_bugs}</li>
-            <li>Critical/High open: ${summary.critical_high_open}</li>
-            <li>Pending verification: ${summary.pending_retest}</li>
-            <li>Resolved today: ${summary.resolved_today}</li>
-          </ul>
-          ${bugListHtml ? `<p>Open Critical and High bugs:</p><ul>${bugListHtml}</ul>` : ''}
-        `
+        subject: `Your daily bug digest: ${assignedTotal} assigned, ${resolved.length} resolved today`,
+        html
       })
       if (delivered) sent += 1
       else failed += 1
     } catch (err) {
       failed += 1
       console.error(`Failed to send daily digest to developer ${dev.id} (${dev.email})`, err)
-    }
-  }
-
-  for (const lead of leads) {
-    try {
-      const metrics = await dashboardRepository.getSnapshotMetrics(null, null, null)
-      const passRate = await dashboardRepository.getPassRate(null, today, today, null, null)
-      const hasActivity = metrics.open_critical_high > 0
-
-      if (!hasActivity) {
-        skipped += 1
-        continue
-      }
-
-      // same "bugs assigned to me" scoping as the profile page's live
-      // preview and the developer email above -- via owner_id, now
-      // that module assignment is gone.
-      const { bugs: todayBugs } = await dashboardRepository.getDeveloperBugsForPeriod(null, lead.id, today, today, 50)
-      const bugs = todayBugs.filter((b) => b.severity === 'Critical' || b.severity === 'High').slice(0, 10)
-      const bugListHtml = bugs
-        .map((b) => {
-          const bugCode = `BUG-${String(b.bug_number).padStart(3, '0')}`
-          return `<li>[${escapeHtml(b.project_name)}] <a href="${appUrl}/bugs/${b.id}">${bugCode}</a> &mdash; ${b.title} (${b.severity}, ${b.status})</li>`
-        })
-        .join('')
-
-      const delivered = await sendDailyDigestEmail(lead.email, {
-        subject: `Project daily digest: ${metrics.open_critical_high} Critical or High open`,
-        html: `
-          <p>Project summary for today.</p>
-          <ul>
-            <li>Open bugs: ${metrics.open_bugs}</li>
-            <li>Open Critical/High: ${metrics.open_critical_high}</li>
-            <li>Today's pass rate: ${passRate.pass_rate}% (${passRate.passed_executions}/${passRate.total_executions})</li>
-          </ul>
-          ${bugListHtml ? `<p>Your assigned Critical and High bugs with activity today:</p><ul>${bugListHtml}</ul>` : ''}
-        `
-      })
-      if (delivered) sent += 1
-      else failed += 1
-    } catch (err) {
-      failed += 1
-      console.error(`Failed to send daily digest to lead ${lead.id} (${lead.email})`, err)
     }
   }
 

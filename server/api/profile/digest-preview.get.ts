@@ -1,4 +1,5 @@
 import { dashboardRepository } from '~~/server/repositories/dashboardRepository'
+import { DIGEST_ASSIGNED_LIMIT } from '~~/server/repositories/dashboardRepository'
 import { karachiNow, mondayOfThisWeek } from '~~/server/utils/karachiDate'
 
 // builds the digest content for the signed in user only, so the profile
@@ -15,6 +16,11 @@ import { karachiNow, mondayOfThisWeek } from '~~/server/utils/karachiDate'
 // the profile page is not tied to one project, so this digest spans every
 // project and each bug row carries its project name and slug
 //
+// the Today view mirrors the 6:30 pm email exactly (assigned to you, resolved
+// today, new bugs by project) and reads through the same repository methods
+// the cron route uses, so the two cannot drift apart. the This week view is
+// the activity list described above and is not part of the email.
+//
 // karachiNow/mondayOfThisWeek live in server/utils/karachiDate.ts and
 // are shared with the developer bugs directory's period filter, so both
 // pages agree on where a day/week starts.
@@ -29,17 +35,31 @@ function parseCursor(query: Record<string, unknown>): { lastStatusChangeAt: stri
 }
 
 function formatBugRows(
-  bugs: { id: number; title: string; severity: string; status: string; project_id: number; project_name: string; project_slug: string }[]
+  bugs: { id: number; bug_number: number; title: string; severity: string; status: string; project_id: number; project_name: string; project_slug: string }[]
 ) {
   return bugs.map((b) => ({
     id: b.id,
-    code: `BUG-${String(b.id).padStart(3, '0')}`,
+    code: `BUG-${String(b.bug_number).padStart(3, '0')}`,
     title: b.title,
     severity: b.severity,
     status: b.status,
     projectId: b.project_id,
     projectName: b.project_name,
     projectSlug: b.project_slug
+  }))
+}
+
+// rows from the digest queries have no project id or slug, only the name
+function formatDigestRows(
+  bugs: { id: number; bug_number: number; title: string; severity: string; status: string; project_name: string }[]
+) {
+  return bugs.map((b) => ({
+    id: b.id,
+    code: `BUG-${String(b.bug_number).padStart(3, '0')}`,
+    title: b.title,
+    severity: b.severity,
+    status: b.status,
+    projectName: b.project_name
   }))
 }
 
@@ -66,6 +86,28 @@ export default defineEventHandler(async (event) => {
 
   const periodStart = range === 'week' ? weekStart : today
   const periodEnd = today
+
+  // Today view: same three sections as the email
+  if (range === 'day' && !bugsOnly) {
+    const [{ bugs: assigned, totalCount: assignedTotal }, resolved, newBugsByProject] = await Promise.all([
+      dashboardRepository.getDigestAssignedBugs(currentUser.id, DIGEST_ASSIGNED_LIMIT),
+      dashboardRepository.getDigestResolvedBugs(currentUser.id, today),
+      dashboardRepository.getDigestNewBugsByProject(today)
+    ])
+    return {
+      scope: 'developer' as const,
+      range: 'day' as const,
+      assignedTotal,
+      assigned: formatDigestRows(assigned),
+      resolved: formatDigestRows(resolved),
+      newBugsTotal: newBugsByProject.reduce((sum, p) => sum + p.opened_today, 0),
+      newBugsByProject: newBugsByProject.map((p) => ({
+        projectId: p.project_id,
+        projectName: p.project_name,
+        openedToday: p.opened_today
+      }))
+    }
+  }
 
   // scrolling further down the bug list only ever needs more bug
   // rows for the same period

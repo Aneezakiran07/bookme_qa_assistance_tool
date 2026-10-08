@@ -268,12 +268,11 @@ Every piece of QA data belongs to exactly one project. That covers modules, rele
 
 ## Daily digest
 
-- `vercel.json` runs `/api/cron/daily-digest` at `0 0 * * *`. That is 00:00 UTC, which is 05:00 in Karachi.
+- `vercel.json` runs `/api/cron/daily-digest` at `30 13 * * *`. That is 13:30 UTC, which is 18:30 (6:30 pm) in Karachi.
 - The route needs `CRON_SECRET`. Send it as `Authorization: Bearer <secret>` or as `?secret=<secret>`.
-- Developers get their own bug numbers and a short list of open bugs.
-- Admins get a project-wide summary.
-- QA Lead and Tester do not get the digest.
-- People with nothing open and nothing new are skipped.
+- Only Developers get the digest for now. Admin, QA Lead and Tester do not.
+- Each email lists, in this order: bugs assigned to the developer that are still open, bugs the developer resolved today, and the number of new bugs opened today in each project.
+- Developers with nothing assigned, nothing resolved today and no new bugs anywhere are skipped.
 - The digest reads across all projects. Each bug shows its project name.
 
 Dates like "today" and "this week" use the Asia/Karachi time zone (UTC+5). The server's own time zone does not matter.
