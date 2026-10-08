@@ -8,6 +8,7 @@ definePageMeta({ layout: 'default', title: 'Bugs' })
 
 interface BugRow {
   id: number
+  bug_number: number
   title: string
   module_id: number
   module_name: string
@@ -122,7 +123,7 @@ const emptyMessage = computed(() =>
 )
 
 const columns = [
-  { field: 'bug_id', sortField: 'id', header: 'Bug ID', sortable: true },
+  { field: 'bug_id', sortField: 'bug_number', header: 'Bug ID', sortable: true },
   { field: 'title', header: 'Title & Module' },
   { field: 'severity', header: 'Severity', sortable: true },
   { field: 'status', header: 'Status', sortable: true },
@@ -130,8 +131,8 @@ const columns = [
   { field: 'release_link', header: 'Release / TC Link' }
 ]
 
-function bugCode(id: number) {
-  return `BUG-${id.toString().padStart(3, '0')}`
+function bugCode(bugNumber: number) {
+  return `BUG-${bugNumber.toString().padStart(3, '0')}`
 }
 
 function tcCode(id: number) {
@@ -302,7 +303,7 @@ async function updateStatus(bug: BugRow, status: string) {
                  text-xs font-semibold text-heading
                  dark:border-[#5B8FE0]/30 dark:bg-[#5B8FE0]/15"
         >
-          {{ bugCode(row.id) }}
+          {{ bugCode(row.bug_number) }}
         </span>
       </template>
 

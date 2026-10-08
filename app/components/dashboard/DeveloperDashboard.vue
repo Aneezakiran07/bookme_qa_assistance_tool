@@ -8,6 +8,7 @@
 
 interface DeveloperBugRow {
   id: number
+  bug_number: number
   title: string
   severity: 'Critical' | 'High' | 'Medium' | 'Low'
   status: string
@@ -53,8 +54,8 @@ const maxHotspotCount = computed(() => Math.max(1, ...hotspots.value.map((h) => 
 // same fabricated "BUG-001" label used everywhere else in the app
 // (bugs/index.vue, the executive dashboard's watchlist); AppDataTable's
 // sortField lets the "Bug ID" column still sort by the real id column
-function bugCode(id: number) {
-  return `BUG-${id.toString().padStart(3, '0')}`
+function bugCode(bugNumber: number) {
+  return `BUG-${bugNumber.toString().padStart(3, '0')}`
 }
 
 function formatDate(dateStr: string) {
@@ -74,7 +75,7 @@ const SEVERITY_CLASSES: Record<string, string> = {
 }
 
 const columns = [
-  { field: 'bug_id', sortField: 'id', header: 'Bug ID', sortable: true },
+  { field: 'bug_id', sortField: 'bug_number', header: 'Bug ID', sortable: true },
   { field: 'title', header: 'Title' },
   { field: 'severity', header: 'Severity', sortable: true },
   { field: 'module_name', header: 'Module', sortable: true },
@@ -180,7 +181,7 @@ async function updateStatus(bug: DeveloperBugRow, status: string) {
           empty-message="No open bugs assigned to you. Nice work."
         >
           <template #cell-bug_id="{ data: row }">
-            <span class="font-mono text-xs text-body">{{ bugCode(row.id) }}</span>
+            <span class="font-mono text-xs text-body">{{ bugCode(row.bug_number) }}</span>
           </template>
 
           <template #cell-severity="{ data: row }">

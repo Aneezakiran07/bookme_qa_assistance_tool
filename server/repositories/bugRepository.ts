@@ -2,6 +2,8 @@ import { useDb } from '../db/client'
 
 export interface BugRecord {
   id: number
+  // the number shown in BUG-001, counted separately inside each project
+  bug_number: number
   title: string
   module_id: number
   severity: 'Critical' | 'High' | 'Medium' | 'Low'
@@ -15,6 +17,7 @@ export interface BugRecord {
   actual_result: string | null
   expected_result: string | null
   dev_notes: string | null
+  qa_comments: string | null
   reported_by: number | null
   reported_at: string
   last_status_change_at: string
@@ -173,7 +176,7 @@ export const bugRepository = {
     const rows = await sql`
       select
         b.*,
-        'BUG-' || lpad(b.id::text, 3, '0') as bug_code,
+        'BUG-' || lpad(b.bug_number::text, 3, '0') as bug_code,
         m.name as module_name,
         owner.email as owner_email,
         reporter.email as reported_by_email,
@@ -247,6 +250,7 @@ export const bugRepository = {
     actual_result: string | null
     expected_result: string | null
     dev_notes: string | null
+    qa_comments: string | null
     last_status_change_at: string
   }>): Promise<BugRecord | null> {
     const sql = useDb()
@@ -291,14 +295,23 @@ export const bugRepository = {
     ownerId?: number | null
   }): Promise<BugRecord> {
     const sql = useDb()
+    // the project's own counter goes up by one and the new bug takes that
+    // number, all in one statement, so two bugs logged at the same moment
+    // can never get the same number
     const rows = await sql`
+      with next_number as (
+        update projects set bug_counter = bug_counter + 1
+        where id = ${projectId}
+        returning bug_counter
+      )
       insert into bugs (
-        project_id, title, module_id, severity, priority, status,
+        project_id, bug_number, title, module_id, severity, priority, status,
         environment_build, linked_test_case_id, release_id,
         steps_to_reproduce, actual_result, expected_result, reported_by, owner_id
       )
       values (
         ${projectId},
+        (select bug_counter from next_number),
         ${input.title},
         ${input.moduleId},
         ${input.severity},

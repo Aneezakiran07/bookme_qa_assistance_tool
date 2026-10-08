@@ -120,9 +120,17 @@ async function submit() {
               class="w-full"
               input-class="w-full"
               toggle-mask
+              :feedback="false"
               autocomplete="new-password"
               required
             />
+            <p
+              v-if="passwordStrength(password)"
+              class="mt-1 text-xs"
+              :class="passwordStrength(password)?.strong ? 'text-green-600' : 'text-red-500'"
+            >
+              {{ passwordStrength(password)?.message }}
+            </p>
           </div>
           <div>
             <label class="mb-1 block text-xs font-medium text-body">

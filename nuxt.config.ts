@@ -136,7 +136,8 @@ export default defineNuxtConfig({
       password: process.env.NUXT_SESSION_PASSWORD ?? '',
     },
     public: {
-      appUrl: process.env.APP_URL,
+      // the address used in every emailed link. APP_URL overrides it, otherwise production uses the live domain
+      appUrl: (process.env.APP_URL || (process.env.NODE_ENV === 'production' ? 'https://qa.bookmepk.com' : 'http://localhost:3000')).replace(/\/+$/, ''),
     },
   },
 })

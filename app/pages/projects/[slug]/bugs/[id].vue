@@ -8,6 +8,7 @@ definePageMeta({ layout: 'default', title: 'Bug Details' })
 
 interface BugDetail {
   id: number
+  bug_number: number
   title: string
   module_id: number
   module_name: string
@@ -31,6 +32,7 @@ interface BugDetail {
   actual_result: string | null
   expected_result: string | null
   dev_notes: string | null
+  qa_comments: string | null
 }
 
 const QA_ROLES = ['QA Lead', 'Tester']
@@ -110,8 +112,8 @@ const PRIORITY_CLASSES: Record<string, string> = {
   Low: 'bg-green-100 text-green-700 border-green-200 dark:bg-green-500/15 dark:text-green-400 dark:border-green-500/30'
 }
 
-function bugCode(id: number) {
-  return `BUG-${id.toString().padStart(3, '0')}`
+function bugCode(bugNumber: number) {
+  return `BUG-${bugNumber.toString().padStart(3, '0')}`
 }
 
 function tcCode(id: number) {
@@ -312,7 +314,7 @@ async function archiveBug() {
   if (!bug.value) return
   const confirmed = await confirmDialogRef.value?.open({
     title: 'Archive this bug?',
-    message: `${bugCode(bug.value.id)} will be moved out of the active Bug Tracker list. Its attachments, assignment log, and status history all stay intact.`,
+    message: `${bugCode(bug.value.bug_number)} will be moved out of the active Bug Tracker list. Its attachments, assignment log, and status history all stay intact.`,
     confirmLabel: 'Archive',
     danger: true
   })
@@ -370,7 +372,7 @@ const timelineEntries = computed(() => {
       <div>
         <p class="text-xs text-gray-400 dark:text-zinc-500">Bug</p>
         <h1 class="text-lg font-semibold text-heading">
-          {{ bug ? bugCode(bug.id) : '\u2014' }}
+          {{ bug ? bugCode(bug.bug_number) : '\u2014' }}
         </h1>
       </div>
     </div>
@@ -648,6 +650,17 @@ const timelineEntries = computed(() => {
             :read-only="isReadOnly"
             @update:attachments="onAttachmentsChanged"
           />
+        </div>
+
+        <!-- qa comments: read only for now, filled by the Excel import with
+             the video file name, remarks and the resolution text -->
+        <div v-if="bug.qa_comments" class="rounded-lg border border-border bg-foreground p-5">
+          <p class="mb-2 text-xs font-semibold uppercase tracking-wide text-gray-400 dark:text-zinc-500">
+            QA Comments
+          </p>
+          <div class="whitespace-pre-wrap text-sm text-heading">
+            {{ bug.qa_comments }}
+          </div>
         </div>
 
         <!-- developer notes & blockers: the developer's own comment field.

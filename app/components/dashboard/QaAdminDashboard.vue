@@ -43,6 +43,7 @@ interface DashboardResponse {
   requirementsBreakdown: { key: string; count: number }[]
   criticalBugs: {
     id: number
+    bug_number: number
     title: string
     severity: 'Critical' | 'High'
     status: string
@@ -199,8 +200,8 @@ function initials(email: string) {
   return (email.split('@')[0] ?? '').slice(0, 2).toUpperCase()
 }
 
-function bugCode(id: number) {
-  return `BUG-${id.toString().padStart(3, '0')}`
+function bugCode(bugNumber: number) {
+  return `BUG-${bugNumber.toString().padStart(3, '0')}`
 }
 
 const SEVERITY_TEXT_CLASSES: Record<string, string> = {
@@ -400,7 +401,7 @@ function executionStatusKey(result: string): string {
           <div class="min-w-0">
             <p class="truncate text-sm font-medium text-heading">{{ bug.title }}</p>
             <p class="text-xs text-gray-400 dark:text-zinc-500">
-              {{ bugCode(bug.id) }} &middot; {{ bug.module_name }} &middot; {{ timeAgo(bug.reported_at) }}
+              {{ bugCode(bug.bug_number) }} &middot; {{ bug.module_name }} &middot; {{ timeAgo(bug.reported_at) }}
             </p>
           </div>
           <span class="shrink-0 text-xs font-semibold" :class="SEVERITY_TEXT_CLASSES[bug.severity]">

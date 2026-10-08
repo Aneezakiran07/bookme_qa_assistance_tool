@@ -4,13 +4,14 @@ import { useDb } from '../db/client'
 // or locked_until, so a query that returns users to the browser can never
 // leak them. every query in this file uses this one column list
 const PUBLIC_COLUMNS = `
-  id, email, role, active, created_at, display_name,
+  id, firebase_uid, email, role, active, created_at, display_name,
   email_notifications, daily_digest_enabled, avatar_id, invited_by,
   invited_at, last_login_at
 `
 
 export interface UserRecord {
   id: number
+  firebase_uid: string | null
   email: string
   role: 'Admin' | 'QA Lead' | 'Tester' | 'Developer'
   active: boolean

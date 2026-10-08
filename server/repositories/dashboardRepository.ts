@@ -239,7 +239,7 @@ export const dashboardRepository = {
     const sql = useDb()
     const rows = await sql`
       select
-        b.id, b.title, b.severity, b.status, b.reported_at,
+        b.id, b.bug_number, b.title, b.severity, b.status, b.reported_at,
         m.name as module_name
       from bugs b
       join modules m on m.id = b.module_id
@@ -349,7 +349,7 @@ export const dashboardRepository = {
 
     const rows = await sql`
       select
-        b.id, b.title, b.severity, b.status, b.module_id, b.last_status_change_at,
+        b.id, b.bug_number, b.title, b.severity, b.status, b.module_id, b.last_status_change_at,
         m.name as module_name,
         b.project_id, p.name as project_name, p.slug as project_slug
       from bugs b
@@ -401,7 +401,7 @@ export const dashboardRepository = {
 
     const rows = await sql`
       select
-        b.id, b.title, b.severity, b.status, b.module_id, b.last_status_change_at,
+        b.id, b.bug_number, b.title, b.severity, b.status, b.module_id, b.last_status_change_at,
         m.name as module_name,
         b.project_id, p.name as project_name, p.slug as project_slug
       from bugs b

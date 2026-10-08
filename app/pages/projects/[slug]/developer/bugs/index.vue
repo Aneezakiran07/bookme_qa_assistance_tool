@@ -122,7 +122,7 @@ function formatDate(dateStr: string) {
 }
 
 const columns = [
-  { field: 'bug_code', sortField: 'id', header: 'ID', sortable: true },
+  { field: 'bug_code', sortField: 'bug_number', header: 'ID', sortable: true },
   { field: 'severity', header: 'Severity', sortable: true },
   { field: 'title', header: 'Title' },
   { field: 'module_name', header: 'Module', sortable: true },
