@@ -5,7 +5,7 @@ import { userRepository } from '~~/server/repositories/userRepository'
 import { requireProject } from '~~/server/utils/requireProject'
 import { bugStatusHistoryRepository } from '~~/server/repositories/bugStatusHistoryRepository'
 import { bugAssignmentLogRepository } from '~~/server/repositories/bugAssignmentLogRepository'
-import { sendEmail } from '~~/server/utils/email'
+import { sendBugAssignmentEmail, shouldSendAssignmentEmail } from '~~/server/utils/email'
 
 const VALID_SEVERITIES = ['Critical', 'High', 'Medium', 'Low']
 const VALID_PRIORITIES = ['High', 'Medium', 'Low']
@@ -185,21 +185,23 @@ export default defineEventHandler(async (event) => {
     const title = (fields.title as string) ?? existing.title
     const severity = (fields.severity as string) ?? existing.severity
 
-    // the send is awaited, because serverless functions can stop right after the response and drop it. a failed email should never turn a successful
-    // reassignment into a 500 for the person doing the assigning
-    // only Critical and High bugs send an assignment email
-    if (severity === 'Critical' || severity === 'High') await sendEmail({
-      to: newOwner.email,
-      subject: `${bugCode} assigned to you: ${title}`,
-      html: `
-        <p>${currentUser.email} assigned you a bug.</p>
-        <p><strong>${bugCode}</strong> &mdash; ${title}</p>
-        <p>Severity: ${severity}</p>
-        <p><a href="${bugUrl}">${bugUrl}</a></p>
-      `
-    }).catch((err) => {
-      console.error(`Failed to send assignment email for bug ${bugId} to ${newOwner!.email}`, err)
-    })
+    // the status can change in the same save as the assignee, so the email uses the new one
+    const status = (fields.status as string) ?? existing.status
+
+    // the send is awaited, because serverless functions can stop right after the response and drop it
+    // a failed email should never turn a successful reassignment into a 500
+    // only Critical and High bugs that are not Closed or Fixed send an assignment email
+    if (shouldSendAssignmentEmail(severity, status)) {
+      await sendBugAssignmentEmail({
+        to: newOwner.email,
+        assignedBy: currentUser.email,
+        bugCode,
+        title,
+        severity,
+        status,
+        bugUrl
+      })
+    }
   }
 
   return bugRepository.findByIdWithMeta(project.id, bugId)

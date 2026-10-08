@@ -191,6 +191,70 @@ async function sendHelperEmail(kind: string, options: SendOptions): Promise<bool
   }
 }
 
+function escapeHtml(value: string): string {
+  return value
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+}
+
+// only these severities send an assignment email
+const ASSIGNMENT_EMAIL_SEVERITIES = ['Critical', 'High']
+
+// a bug in one of these statuses never sends an assignment email
+const NO_ASSIGNMENT_EMAIL_STATUSES = ['Closed', 'Fixed']
+
+// one place that decides if an assignment email should go out. both the
+// create route and the update route use it so the rule cannot drift apart
+export function shouldSendAssignmentEmail(severity: string, status: string): boolean {
+  return ASSIGNMENT_EMAIL_SEVERITIES.includes(severity) && !NO_ASSIGNMENT_EMAIL_STATUSES.includes(status)
+}
+
+interface BugAssignmentEmail {
+  to: string
+  assignedBy: string
+  bugCode: string
+  title: string
+  severity: string
+  status: string
+  bugUrl: string
+}
+
+// the subject stays short on purpose. the full title lives in the body
+export async function sendBugAssignmentEmail(bug: BugAssignmentEmail): Promise<boolean> {
+  const severityColor = bug.severity === 'Critical' ? '#b91c1c' : '#c2410c'
+  const safeUrl = escapeAttr(bug.bugUrl)
+  const row = (label: string, value: string) => `
+        <tr>
+          <td style="padding: 6px 12px 6px 0; color: #6b7280; vertical-align: top; white-space: nowrap;">${label}</td>
+          <td style="padding: 6px 0;">${value}</td>
+        </tr>`
+
+  const html = `
+    <div style="font-family: Arial, sans-serif; font-size: 14px; color: #1f2937; max-width: 520px;">
+      <h2 style="font-size: 18px; margin: 0 0 12px;">A bug has been assigned to you</h2>
+      <p style="margin: 0 0 12px;">${escapeHtml(bug.assignedBy)} assigned you ${escapeHtml(bug.bugCode)}.</p>
+      <table style="border-collapse: collapse; margin: 0 0 16px;">
+        ${row('Bug', escapeHtml(bug.bugCode))}
+        ${row('Title', escapeHtml(bug.title))}
+        ${row('Severity', `<strong style="color: ${severityColor};">${escapeHtml(bug.severity)}</strong>`)}
+        ${row('Status', `<strong>${escapeHtml(bug.status)}</strong>`)}
+      </table>
+      <p style="margin: 0 0 16px;">
+        <a href="${safeUrl}" style="background: #245CB1; color: #ffffff; padding: 10px 18px; border-radius: 6px; text-decoration: none;">Open bug</a>
+      </p>
+      <p style="margin: 0; color: #6b7280; font-size: 12px;">If the button does not work, copy this link into your browser: ${safeUrl}</p>
+    </div>
+  `
+
+  return sendHelperEmail('bug assignment', {
+    to: bug.to,
+    subject: `${bug.bugCode} assigned to you (${bug.severity}, ${bug.status})`,
+    html
+  })
+}
+
 export async function sendInviteEmail(to: string, inviteUrl: string): Promise<boolean> {
   const html = linkEmailHtml(
     'You have been invited to the Bookme QA Tool',

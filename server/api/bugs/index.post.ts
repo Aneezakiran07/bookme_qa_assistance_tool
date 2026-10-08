@@ -5,7 +5,7 @@ import { testCaseRepository } from '~~/server/repositories/testCaseRepository'
 import { userRepository } from '~~/server/repositories/userRepository'
 import { bugStatusHistoryRepository } from '~~/server/repositories/bugStatusHistoryRepository'
 import { bugAssignmentLogRepository } from '~~/server/repositories/bugAssignmentLogRepository'
-import { sendEmail } from '~~/server/utils/email'
+import { sendBugAssignmentEmail, shouldSendAssignmentEmail } from '~~/server/utils/email'
 import { requireProject } from '~~/server/utils/requireProject'
 
 const VALID_SEVERITIES = ['Critical', 'High', 'Medium', 'Low']
@@ -20,14 +20,6 @@ function parseOptionalId(value: unknown, label: string): number | null {
     throw createError({ statusCode: 400, statusMessage: `Invalid ${label}` })
   }
   return id
-}
-
-function escapeHtml(value: string): string {
-  return value
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
 }
 
 // every active role can report a bug, the caller comes from the session
@@ -123,20 +115,20 @@ export default defineEventHandler(async (event) => {
     const config = useRuntimeConfig()
     const bugUrl = `${config.public.appUrl}/bugs/${created.id}`
 
-    // the send is awaited, because serverless functions can stop right after the response and drop it. a failed email never turns a logged bug into a 500
-    // only Critical and High bugs send an assignment email
-    if (created.severity === 'Critical' || created.severity === 'High') await sendEmail({
-      to: owner.email,
-      subject: `${bugCode} assigned to you: ${title}`,
-      html: `
-        <p>${escapeHtml(currentUser.email)} assigned you a bug.</p>
-        <p><strong>${bugCode}</strong> &mdash; ${escapeHtml(title)}</p>
-        <p>Severity: ${created.severity}</p>
-        <p><a href="${bugUrl}">${bugUrl}</a></p>
-      `
-    }).catch((err) => {
-      console.error(`Failed to send assignment email for bug ${created.id} to ${owner.email}`, err)
-    })
+    // the send is awaited, because serverless functions can stop right after the response and drop it
+    // a failed email never turns a logged bug into a 500
+    // a new bug always starts as Open, and only Critical and High bugs send an email
+    if (shouldSendAssignmentEmail(created.severity, 'Open')) {
+      await sendBugAssignmentEmail({
+        to: owner.email,
+        assignedBy: currentUser.email,
+        bugCode,
+        title,
+        severity: created.severity,
+        status: 'Open',
+        bugUrl
+      })
+    }
   }
 
   return bugRepository.findByIdWithMeta(project.id, created.id)
