@@ -21,6 +21,14 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 404, statusMessage: 'User not found' })
   }
 
+  // the display name must be text and is capped so it cannot bloat the sidebar or emails
+  if (body?.displayName !== undefined && body.displayName !== null && typeof body.displayName !== 'string') {
+    throw createError({ statusCode: 400, statusMessage: 'Display name must be text' })
+  }
+  if (typeof body?.displayName === 'string' && body.displayName.trim().length > 100) {
+    throw createError({ statusCode: 400, statusMessage: 'Display name is too long (100 characters max)' })
+  }
+
   const displayName = body?.displayName !== undefined ? body.displayName?.trim() || null : existing.display_name
 
   let avatarId = existing.avatar_id

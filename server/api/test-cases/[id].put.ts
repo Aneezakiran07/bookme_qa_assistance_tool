@@ -20,7 +20,8 @@ export default defineEventHandler(async (event) => {
   }
 
   const existing = await testCaseRepository.findById(project.id, id)
-  if (!existing) {
+  // an archived test case is treated as deleted, so it cannot be edited
+  if (!existing || existing.archived) {
     throw createError({ statusCode: 404, statusMessage: 'Test case not found' })
   }
 

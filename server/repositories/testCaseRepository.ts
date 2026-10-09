@@ -248,32 +248,45 @@ export const testCaseRepository = {
   },
 
   // creates a copy of an existing test case (title suffixed "(Copy)") and
-  // carries over its requirement links, used by the table's Duplicate action
+  // carries over its requirement and release links, used by the table's Duplicate action
   async duplicate(projectId: number, id: number, duplicatedBy: number): Promise<TestCaseRecord | null> {
     const sql = useDb()
     const source = await this.findById(projectId, id)
-    if (!source) return null
+    // an archived test case is treated as deleted, so it cannot be duplicated
+    if (!source || source.archived) return null
 
-    const links = await this.linkedRequirementIds(id)
-    const releaseLinks = await this.linkedReleaseIds(id)
+    const requirementList = (await this.linkedRequirementIds(id)).join(',')
+    const releaseList = (await this.linkedReleaseIds(id)).join(',')
+    // the copy and both sets of links go in as one statement, so a failure
+    // can never leave a copy behind without its links
     const rows = await sql`
-      insert into test_cases (project_id, title, module_id, steps, expected_result, priority, type, created_by, last_modified_by)
-      values (
-        ${projectId},
-        ${`${source.title} (Copy)`},
-        ${source.module_id},
-        ${source.steps},
-        ${source.expected_result},
-        ${source.priority},
-        ${source.type},
-        ${duplicatedBy},
-        ${duplicatedBy}
+      with new_case as (
+        insert into test_cases (project_id, title, module_id, steps, expected_result, priority, type, created_by, last_modified_by)
+        values (
+          ${projectId},
+          ${`${source.title} (Copy)`},
+          ${source.module_id},
+          ${source.steps},
+          ${source.expected_result},
+          ${source.priority},
+          ${source.type},
+          ${duplicatedBy},
+          ${duplicatedBy}
+        )
+        returning *
+      ),
+      requirement_links as (
+        insert into requirement_test_case_links (test_case_id, requirement_id)
+        select new_case.id, r.requirement_id
+        from new_case, unnest(string_to_array(${requirementList}, ',')::int[]) as r(requirement_id)
+      ),
+      release_links as (
+        insert into test_case_release_links (test_case_id, release_id)
+        select new_case.id, l.release_id
+        from new_case, unnest(string_to_array(${releaseList}, ',')::int[]) as l(release_id)
       )
-      returning *
+      select * from new_case
     `
-    const created = rows[0] as TestCaseRecord
-    await this.setRequirementLinks(created.id, links)
-    await this.setReleaseLinks(created.id, releaseLinks)
-    return created
+    return (rows[0] as TestCaseRecord) ?? null
   }
 }
