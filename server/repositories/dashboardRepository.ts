@@ -462,20 +462,21 @@ export const dashboardRepository = {
     return rows as DigestProjectCount[]
   },
 
-  // bugs currently on this developer's plate: assigned to them and not yet
-  // Fixed or Closed. most severe first, then oldest first.
+  // bugs on this developer's plate: assigned to them and still Open or
+  // Reopened (the statuses that need their attention). most severe first,
+  // then oldest first.
   async getDigestAssignedBugs(userId: number, limit = 25): Promise<{ bugs: DigestBugRow[]; totalCount: number }> {
     const sql = useDb()
     const countRows = await sql`
       select count(*)::int as total
       from bugs
-      where archived = false and owner_id = ${userId} and status not in ('Fixed', 'Closed')
+      where archived = false and owner_id = ${userId} and status in ('Open', 'Reopened')
     `
     const rows = await sql`
       select b.id, b.bug_number, p.name as project_name, b.title, b.severity, b.status
       from bugs b
       join projects p on p.id = b.project_id
-      where b.archived = false and b.owner_id = ${userId} and b.status not in ('Fixed', 'Closed')
+      where b.archived = false and b.owner_id = ${userId} and b.status in ('Open', 'Reopened')
       order by
         case b.severity when 'Critical' then 1 when 'High' then 2 when 'Medium' then 3 else 4 end,
         b.reported_at asc, b.id asc

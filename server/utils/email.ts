@@ -203,8 +203,8 @@ function escapeHtml(value: string): string {
 const ASSIGNMENT_EMAIL_SEVERITIES = ['Critical', 'High']
 
 // an assignment email only goes out while the bug is in one of these statuses.
-// anything else (In Progress, Reopened, Fixed, Closed) sends nothing
-const ASSIGNMENT_EMAIL_STATUSES = ['Open', 'Retest']
+// anything else (In Progress, Retest, Fixed, Closed) sends nothing
+const ASSIGNMENT_EMAIL_STATUSES = ['Open', 'Reopened']
 
 // one place that decides if an assignment email should go out. both the
 // create route and the update route use it so the rule cannot drift apart
