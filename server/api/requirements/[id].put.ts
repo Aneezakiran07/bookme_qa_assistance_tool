@@ -29,8 +29,12 @@ export default defineEventHandler(async (event) => {
     description?: string | null
   }>(event)
 
-  if (body?.title !== undefined && !body.title.trim()) {
+  if (body?.title !== undefined && (typeof body.title !== 'string' || !body.title.trim())) {
     throw createError({ statusCode: 400, statusMessage: 'Title cannot be empty' })
+  }
+
+  if (body?.targetRelease !== undefined && body.targetRelease !== null && typeof body.targetRelease !== 'string') {
+    throw createError({ statusCode: 400, statusMessage: 'Target release must be text' })
   }
 
   if (body?.moduleId !== undefined) {

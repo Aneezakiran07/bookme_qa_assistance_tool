@@ -33,7 +33,7 @@ export default defineEventHandler(async (event) => {
       description?: string | null
     }>(event)
 
-    const title = body?.title?.trim()
+    const title = typeof body?.title === 'string' ? body.title.trim() : ''
     if (!title) {
       throw createError({ statusCode: 400, statusMessage: 'Title is required' })
     }
@@ -45,6 +45,10 @@ export default defineEventHandler(async (event) => {
     const module = await moduleRepository.findById(project.id, moduleId)
     if (!module) {
       throw createError({ statusCode: 404, statusMessage: 'Selected module does not exist' })
+    }
+
+    if (body?.targetRelease !== undefined && body.targetRelease !== null && typeof body.targetRelease !== 'string') {
+      throw createError({ statusCode: 400, statusMessage: 'Target release must be text' })
     }
 
     const status = body?.status ?? 'Draft'

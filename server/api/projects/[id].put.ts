@@ -22,9 +22,12 @@ export default defineEventHandler(async (event) => {
     archived?: boolean
   }>(event)
 
-  const name = body?.name !== undefined ? body.name.trim() : undefined
+  const name = body?.name !== undefined ? (typeof body.name === 'string' ? body.name.trim() : '') : undefined
   if (name !== undefined && !name) {
     throw createError({ statusCode: 400, statusMessage: 'Project name cannot be empty' })
+  }
+  if (body?.description !== undefined && body.description !== null && typeof body.description !== 'string') {
+    throw createError({ statusCode: 400, statusMessage: 'Description must be text' })
   }
   if (body?.archived !== undefined && typeof body.archived !== 'boolean') {
     throw createError({ statusCode: 400, statusMessage: 'Archived must be true or false' })

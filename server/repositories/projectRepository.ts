@@ -109,14 +109,23 @@ export const projectRepository = {
     const rows = await sql`
       select
         (select count(*) from projects where archived = false)::int as active_projects,
-        (select count(*) from bugs where status <> 'Closed' and archived = false)::int as open_bugs,
         (
-          select count(*) from bugs
-          where status <> 'Closed' and archived = false and severity in ('Critical', 'High')
+          select count(*) from bugs b
+          join projects p on p.id = b.project_id
+          where b.status <> 'Closed' and b.archived = false and p.archived = false
+        )::int as open_bugs,
+        (
+          select count(*) from bugs b
+          join projects p on p.id = b.project_id
+          where b.status <> 'Closed' and b.archived = false and p.archived = false
+            and b.severity in ('Critical', 'High')
         )::int as critical_high_open,
         (
-          select round(100.0 * count(*) filter (where result = 'Pass') / nullif(count(*), 0), 1)
-          from test_executions
+          select round(100.0 * count(*) filter (where te.result = 'Pass') / nullif(count(*), 0), 1)
+          from test_executions te
+          join releases r on r.id = te.release_id
+          join projects p on p.id = r.project_id
+          where p.archived = false
         )::float8 as pass_rate
     `
     const row = rows[0] as {

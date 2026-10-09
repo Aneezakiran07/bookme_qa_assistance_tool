@@ -51,7 +51,7 @@ export default defineEventHandler(async (event) => {
       releaseIds?: number[]
     }>(event)
 
-    const title = body?.title?.trim()
+    const title = typeof body?.title === 'string' ? body.title.trim() : ''
     if (!title) {
       throw createError({ statusCode: 400, statusMessage: 'Title is required' })
     }

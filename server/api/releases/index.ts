@@ -16,7 +16,7 @@ export default defineEventHandler(async (event) => {
       releaseDate?: string | null
     }>(event)
 
-    const version = body?.version?.trim()
+    const version = typeof body?.version === 'string' ? body.version.trim() : ''
     if (!version) {
       throw createError({ statusCode: 400, statusMessage: 'Version is required' })
     }

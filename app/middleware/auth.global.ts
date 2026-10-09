@@ -38,7 +38,7 @@ export default defineNuxtRouteMiddleware((to) => {
   }
 
   // developers get a focused bug workspace only, they never get the full
-  // test case or execution suites, so send them back to the dashboard
+  // test case, execution, requirement or release suites, so send them back to the dashboard
   // with a query flag if they try to reach those routes directly. a
   // toast can't be fired from here because the toast service may not be
   // mounted yet during middleware, so the dashboard watches for this
@@ -51,8 +51,11 @@ export default defineNuxtRouteMiddleware((to) => {
   const pagePath = projectMatch ? (projectMatch[2] ?? '') : to.path
   const isTestCaseRoute = pagePath.startsWith('/test-cases')
   const isExecutionRoute = pagePath.startsWith('/executions')
+  // the server already refuses requirements and releases for developers, so the pages are blocked here too
+  const isRequirementRoute = pagePath.startsWith('/requirements')
+  const isReleaseRoute = pagePath.startsWith('/releases')
 
-  if (isDeveloper && (isTestCaseRoute || isExecutionRoute)) {
+  if (isDeveloper && (isTestCaseRoute || isExecutionRoute || isRequirementRoute || isReleaseRoute)) {
     // inside a project the developer goes back to that project dashboard, which shows the toast
     const backTo = projectMatch ? `/projects/${projectMatch[1]}` : '/'
     return navigateTo({ path: backTo, query: { denied: 'developer-role' } })

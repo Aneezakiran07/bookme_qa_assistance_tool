@@ -14,7 +14,7 @@ export default defineEventHandler(async (event) => {
   const currentUser = requireRole(event, ['Admin', 'QA Lead'])
 
   const body = await readBody<{ email?: string; role?: string }>(event)
-  const email = body?.email?.trim().toLowerCase()
+  const email = typeof body?.email === 'string' ? body.email.trim().toLowerCase() : ''
 
   if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
     throw createError({ statusCode: 400, statusMessage: 'A valid email is required' })
@@ -35,19 +35,34 @@ export default defineEventHandler(async (event) => {
 
   const existingInvite = await invitationRepository.findActiveByEmail(email)
   if (existingInvite) {
-    throw createError({ statusCode: 409, statusMessage: 'An outstanding invite already exists for this email' })
+    // only an invite that is still valid blocks a new one
+    const stillValid = new Date(existingInvite.expires_at).getTime() > Date.now()
+    if (stillValid) {
+      throw createError({ statusCode: 409, statusMessage: 'An outstanding invite already exists for this email' })
+    }
+    // an expired invite is revoked so the unique index frees the email for the new invite
+    await invitationRepository.revoke(existingInvite.id)
   }
 
   const token = crypto.randomBytes(32).toString('hex')
   const expiresAt = new Date(Date.now() + INVITE_EXPIRY_DAYS * 24 * 60 * 60 * 1000)
 
-  const invitation = await invitationRepository.create({
-    email,
-    role: body.role,
-    token,
-    invitedBy: currentUser.id,
-    expiresAt
-  })
+  let invitation
+  try {
+    invitation = await invitationRepository.create({
+      email,
+      role: body.role,
+      token,
+      invitedBy: currentUser.id,
+      expiresAt
+    })
+  } catch (error: any) {
+    // two people inviting the same email at once lands here through the unique index
+    if (error?.code === '23505') {
+      throw createError({ statusCode: 409, statusMessage: 'An outstanding invite already exists for this email' })
+    }
+    throw error
+  }
 
   const config = useRuntimeConfig()
   const inviteUrl = `${config.public.appUrl}/accept-invite?token=${token}`

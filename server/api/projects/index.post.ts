@@ -7,9 +7,13 @@ export default defineEventHandler(async (event) => {
   const currentUser = requireRole(event, ['Admin', 'QA Lead'])
 
   const body = await readBody<{ name?: string; description?: string | null }>(event)
-  const name = body?.name?.trim()
+  const name = typeof body?.name === 'string' ? body.name.trim() : ''
   if (!name) {
     throw createError({ statusCode: 400, statusMessage: 'Project name is required' })
+  }
+
+  if (body?.description !== undefined && body.description !== null && typeof body.description !== 'string') {
+    throw createError({ statusCode: 400, statusMessage: 'Description must be text' })
   }
 
   const existing = await projectRepository.findByNameLower(name)

@@ -3,6 +3,10 @@ import { bugAttachmentRepository } from '~~/server/repositories/bugAttachmentRep
 import { bugRepository } from '~~/server/repositories/bugRepository'
 import { requireProject } from '~~/server/utils/requireProject'
 
+// largest file accepted, images and videos have separate caps
+const MAX_IMAGE_BYTES = 10 * 1024 * 1024
+const MAX_VIDEO_BYTES = 50 * 1024 * 1024
+
 // video length is capped in the frontend uploader before it ever reaches here,
 // this endpoint does not transcode anything, it just forwards the file
 export default defineEventHandler(async (event) => {
@@ -19,6 +23,19 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 400, statusMessage: 'bugId and file are required' })
   }
 
+  // only images and videos are accepted, anything else is turned away before the bug lookup
+  const mimeType = fileField.type ?? ''
+  if (!mimeType.startsWith('image/') && !mimeType.startsWith('video/')) {
+    throw createError({ statusCode: 400, statusMessage: 'Only image and video files can be uploaded' })
+  }
+  const maxBytes = mimeType.startsWith('video/') ? MAX_VIDEO_BYTES : MAX_IMAGE_BYTES
+  if (fileField.data.length > maxBytes) {
+    throw createError({
+      statusCode: 400,
+      statusMessage: `File is too large, the limit is ${maxBytes / (1024 * 1024)} MB`
+    })
+  }
+
   const bugId = Number(bugIdField.data.toString())
   if (!bugId || Number.isNaN(bugId)) {
     throw createError({ statusCode: 400, statusMessage: 'Invalid bug id' })
@@ -30,7 +47,7 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 404, statusMessage: 'Bug not found' })
   }
 
-  const isVideo = fileField.type?.startsWith('video')
+  const isVideo = mimeType.startsWith('video/')
   const fileType: 'image' | 'video' = isVideo ? 'video' : 'image'
 
   const cloudinary = useCloudinary()

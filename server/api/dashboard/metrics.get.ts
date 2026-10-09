@@ -1,5 +1,6 @@
 import { dashboardRepository } from '~~/server/repositories/dashboardRepository'
 import { requireProject } from '~~/server/utils/requireProject'
+import { karachiNow } from '~~/server/utils/karachiDate'
 
 const RANGE_DAYS: Record<string, number | null> = {
   '7d': 7,
@@ -16,7 +17,8 @@ function toDateOnly(date: Date): string {
 // "all" has no lower bound in practice, so it uses a floor date far
 // enough back to include everything this pilot could plausibly have.
 function resolveRange(rangeKey: string): { start: string; end: string } {
-  const today = new Date()
+  // karachi time shifted so the utc getters read karachi calendar dates
+  const today = karachiNow()
   const end = toDateOnly(today)
   const days = RANGE_DAYS[rangeKey]
 
@@ -25,7 +27,7 @@ function resolveRange(rangeKey: string): { start: string; end: string } {
   }
 
   const start = new Date(today)
-  start.setDate(start.getDate() - ((days ?? 30) - 1))
+  start.setUTCDate(start.getUTCDate() - ((days ?? 30) - 1))
   return { start: toDateOnly(start), end }
 }
 

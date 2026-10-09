@@ -1,4 +1,5 @@
 import { useDb } from '../db/client'
+import { karachiToday } from '../utils/karachiDate'
 
 export interface SnapshotMetrics {
   total_requirements: number
@@ -163,7 +164,7 @@ export const dashboardRepository = {
         count(*) filter (where te.result = 'Pass')::int as passed
       from test_executions te
       join test_cases tc on tc.id = te.test_case_id
-      where te.execution_date::date between ${startDate}::date and ${endDate}::date
+      where (te.execution_date at time zone 'Asia/Karachi')::date between ${startDate}::date and ${endDate}::date
         and (${projectId}::int is null or tc.project_id = ${projectId}::int)
         and (${moduleId}::int is null or tc.module_id = ${moduleId}::int)
         and (${releaseId}::int is null or te.release_id = ${releaseId}::int)
@@ -184,13 +185,13 @@ export const dashboardRepository = {
     const sql = useDb()
     const rows = await sql`
       select
-        te.execution_date::date as day,
+        (te.execution_date at time zone 'Asia/Karachi')::date as day,
         count(*) filter (where te.result = 'Pass')::int as pass_count,
         count(*) filter (where te.result = 'Fail')::int as fail_count,
         count(*) filter (where te.result = 'Blocked')::int as blocked_count
       from test_executions te
       join test_cases tc on tc.id = te.test_case_id
-      where te.execution_date::date between ${startDate}::date and ${endDate}::date
+      where (te.execution_date at time zone 'Asia/Karachi')::date between ${startDate}::date and ${endDate}::date
         and (${projectId}::int is null or tc.project_id = ${projectId}::int)
         and (${moduleId}::int is null or tc.module_id = ${moduleId}::int)
         and (${releaseId}::int is null or te.release_id = ${releaseId}::int)
@@ -311,13 +312,16 @@ export const dashboardRepository = {
   // already the field bugs.put.ts stamps on every status change
   async getDeveloperSummary(projectId: number | null, userId: number): Promise<DeveloperSummary> {
     const sql = useDb()
+    // today is the karachi calendar date, not the database date
+    const today = karachiToday()
     const rows = await sql`
       select
         count(*) filter (where status != 'Closed')::int as my_open_bugs,
         count(*) filter (where status != 'Closed' and severity in ('Critical', 'High'))::int as critical_high_open,
         count(*) filter (where status = 'Retest')::int as pending_retest,
         count(*) filter (
-          where status in ('Fixed', 'Closed') and last_status_change_at::date = current_date
+          where status in ('Fixed', 'Closed')
+            and (last_status_change_at at time zone 'Asia/Karachi')::date = ${today}::date
         )::int as resolved_today
       from bugs
       where archived = false and owner_id = ${userId}
@@ -414,8 +418,8 @@ export const dashboardRepository = {
       from bugs
       where owner_id = ${userId}
         and (${projectId}::int is null or project_id = ${projectId}::int)
-        and last_status_change_at >= ${periodStart}::date
-        and last_status_change_at < (${periodEnd}::date + interval '1 day')
+        and (last_status_change_at at time zone 'Asia/Karachi')::date >= ${periodStart}::date
+        and (last_status_change_at at time zone 'Asia/Karachi')::date <= ${periodEnd}::date
     `
     const totalCount = (countRows[0] as any).total as number
 
@@ -429,8 +433,8 @@ export const dashboardRepository = {
       join projects p on p.id = b.project_id
       where b.owner_id = ${userId}
         and (${projectId}::int is null or b.project_id = ${projectId}::int)
-        and b.last_status_change_at >= ${periodStart}::date
-        and b.last_status_change_at < (${periodEnd}::date + interval '1 day')
+        and (b.last_status_change_at at time zone 'Asia/Karachi')::date >= ${periodStart}::date
+        and (b.last_status_change_at at time zone 'Asia/Karachi')::date <= ${periodEnd}::date
         and (
           ${cursor?.lastStatusChangeAt ?? null}::timestamptz is null
           or (b.last_status_change_at, b.id) < (${cursor?.lastStatusChangeAt ?? null}::timestamptz, ${cursor?.id ?? null}::int)
@@ -463,20 +467,24 @@ export const dashboardRepository = {
   },
 
   // bugs on this developer's plate: assigned to them and still Open or
-  // Reopened (the statuses that need their attention). most severe first,
-  // then oldest first.
+  // Reopened (the statuses that need their attention). bugs in archived
+  // projects are left out, those projects are read only so nothing in them
+  // can be acted on. most severe first, then oldest first.
   async getDigestAssignedBugs(userId: number, limit = 25): Promise<{ bugs: DigestBugRow[]; totalCount: number }> {
     const sql = useDb()
     const countRows = await sql`
       select count(*)::int as total
-      from bugs
-      where archived = false and owner_id = ${userId} and status in ('Open', 'Reopened')
+      from bugs b
+      join projects p on p.id = b.project_id
+      where b.archived = false and p.archived = false
+        and b.owner_id = ${userId} and b.status in ('Open', 'Reopened')
     `
     const rows = await sql`
       select b.id, b.bug_number, p.name as project_name, b.title, b.severity, b.status
       from bugs b
       join projects p on p.id = b.project_id
-      where b.archived = false and b.owner_id = ${userId} and b.status in ('Open', 'Reopened')
+      where b.archived = false and p.archived = false
+        and b.owner_id = ${userId} and b.status in ('Open', 'Reopened')
       order by
         case b.severity when 'Critical' then 1 when 'High' then 2 when 'Medium' then 3 else 4 end,
         b.reported_at asc, b.id asc
@@ -529,7 +537,7 @@ export const dashboardRepository = {
       select count(distinct bug_id)::int as count
       from bug_assignment_log
       where assigned_to = ${userId}
-        and assigned_at::date between ${weekStart}::date and ${weekEnd}::date
+        and (assigned_at at time zone 'Asia/Karachi')::date between ${weekStart}::date and ${weekEnd}::date
     `
     const resolvedRows = await sql`
       select count(distinct h.bug_id)::int as count
@@ -537,7 +545,7 @@ export const dashboardRepository = {
       join bugs b on b.id = h.bug_id
       where b.owner_id = ${userId}
         and h.new_status in ('Fixed', 'Closed')
-        and h.changed_at::date between ${weekStart}::date and ${weekEnd}::date
+        and (h.changed_at at time zone 'Asia/Karachi')::date between ${weekStart}::date and ${weekEnd}::date
     `
     return {
       assignedThisWeek: (assignedRows[0] as any).count,

@@ -10,6 +10,8 @@ import { neon } from '@neondatabase/serverless'
 type SqlFn = {
   <T = any>(strings: TemplateStringsArray, ...values: any[]): Promise<T[]>
   <T = any>(query: string, ...values: any[]): Promise<T[]>
+  // runs the given queries in one transaction, so either all apply or none do
+  transaction(queries: Promise<any[]>[]): Promise<any[][]>
 }
 
 let sqlClient: SqlFn | null = null

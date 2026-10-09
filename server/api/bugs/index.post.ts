@@ -63,6 +63,10 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 400, statusMessage: 'Invalid priority' })
   }
 
+  if (body.environmentBuild != null && typeof body.environmentBuild !== 'string') {
+    throw createError({ statusCode: 400, statusMessage: 'Environment build must be text' })
+  }
+
   const linkedTestCaseId = parseOptionalId(body.linkedTestCaseId, 'test case')
   if (linkedTestCaseId && !(await testCaseRepository.findById(project.id, linkedTestCaseId))) {
     throw createError({ statusCode: 404, statusMessage: 'Linked test case not found' })
@@ -77,6 +81,10 @@ export default defineEventHandler(async (event) => {
   const owner = ownerId ? await userRepository.findById(ownerId) : null
   if (ownerId && !owner) {
     throw createError({ statusCode: 404, statusMessage: 'Assignee not found' })
+  }
+  // a deactivated person cannot be given new work
+  if (owner && !owner.active) {
+    throw createError({ statusCode: 400, statusMessage: 'Assignee is deactivated' })
   }
 
   const created = await bugRepository.create(project.id, {

@@ -15,10 +15,15 @@ export default defineEventHandler(async (event) => {
   }
 
   if (deleted.public_id) {
-    const cloudinary = useCloudinary()
-    await cloudinary.uploader.destroy(deleted.public_id, {
-      resource_type: deleted.file_type === 'video' ? 'video' : 'image'
-    })
+    // the row is already gone, so a failed cloudinary cleanup is only logged
+    try {
+      const cloudinary = useCloudinary()
+      await cloudinary.uploader.destroy(deleted.public_id, {
+        resource_type: deleted.file_type === 'video' ? 'video' : 'image'
+      })
+    } catch (error) {
+      console.error('Could not remove the attachment from cloudinary', deleted.public_id, error)
+    }
   }
 
   return { deleted: true }

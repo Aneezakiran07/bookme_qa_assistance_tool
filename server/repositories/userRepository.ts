@@ -111,15 +111,6 @@ export const userRepository = {
     )
   },
 
-  async approve(userId: number, role: string): Promise<UserRecord | null> {
-    const sql = useDb()
-    const rows = await sql(
-      `update users set role = $1, active = true where id = $2 returning ${PUBLIC_COLUMNS}`,
-      [role, userId]
-    )
-    return (rows[0] as UserRecord) ?? null
-  },
-
   async setRole(userId: number, role: string): Promise<UserRecord | null> {
     const sql = useDb()
     const rows = await sql(

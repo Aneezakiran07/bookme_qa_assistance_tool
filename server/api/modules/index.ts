@@ -17,7 +17,7 @@ export default defineEventHandler(async (event) => {
 
   if (event.method === 'POST') {
     const body = await readBody<{ name: string }>(event)
-    const name = body?.name?.trim()
+    const name = typeof body?.name === 'string' ? body.name.trim() : ''
     if (!name) {
       throw createError({ statusCode: 400, statusMessage: 'Module name is required' })
     }

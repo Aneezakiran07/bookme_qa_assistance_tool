@@ -35,7 +35,7 @@ export default defineEventHandler(async (event) => {
     releaseIds?: number[]
   }>(event)
 
-  if (body?.title !== undefined && !body.title.trim()) {
+  if (body?.title !== undefined && (typeof body.title !== 'string' || !body.title.trim())) {
     throw createError({ statusCode: 400, statusMessage: 'Title cannot be empty' })
   }
 

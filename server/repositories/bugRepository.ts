@@ -92,8 +92,8 @@ export const bugRepository = {
         and (${filters.severity ?? null}::text is null or b.severity = ${filters.severity ?? null}::text)
         and (${filters.status ?? null}::text is null or b.status = ${filters.status ?? null}::text)
         and (${filters.releaseId ?? null}::int is null or b.release_id = ${filters.releaseId ?? null}::int)
-        and (${filters.periodStart ?? null}::date is null or b.last_status_change_at >= ${filters.periodStart ?? null}::date)
-        and (${filters.periodEnd ?? null}::date is null or b.last_status_change_at < (${filters.periodEnd ?? null}::date + interval '1 day'))
+        and (${filters.periodStart ?? null}::date is null or (b.last_status_change_at at time zone 'Asia/Karachi')::date >= ${filters.periodStart ?? null}::date)
+        and (${filters.periodEnd ?? null}::date is null or (b.last_status_change_at at time zone 'Asia/Karachi')::date <= ${filters.periodEnd ?? null}::date)
       order by b.reported_at desc
     `
     return rows as BugWithMeta[]
@@ -205,8 +205,8 @@ export const bugRepository = {
         and (${filters.moduleId ?? null}::int is null or b.module_id = ${filters.moduleId ?? null}::int)
         and (${filters.severity ?? null}::text is null or b.severity = ${filters.severity ?? null}::text)
         and (${filters.status ?? null}::text is null or b.status = ${filters.status ?? null}::text)
-        and (${filters.periodStart ?? null}::date is null or b.last_status_change_at >= ${filters.periodStart ?? null}::date)
-        and (${filters.periodEnd ?? null}::date is null or b.last_status_change_at < (${filters.periodEnd ?? null}::date + interval '1 day'))
+        and (${filters.periodStart ?? null}::date is null or (b.last_status_change_at at time zone 'Asia/Karachi')::date >= ${filters.periodStart ?? null}::date)
+        and (${filters.periodEnd ?? null}::date is null or (b.last_status_change_at at time zone 'Asia/Karachi')::date <= ${filters.periodEnd ?? null}::date)
       order by b.reported_at desc
     `
     return rows as BugWithMeta[]

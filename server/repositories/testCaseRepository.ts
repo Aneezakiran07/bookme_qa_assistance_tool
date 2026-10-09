@@ -182,15 +182,22 @@ export const testCaseRepository = {
   // to diff the old vs new set themselves.
   async setRequirementLinks(testCaseId: number, requirementIds: number[]): Promise<void> {
     const sql = useDb()
-    await sql`delete from requirement_test_case_links where test_case_id = ${testCaseId}`
-    const uniqueIds = [...new Set(requirementIds)]
-    for (const reqId of uniqueIds) {
-      await sql`
+    const idList = [...new Set(requirementIds)].join(',')
+    // both statements run in one transaction, so a failed insert leaves the old links untouched
+    await sql.transaction([
+      // only links that are no longer wanted are removed
+      sql`
+        delete from requirement_test_case_links
+        where test_case_id = ${testCaseId}
+          and requirement_id <> all(string_to_array(${idList}, ',')::int[])
+      `,
+      // links that already exist are skipped
+      sql`
         insert into requirement_test_case_links (test_case_id, requirement_id)
-        values (${testCaseId}, ${reqId})
+        select ${testCaseId}::int, unnest(string_to_array(${idList}, ',')::int[])
         on conflict do nothing
       `
-    }
+    ])
   },
 
   // same replace-the-whole-set pattern as setRequirementLinks, for the
@@ -198,15 +205,22 @@ export const testCaseRepository = {
   // a given release show up in that release's execution workspace.
   async setReleaseLinks(testCaseId: number, releaseIds: number[]): Promise<void> {
     const sql = useDb()
-    await sql`delete from test_case_release_links where test_case_id = ${testCaseId}`
-    const uniqueIds = [...new Set(releaseIds)]
-    for (const releaseId of uniqueIds) {
-      await sql`
+    const idList = [...new Set(releaseIds)].join(',')
+    // both statements run in one transaction, so a failed insert leaves the old links untouched
+    await sql.transaction([
+      // only links that are no longer wanted are removed
+      sql`
+        delete from test_case_release_links
+        where test_case_id = ${testCaseId}
+          and release_id <> all(string_to_array(${idList}, ',')::int[])
+      `,
+      // links that already exist are skipped
+      sql`
         insert into test_case_release_links (test_case_id, release_id)
-        values (${testCaseId}, ${releaseId})
+        select ${testCaseId}::int, unnest(string_to_array(${idList}, ',')::int[])
         on conflict do nothing
       `
-    }
+    ])
   },
 
   // soft delete only, matches the schema's archived flag. the row, its

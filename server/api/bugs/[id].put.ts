@@ -20,7 +20,8 @@ export default defineEventHandler(async (event) => {
   }
 
   const existing = await bugRepository.findById(project.id, bugId)
-  if (!existing) {
+  // an archived bug counts as deleted, so it cannot be edited
+  if (!existing || existing.archived) {
     throw createError({ statusCode: 404, statusMessage: 'Bug not found' })
   }
 
@@ -51,7 +52,7 @@ export default defineEventHandler(async (event) => {
   const fields: Record<string, unknown> = {}
 
   if (body.title !== undefined) {
-    const title = body.title.trim()
+    const title = typeof body.title === 'string' ? body.title.trim() : ''
     if (!title) {
       throw createError({ statusCode: 400, statusMessage: 'Title is required' })
     }
@@ -73,6 +74,9 @@ export default defineEventHandler(async (event) => {
   }
 
   if (body.environmentBuild !== undefined) {
+    if (body.environmentBuild !== null && typeof body.environmentBuild !== 'string') {
+      throw createError({ statusCode: 400, statusMessage: 'Environment build must be text' })
+    }
     fields.environment_build = body.environmentBuild?.trim() || null
   }
 
@@ -104,6 +108,9 @@ export default defineEventHandler(async (event) => {
   if (body.qaComments !== undefined) {
     if (!isQaRole) {
       throw createError({ statusCode: 403, statusMessage: 'Only QA can edit the QA comments' })
+    }
+    if (body.qaComments !== null && typeof body.qaComments !== 'string') {
+      throw createError({ statusCode: 400, statusMessage: 'QA comments must be text' })
     }
     fields.qa_comments = body.qaComments?.trim() || null
   }
@@ -150,6 +157,10 @@ export default defineEventHandler(async (event) => {
       if (!newOwner) {
         throw createError({ statusCode: 404, statusMessage: 'Assignee not found' })
       }
+      // a deactivated person cannot be given new work
+      if (!newOwner.active) {
+        throw createError({ statusCode: 400, statusMessage: 'Assignee is deactivated' })
+      }
     }
     fields.owner_id = body.ownerId
   }
@@ -158,6 +169,9 @@ export default defineEventHandler(async (event) => {
     return bugRepository.findByIdWithMeta(project.id, bugId)
   }
 
+  await bugRepository.update(project.id, bugId, fields as any)
+
+  // the audit rows are written only after the update worked, so a failed update leaves no false entry
   if (fields.status) {
     await bugStatusHistoryRepository.create({
       bugId,
@@ -175,8 +189,6 @@ export default defineEventHandler(async (event) => {
       severityAtAssignment: (fields.severity as string) ?? existing.severity
     })
   }
-
-  await bugRepository.update(project.id, bugId, fields as any)
 
   if (newOwner) {
     const bugCode = `BUG-${String(existing.bug_number).padStart(3, '0')}`

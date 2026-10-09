@@ -259,14 +259,21 @@ export const releaseRepository = {
 
   async syncTestCases(releaseId: number, testCaseIds: number[]): Promise<void> {
     const sql = useDb()
-    await sql`delete from test_case_release_links where release_id = ${releaseId}`
-    const uniqueIds = [...new Set(testCaseIds)]
-    for (const testCaseId of uniqueIds) {
-      await sql`
+    const idList = [...new Set(testCaseIds)].join(',')
+    // both statements run in one transaction, so a failed insert leaves the old links untouched
+    await sql.transaction([
+      // only links that are no longer wanted are removed
+      sql`
+        delete from test_case_release_links
+        where release_id = ${releaseId}
+          and test_case_id <> all(string_to_array(${idList}, ',')::int[])
+      `,
+      // links that already exist are skipped
+      sql`
         insert into test_case_release_links (test_case_id, release_id)
-        values (${testCaseId}, ${releaseId})
+        select unnest(string_to_array(${idList}, ',')::int[]), ${releaseId}::int
         on conflict do nothing
       `
-    }
+    ])
   }
 }
