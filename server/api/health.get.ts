@@ -1,4 +1,4 @@
-import { useDb } from '~~/server/utils/db'
+import { useDb } from '~~/server/db/client'
 
 export default defineEventHandler(async () => {
   await useDb()`SELECT 1`
