@@ -53,3 +53,5 @@ node_modules
 # Archives (never commit these)
 *.zip
 *.tar.gz
+.vercel
+.env*
