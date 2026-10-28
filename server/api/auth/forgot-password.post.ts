@@ -40,9 +40,8 @@ export default defineEventHandler(async (event) => {
   const email = typeof body?.email === 'string' ? body.email.trim().toLowerCase() : ''
 
   if (email) {
-    // waitUntil keeps the work alive on serverless after the response is sent
-    event.waitUntil(createAndSendReset(email))
-  }
+  await createAndSendReset(email)
+}
 
   return { success: true }
 })
